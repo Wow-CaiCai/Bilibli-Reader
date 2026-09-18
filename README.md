@@ -1,6 +1,7 @@
 # Bilibili Reader Userscript
 
 供脚本猫、Tampermonkey 等用户脚本管理器使用的 B 站阅读模式。
+![alt text](示例图.png)
 
 ## 安装
 

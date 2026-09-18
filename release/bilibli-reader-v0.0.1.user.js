@@ -4,6 +4,11 @@
 // @version      0.0.1
 // @description  将 B 站视频切换为视频、章节与字幕联动的阅读视图
 // @author       Local
+// @homepageURL  https://github.com/Wow-CaiCai/Bilibli-Reader
+// @source       https://github.com/Wow-CaiCai/Bilibli-Reader
+// @supportURL   https://github.com/Wow-CaiCai/Bilibli-Reader/issues
+// @updateURL    https://raw.githubusercontent.com/Wow-CaiCai/Bilibli-Reader/main/Bilibli-Reader.user.js
+// @downloadURL  https://raw.githubusercontent.com/Wow-CaiCai/Bilibli-Reader/main/Bilibli-Reader.user.js
 // @match        https://www.bilibili.com/video/*
 // @match        https://www.bilibili.com/list/watchlater
 // @match        https://www.bilibili.com/list/watchlater/*
