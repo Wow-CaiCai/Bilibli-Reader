@@ -446,6 +446,7 @@ const ids = {
   closeBtn: "blr-close-btn",
   settingsBtn: "blr-settings-btn",
   readingView: "blr-reading-view",
+  readingPageTitle: "blr-reading-page-title",
   readingEpisodeTitle: "blr-reading-episode-title",
   readingCollectionNav: "blr-reading-collection-nav",
   readingCollectionList: "blr-reading-collection-list",
@@ -949,10 +950,15 @@ function buildUiHtml() {
     </aside>
 
     <section id="${ids.readingView}" aria-hidden="true" data-blr-reader-ready="0" aria-busy="true">
-      <div id="${ids.readingEpisodeTitle}" class="blr-reading-episode-title" hidden></div>
-      <nav id="${ids.readingCollectionNav}" class="blr-reading-collection-nav" aria-label="合集选集" hidden>
-        <div id="${ids.readingCollectionList}" class="blr-reading-collection-list"></div>
-      </nav>
+      <div class="blr-reading-topbar">
+        <div class="blr-reading-heading-group">
+          <strong id="${ids.readingPageTitle}" class="blr-reading-page-title"></strong>
+          <div id="${ids.readingEpisodeTitle}" class="blr-reading-episode-title" hidden></div>
+        </div>
+        <nav id="${ids.readingCollectionNav}" class="blr-reading-collection-nav" aria-label="合集选集" hidden>
+          <div id="${ids.readingCollectionList}" class="blr-reading-collection-list"></div>
+        </nav>
+      </div>
       <div class="blr-reading-layout">
         <aside class="blr-reading-rail">
           <div class="blr-reading-eyebrow">章节</div>
@@ -2327,6 +2333,7 @@ function closeReadingView() {
 
 function renderReadingView() {
   const titleNode = document.querySelector(".blr-reading-title");
+  const pageTitleNode = byId(ids.readingPageTitle);
   const metaNode = byId(ids.readingMeta);
   const chapterList = byId(ids.readingChapterList);
   const transcriptList = byId(ids.readingTranscriptList);
@@ -2338,6 +2345,10 @@ function renderReadingView() {
 
   if (titleNode) {
     titleNode.textContent = state.title || "B站字幕阅读";
+  }
+  if (pageTitleNode) {
+    pageTitleNode.textContent = state.title || "B站字幕阅读";
+    pageTitleNode.title = pageTitleNode.textContent;
   }
   if (metaNode) {
     metaNode.textContent = buildReadingMetaLine();
