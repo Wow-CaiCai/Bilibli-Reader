@@ -59,6 +59,7 @@ const state = {
   pageIndex: 1,
   pageCount: 0,
   pageTitle: "",
+  collection: null,
   videoDuration: 0,
   description: "",
   title: "",
@@ -441,6 +442,10 @@ const ids = {
   closeBtn: "blr-close-btn",
   settingsBtn: "blr-settings-btn",
   readingView: "blr-reading-view",
+  readingEpisodeTitle: "blr-reading-episode-title",
+  readingCollectionNav: "blr-reading-collection-nav",
+  readingCollectionName: "blr-reading-collection-name",
+  readingCollectionList: "blr-reading-collection-list",
   readingPlayerSlot: "blr-reading-player-slot",
   readingStatus: "blr-reading-status",
   readingCloseBtn: "blr-reading-close-btn",
@@ -941,6 +946,11 @@ function buildUiHtml() {
     </aside>
 
     <section id="${ids.readingView}" aria-hidden="true" data-blr-reader-ready="0" aria-busy="true">
+      <div id="${ids.readingEpisodeTitle}" class="blr-reading-episode-title" hidden></div>
+      <nav id="${ids.readingCollectionNav}" class="blr-reading-collection-nav" aria-label="合集选集" hidden>
+        <strong id="${ids.readingCollectionName}" class="blr-reading-collection-name"></strong>
+        <div id="${ids.readingCollectionList}" class="blr-reading-collection-list"></div>
+      </nav>
       <div class="blr-reading-layout">
         <aside class="blr-reading-rail">
           <div class="blr-reading-eyebrow">章节</div>
@@ -1075,6 +1085,7 @@ function bindUiEvents() {
   const readingLetterSpacingSelect = byId(ids.readingLetterSpacingSelect);
   const readingLineHeightSelect = byId(ids.readingLineHeightSelect);
   const readingDescriptionBtn = byId(ids.readingDescriptionBtn);
+  const readingCollectionList = byId(ids.readingCollectionList);
   const chapterList = byId(ids.readingChapterList);
   const transcriptList = byId(ids.readingTranscriptList);
 
@@ -1189,6 +1200,18 @@ function bindUiEvents() {
   chapterList.addEventListener("pointerdown", () => noteManualReaderInteraction(3500));
   transcriptList.addEventListener("pointerdown", () => noteManualReaderInteraction(3500));
   chapterList.addEventListener("click", onReadingChapterClick);
+  readingCollectionList.addEventListener("click", onReadingCollectionClick);
+  readingCollectionList.addEventListener(
+    "wheel",
+    (event) => {
+      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) {
+        return;
+      }
+      readingCollectionList.scrollLeft += event.deltaY;
+      event.preventDefault();
+    },
+    { passive: false }
+  );
   transcriptList.addEventListener("click", onReadingTranscriptClick);
   readingView.addEventListener("transitionend", () => {
     if (!state.readingViewOpen) {
@@ -1248,6 +1271,7 @@ function resetClipState() {
   state.pageIndex = 1;
   state.pageCount = 0;
   state.pageTitle = "";
+  state.collection = null;
   state.videoDuration = 0;
   state.description = "";
   state.title = "";
@@ -1357,6 +1381,11 @@ async function refreshClip() {
     const currentPage = pickPageFromPages(meta.pages, resolvedPageIndex);
     state.pageIndex = resolvedPageIndex;
     state.pageTitle = currentPage?.part || "";
+    state.collection = resolveVideoCollectionCurrent(meta.collection, {
+      bvid: state.bvid,
+      aid: state.aid,
+      pageIndex: resolvedPageIndex
+    });
     state.cid = currentPage?.cid || pickCidFromPages(meta.pages, resolvedPageIndex, meta.defaultCid);
     state.cidSource = "meta-pages";
     state.videoDuration = pickDurationFromPages(meta.pages, resolvedPageIndex, meta.defaultDuration);
@@ -2326,6 +2355,7 @@ function renderReadingView() {
   if (metaNode) {
     metaNode.textContent = buildReadingMetaLine();
   }
+  renderReadingCollection();
 
   if (chapters.length === 0) {
     chapterList.innerHTML = '<div class="blr-reading-empty">当前视频没有章节。</div>';
@@ -2407,6 +2437,62 @@ function renderReadingView() {
   updateReadingTranscriptTailSpacer();
   state.readingActiveSubtitleIndex = -1;
   state.readingActiveChapterIndex = -1;
+}
+
+function renderReadingCollection() {
+  const episodeTitle = byId(ids.readingEpisodeTitle);
+  const collectionNav = byId(ids.readingCollectionNav);
+  const collectionName = byId(ids.readingCollectionName);
+  const collectionList = byId(ids.readingCollectionList);
+  const collection = state.collection;
+  const episodes = Array.isArray(collection?.episodes) ? collection.episodes : [];
+  const hasCollection = episodes.length > 1;
+
+  if (!hasCollection) {
+    episodeTitle.hidden = true;
+    episodeTitle.textContent = "";
+    episodeTitle.removeAttribute("title");
+    collectionNav.hidden = true;
+    collectionName.textContent = "";
+    collectionList.innerHTML = "";
+    return;
+  }
+
+  const currentIndex = Number(collection.currentIndex);
+  const currentEpisode = currentIndex >= 0 ? episodes[currentIndex] : null;
+  episodeTitle.textContent = currentEpisode?.title || state.pageTitle || state.title || "";
+  episodeTitle.hidden = !episodeTitle.textContent;
+  episodeTitle.title = episodeTitle.textContent;
+  collectionName.textContent = collection.title || "合集";
+  collectionList.innerHTML = episodes
+    .map((episode, index) => {
+      const isCurrent = index === currentIndex;
+      const label = episode.title || `第 ${index + 1} 集`;
+      return `
+        <button
+          type="button"
+          class="blr-reading-collection-item${isCurrent ? " is-active" : ""}"
+          data-bvid="${escapeHtml(episode.bvid)}"
+          data-page="${Number(episode.page || 0) || ""}"
+          title="${escapeHtml(label)}"
+          aria-label="第 ${Number(episode.page || 0) || index + 1} 集：${escapeHtml(label)}"
+          ${isCurrent ? 'aria-current="true"' : ""}
+        >
+          <span class="blr-reading-collection-index">${Number(episode.page || 0) || index + 1}</span>
+          <span class="blr-reading-collection-item-title">${escapeHtml(label)}</span>
+        </button>
+      `;
+    })
+    .join("");
+
+  collectionNav.hidden = false;
+  window.requestAnimationFrame(() => {
+    collectionList.querySelector(".is-active")?.scrollIntoView({
+      behavior: "auto",
+      block: "nearest",
+      inline: "center"
+    });
+  });
 }
 
 function getReadingTranscriptPlaceholderText() {
@@ -4712,6 +4798,27 @@ function onReadingChapterClick(event) {
   jumpReadingTarget(target.dataset.seconds);
 }
 
+function onReadingCollectionClick(event) {
+  const target = event.target.closest(".blr-reading-collection-item");
+  if (!target || target.classList.contains("is-active")) {
+    return;
+  }
+  const bvid = String(target.dataset.bvid || "").trim();
+  if (!/^BV[0-9A-Za-z]+$/.test(bvid)) {
+    renderReadingStatus("无法读取这一集的视频地址。");
+    return;
+  }
+
+  target.setAttribute("aria-busy", "true");
+  const nextUrl = new URL(`https://www.bilibili.com/video/${bvid}/`);
+  const pageIndex = Number(target.dataset.page || 0);
+  if (pageIndex > 1) {
+    nextUrl.searchParams.set("p", String(pageIndex));
+  }
+  nextUrl.searchParams.set("bilibli_reader", "1");
+  location.assign(nextUrl.toString());
+}
+
 function onReadingTranscriptClick(event) {
   const target = event.target.closest(".blr-reading-item, .blr-reading-complete-segment");
   if (!target) {
@@ -5047,6 +5154,7 @@ async function fetchVideoMeta(bvid) {
     uploadDate,
     defaultCid: data.cid ? String(data.cid) : "",
     defaultDuration: Number(data.duration || 0) || 0,
+    collection: mapVideoCollection(data, bvid),
     pages: pages.map((item) => ({
       cid: String(item.cid || ""),
       page: Number(item.page || 0) || 0,
@@ -5054,6 +5162,68 @@ async function fetchVideoMeta(bvid) {
       duration: Number(item.duration || 0) || 0
     }))
   };
+}
+
+function mapVideoCollection(data, currentBvid = "") {
+  const pages = Array.isArray(data?.pages) ? data.pages : [];
+  if (pages.length > 1) {
+    return {
+      id: String(currentBvid || ""),
+      type: "pages",
+      title: String(data?.title || "选集").trim() || "选集",
+      currentIndex: -1,
+      episodes: pages.map((page, index) => ({
+        aid: String(data?.aid || ""),
+        bvid: String(currentBvid || "").trim(),
+        cid: String(page?.cid || ""),
+        page: Number(page?.page || 0) || index + 1,
+        title: String(page?.part || "").trim()
+      }))
+    };
+  }
+
+  const rawCollection = data?.ugc_season;
+  const sections = Array.isArray(rawCollection?.sections) ? rawCollection.sections : [];
+  const episodes = sections
+    .flatMap((section) => (Array.isArray(section?.episodes) ? section.episodes : []))
+    .map((episode) => ({
+      aid: String(episode?.aid || episode?.arc?.aid || ""),
+      bvid: String(episode?.bvid || episode?.arc?.bvid || "").trim(),
+      cid: String(episode?.cid || episode?.arc?.cid || ""),
+      page: 0,
+      title: String(episode?.title || episode?.arc?.title || "").trim()
+    }))
+    .filter((episode) => /^BV[0-9A-Za-z]+$/.test(episode.bvid));
+
+  if (episodes.length <= 1) {
+    return null;
+  }
+
+  return {
+    id: String(rawCollection?.id || ""),
+    type: "ugc-season",
+    title: String(rawCollection?.title || "合集").trim() || "合集",
+    currentIndex: -1,
+    episodes
+  };
+}
+
+function resolveVideoCollectionCurrent(collection, { bvid = "", aid = "", pageIndex = 1 } = {}) {
+  const episodes = Array.isArray(collection?.episodes) ? collection.episodes : [];
+  if (episodes.length <= 1) {
+    return null;
+  }
+
+  const safeBvid = String(bvid || "").trim();
+  const safeAid = String(aid || "").trim();
+  const currentIndex = episodes.findIndex((episode) => {
+    if (collection.type === "pages") {
+      return Number(episode.page) === Number(pageIndex);
+    }
+    return episode.bvid === safeBvid || (safeAid && episode.aid === safeAid);
+  });
+
+  return { ...collection, currentIndex };
 }
 
 function pickPageFromPages(pages, pageIndex) {
