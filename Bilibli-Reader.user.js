@@ -381,6 +381,7 @@ const state = {
   readingDocumentClickBound: false,
   readingManualScrollPauseUntil: 0,
   readingProgrammaticScrollUntil: 0,
+  readingCollectionSwitchInFlight: false,
   readingViewReady: false,
   statusText: "准备就绪，点击“刷新抓取”开始。",
   messageText: "",
@@ -1471,7 +1472,7 @@ function startUrlWatcher() {
     state.currentClipSignature = nextSignature;
     enforceNormalPageStateIfNeeded(nextUrl);
     ensureUiReady();
-    resetClipState();
+    resetClipState({ preserveReadingContent: state.readingViewOpen && isReaderMode(nextUrl) });
     const shouldEnterReaderMode = isReaderMode(nextUrl);
     if (!state.readingViewOpen && shouldEnterReaderMode) {
       document.documentElement.setAttribute("data-blr-reader-mode", "1");
@@ -1497,27 +1498,29 @@ function startUrlWatcher() {
   }, 1200);
 }
 
-function resetClipState() {
+function resetClipState({ preserveReadingContent = false } = {}) {
   state.bvid = "";
   state.aid = "";
   state.cid = "";
   state.cidSource = "";
-  state.pageIndex = 1;
-  state.pageCount = 0;
-  state.pageTitle = "";
-  state.collection = null;
   state.videoDuration = 0;
-  state.description = "";
-  state.title = "";
-  state.author = "";
-  state.uploadDate = "";
-  state.subtitles = [];
-  state.selectedSubtitleId = "";
-  state.selectedSubtitleUrl = "";
-  state.selectedSubtitleLang = "";
-  state.subtitleBody = [];
-  state.subtitleFetchState = "idle";
-  state.chapters = [];
+  if (!preserveReadingContent) {
+    state.pageIndex = 1;
+    state.pageCount = 0;
+    state.pageTitle = "";
+    state.collection = null;
+    state.description = "";
+    state.title = "";
+    state.author = "";
+    state.uploadDate = "";
+    state.subtitles = [];
+    state.selectedSubtitleId = "";
+    state.selectedSubtitleUrl = "";
+    state.selectedSubtitleLang = "";
+    state.subtitleBody = [];
+    state.chapters = [];
+  }
+  state.subtitleFetchState = preserveReadingContent ? "loading" : "idle";
   state.hotComments = [];
   state.markdown = "";
   state.srt = "";
@@ -1530,12 +1533,16 @@ function resetClipState() {
   stopReaderPlayerObserver();
 
   renderMeta();
-  renderSubtitleSelect();
-  byId(ids.preview).value = "";
+  if (!preserveReadingContent) {
+    renderSubtitleSelect();
+    byId(ids.preview).value = "";
+  }
   setMessage("");
-  if (state.readingViewOpen) {
+  if (state.readingViewOpen && !preserveReadingContent) {
     renderReadingView();
     renderReadingStatus("请先点击“刷新抓取”加载当前视频字幕。");
+  } else if (state.readingViewOpen) {
+    renderReadingStatus("正在切换选集并加载新字幕...");
   }
 }
 
@@ -2492,6 +2499,7 @@ function closeReadingView() {
   state.readingSettingsExpanded = false;
   state.readingManualScrollPauseUntil = 0;
   state.readingProgrammaticScrollUntil = 0;
+  state.readingCollectionSwitchInFlight = false;
   state.readingNextScrollBehavior = "smooth";
   if (state.readingPlayerRetryTimer) {
     window.clearTimeout(state.readingPlayerRetryTimer);
@@ -2692,6 +2700,7 @@ function renderReadingCollection() {
         <button
           type="button"
           class="blr-reading-collection-item${isCurrent ? " is-active" : ""}"
+          data-index="${index}"
           data-bvid="${escapeHtml(episode.bvid)}"
           data-page="${Number(episode.page || 0) || ""}"
           title="${escapeHtml(label)}"
@@ -5019,9 +5028,9 @@ function onReadingChapterClick(event) {
   jumpReadingTarget(target.dataset.seconds);
 }
 
-function onReadingCollectionClick(event) {
+async function onReadingCollectionClick(event) {
   const target = event.target.closest(".blr-reading-collection-item");
-  if (!target || target.classList.contains("is-active")) {
+  if (!target || target.classList.contains("is-active") || state.readingCollectionSwitchInFlight) {
     return;
   }
   const bvid = String(target.dataset.bvid || "").trim();
@@ -5030,16 +5039,170 @@ function onReadingCollectionClick(event) {
     return;
   }
 
-  target.setAttribute("aria-busy", "true");
-  setReadingViewReady(false);
-  renderReadingStatus("正在切换选集并重新整理阅读布局...");
-  const nextUrl = new URL(`https://www.bilibili.com/video/${bvid}/`);
   const pageIndex = Number(target.dataset.page || 0);
-  if (pageIndex > 1) {
-    nextUrl.searchParams.set("p", String(pageIndex));
+  const targetIndex = Number(target.dataset.index);
+  const currentIndex = Number(state.collection?.currentIndex);
+  const expectedSignature = [bvid, pageIndex > 0 ? pageIndex : 1].join("|");
+  state.readingCollectionSwitchInFlight = true;
+  target.setAttribute("aria-busy", "true");
+  renderReadingStatus("正在使用播放器原生逻辑切换选集...");
+
+  try {
+    const nativeTriggered = triggerNativeCollectionSwitch({
+      currentIndex,
+      targetIndex,
+      bvid,
+      pageIndex,
+      cid: String(state.collection?.episodes?.[targetIndex]?.cid || "")
+    });
+    if (nativeTriggered && (await waitForClipSignature(expectedSignature, 4500))) {
+      return;
+    }
+
+    renderReadingStatus("原生切集未响应，正在使用兼容方式切换...");
+    setReadingViewReady(false);
+    const nextUrl = new URL(`https://www.bilibili.com/video/${bvid}/`);
+    if (pageIndex > 1) {
+      nextUrl.searchParams.set("p", String(pageIndex));
+    }
+    nextUrl.searchParams.set("bilibli_reader", "1");
+    location.assign(nextUrl.toString());
+  } finally {
+    state.readingCollectionSwitchInFlight = false;
+    target.removeAttribute("aria-busy");
   }
-  nextUrl.searchParams.set("bilibli_reader", "1");
-  location.assign(nextUrl.toString());
+}
+
+function triggerNativeCollectionSwitch({ currentIndex, targetIndex, bvid, pageIndex, cid }) {
+  const offset = targetIndex - currentIndex;
+  if (Math.abs(offset) === 1) {
+    const control = findNativePlayerEpisodeControl(offset < 0 ? "previous" : "next");
+    if (activateNativeCollectionTarget(control)) {
+      return true;
+    }
+  }
+
+  const episodeTarget = findNativeCollectionEpisodeTarget({ bvid, pageIndex, cid });
+  return activateNativeCollectionTarget(episodeTarget);
+}
+
+function findNativePlayerEpisodeControl(direction) {
+  const isPrevious = direction === "previous";
+  const selectors = isPrevious
+    ? [
+        ".bpx-player-ctrl-prev",
+        ".bpx-player-ctrl-prev-btn",
+        ".bilibili-player-video-btn-prev",
+        "[aria-label*='上一集']",
+        "[title*='上一集']",
+        "[data-text*='上一集']"
+      ]
+    : [
+        ".bpx-player-ctrl-next",
+        ".bpx-player-ctrl-next-btn",
+        ".bilibili-player-video-btn-next",
+        "[aria-label*='下一集']",
+        "[title*='下一集']",
+        "[data-text*='下一集']"
+      ];
+  const roots = [getReaderControlsRoot(), getReaderPlayerWrapNode(), state.readingPlayerHost, document].filter(
+    Boolean
+  );
+
+  for (const root of roots) {
+    for (const selector of selectors) {
+      const node = root.querySelector?.(selector);
+      if (isUsableNativeCollectionTarget(node)) {
+        return node;
+      }
+    }
+  }
+  return null;
+}
+
+function findNativeCollectionEpisodeTarget({ bvid, pageIndex = 0, cid = "" }) {
+  const safeBvid = String(bvid || "").trim();
+  const safeCid = String(cid || "").trim();
+  const safePageIndex = Number(pageIndex || 0);
+  const candidates = Array.from(
+    document.querySelectorAll("a[href], [data-page], [data-p], [data-cid]")
+  ).filter((node) => !node.closest(`#${ids.root}`));
+
+  const byCid = safeCid
+    ? candidates.find(
+        (node) => String(node.dataset?.cid || node.getAttribute("data-cid") || "").trim() === safeCid
+      )
+    : null;
+  if (byCid) {
+    return byCid;
+  }
+
+  const byHref = candidates.find((node) => {
+      const href = String(node.getAttribute("href") || "").trim();
+      if (!href) {
+        return false;
+      }
+      try {
+        const url = new URL(href, location.href);
+        const hrefBvid = extractBvid(url.toString());
+        const hrefPage = extractPageIndex(url.toString());
+        return hrefBvid === safeBvid && (!safePageIndex || hrefPage === safePageIndex);
+      } catch {
+        return false;
+      }
+    });
+  if (byHref) {
+    return byHref;
+  }
+
+  if (safePageIndex <= 0) {
+    return null;
+  }
+  return (
+    candidates.find((node) => {
+      const inNativeEpisodeList = node.closest?.(
+        ".video-pod, .multi-page, .cur-list, [class*='video-pod'], [class*='multi-page'], [class*='part-list']"
+      );
+      const nodePage = Number(node.dataset?.page || node.dataset?.p || 0);
+      return Boolean(inNativeEpisodeList) && nodePage === safePageIndex;
+    }) || null
+  );
+}
+
+function isUsableNativeCollectionTarget(node) {
+  if (!node || !node.isConnected || node.closest?.(`#${ids.root}`)) {
+    return false;
+  }
+  return !(
+    node.disabled ||
+    node.getAttribute?.("aria-disabled") === "true" ||
+    node.classList?.contains("disabled") ||
+    node.classList?.contains("is-disabled")
+  );
+}
+
+function activateNativeCollectionTarget(node) {
+  if (!isUsableNativeCollectionTarget(node)) {
+    return false;
+  }
+  try {
+    node.click();
+    return true;
+  } catch (error) {
+    logWarn("[BOC] native collection switch failed", error);
+    return false;
+  }
+}
+
+async function waitForClipSignature(expectedSignature, timeoutMs = 4500) {
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    if (computeCurrentClipSignature() === expectedSignature) {
+      return true;
+    }
+    await sleep(100);
+  }
+  return false;
 }
 
 function onReadingTranscriptClick(event) {
@@ -5621,7 +5784,31 @@ async function fetchSubtitleBundle(bvid, cid, aid = "") {
     if (primaryResult.withUrl.length > 0) {
       return { tracks: primaryResult.withUrl, chapters: primaryResult.chapters };
     }
-    // 主来源成功但无字幕：直接判定无字幕，不再跨源兜底。
+    // 切集后播放器接口可能短暂返回空字幕；主来源为空时再核对一次次来源，
+    // 避免把“接口尚未就绪”误判为“当前视频无字幕”。
+    if (requests.length > 1) {
+      const secondaryRequest = requests[1];
+      try {
+        const secondaryResult = await fetchByRequest(secondaryRequest);
+        if (secondaryResult.withUrl.length > 0) {
+          logWarn("[BOC] primary subtitles source empty, using fallback source", {
+            primary: primaryRequest.source,
+            fallback: secondaryRequest.source
+          });
+          return {
+            tracks: secondaryResult.withUrl,
+            chapters: primaryResult.chapters.length
+              ? primaryResult.chapters
+              : secondaryResult.chapters
+          };
+        }
+      } catch (secondaryError) {
+        logWarn("[BOC] fallback subtitles source failed after empty primary", {
+          source: secondaryRequest.source,
+          message: getErrorMessage(secondaryError)
+        });
+      }
+    }
     return { tracks: [], chapters: primaryResult.chapters };
   } catch (primaryError) {
     logWarn("[BOC] subtitles API request failed", {
