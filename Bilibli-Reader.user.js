@@ -2466,8 +2466,8 @@ function queueEnsureReaderPlayerMounted() {
         if (!mounted || !state.readingViewOpen || !isReaderMode()) {
           return;
         }
-        applyReaderPageFocus();
         moveReadingMainInline();
+        applyReaderPageFocus();
         layoutReaderPlayerHost();
         syncReadingViewPlayback(true);
         settleReaderModePresentation();
@@ -3677,7 +3677,8 @@ function applyReaderPageFocus() {
   const video = getRuntimeVideoElement();
   const playerHost = findReaderPlayerHost(video);
   const titleNode = findReaderTitleContainer();
-  const keepRoots = [root, playerHost, titleNode].filter(Boolean);
+  const inlineHost = document.getElementById("blr-reading-inline-host");
+  const keepRoots = [root, inlineHost, playerHost, titleNode].filter(Boolean);
 
   keepRoots.forEach((node) => {
     markReaderKeepSubtree(node);
@@ -3743,6 +3744,9 @@ function moveReadingMainInline() {
   if (inlineHost.parentElement !== document.body) {
     document.body.appendChild(inlineHost);
   }
+  inlineHost.removeAttribute("data-blr-reader-hidden");
+  markReaderKeepSubtree(inlineHost);
+  markReaderKeepPath(inlineHost);
 
   let transcriptHeading = document.getElementById("blr-reading-transcript-heading");
   if (!transcriptHeading) {
@@ -5352,8 +5356,8 @@ async function refreshOpenReadingView(statusText, runId = state.fetchRunId) {
     return;
   }
 
-  applyReaderPageFocus();
   moveReadingMainInline();
+  applyReaderPageFocus();
   renderReadingView();
   renderReadingStatus(statusText);
   startReadingViewSync();
