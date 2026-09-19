@@ -285,9 +285,12 @@ function updateReaderChapterRailPosition(rect = null) {
   const playerRect = rect || playerNode?.getBoundingClientRect?.();
   if (!playerRect || !(playerRect.width > 0) || !(playerRect.height > 0)) return;
 
-  readingView.style.setProperty("--blr-reader-player-left", `${Math.round(playerRect.left)}px`);
-  readingView.style.setProperty("--blr-reader-player-bottom", `${Math.round(playerRect.bottom)}px`);
-  readingView.style.setProperty("--blr-reader-player-width", `${Math.round(playerRect.width)}px`);
+  [document.documentElement, document.body, readingView].forEach((node) => {
+    node.style.setProperty("--blr-reader-player-left", `${Math.round(playerRect.left)}px`);
+    node.style.setProperty("--blr-reader-player-top", `${Math.round(playerRect.top)}px`);
+    node.style.setProperty("--blr-reader-player-bottom", `${Math.round(playerRect.bottom)}px`);
+    node.style.setProperty("--blr-reader-player-width", `${Math.round(playerRect.width)}px`);
+  });
   document
     .getElementById(ids.readingChapterResizeHandle)
     ?.setAttribute("aria-valuenow", String(Math.round(playerRect.height)));
@@ -444,7 +447,6 @@ const ids = {
   readingView: "blr-reading-view",
   readingEpisodeTitle: "blr-reading-episode-title",
   readingCollectionNav: "blr-reading-collection-nav",
-  readingCollectionName: "blr-reading-collection-name",
   readingCollectionList: "blr-reading-collection-list",
   readingPlayerSlot: "blr-reading-player-slot",
   readingStatus: "blr-reading-status",
@@ -948,7 +950,6 @@ function buildUiHtml() {
     <section id="${ids.readingView}" aria-hidden="true" data-blr-reader-ready="0" aria-busy="true">
       <div id="${ids.readingEpisodeTitle}" class="blr-reading-episode-title" hidden></div>
       <nav id="${ids.readingCollectionNav}" class="blr-reading-collection-nav" aria-label="合集选集" hidden>
-        <strong id="${ids.readingCollectionName}" class="blr-reading-collection-name"></strong>
         <div id="${ids.readingCollectionList}" class="blr-reading-collection-list"></div>
       </nav>
       <div class="blr-reading-layout">
@@ -1427,14 +1428,7 @@ async function refreshClip() {
       applyNoSubtitleState();
       renderMeta();
       renderSubtitleSelect();
-      if (state.readingViewOpen) {
-        moveReadingMainInline();
-        renderReadingView();
-        renderReadingStatus("当前视频无字幕。");
-        startReadingViewSync();
-        startReaderPlayerObserver();
-        syncReadingViewPlayback(true);
-      }
+      await refreshOpenReadingView("当前视频无字幕。", runId);
       setStatus("当前视频无字幕。");
       return;
     }
@@ -1452,14 +1446,7 @@ async function refreshClip() {
       applyNoSubtitleState();
       renderMeta();
       renderSubtitleSelect();
-      if (state.readingViewOpen) {
-        moveReadingMainInline();
-        renderReadingView();
-        renderReadingStatus("当前视频无字幕。");
-        startReadingViewSync();
-        startReaderPlayerObserver();
-        syncReadingViewPlayback(true);
-      }
+      await refreshOpenReadingView("当前视频无字幕。", runId);
       setStatus("当前视频无字幕。");
       return;
     }
@@ -1506,14 +1493,7 @@ async function refreshClip() {
     state.subtitleFetchState = "ready";
     renderMeta();
     renderSubtitleSelect();
-    if (state.readingViewOpen) {
-      moveReadingMainInline();
-      renderReadingView();
-      renderReadingStatus("抓取完成，阅读视图已同步最新字幕。");
-      startReadingViewSync();
-      startReaderPlayerObserver();
-      syncReadingViewPlayback(true);
-    }
+    await refreshOpenReadingView("抓取完成，阅读视图已同步最新字幕。", runId);
     setStatus("抓取完成，可以复制、下载或发送到 Obsidian。");
   } catch (error) {
     if (isStaleRunError(error)) {
@@ -1528,9 +1508,7 @@ async function refreshClip() {
       resetClipState();
       state.subtitleFetchState = "error";
     }
-    if (state.readingViewOpen) {
-      renderReadingView();
-    }
+    await refreshOpenReadingView("字幕加载失败，请刷新重试。", runId);
     if (error?.code === "SUBTITLE_DURATION_MISMATCH") {
       setStatus("抓取失败：未找到与当前视频时长匹配的字幕轨，可能该视频无可用字幕。");
       return;
@@ -2232,9 +2210,20 @@ function queueEnsureReaderPlayerMounted() {
   }
   state.readingPlayerMountTimer = window.setTimeout(() => {
     state.readingPlayerMountTimer = 0;
-    ensureReaderPlayerMounted({ retries: 12, delayMs: 120, forceLayout: true }).catch((error) => {
-      logWarn("[BOC] ensure reader player mounted failed", error);
-    });
+    ensureReaderPlayerMounted({ retries: 12, delayMs: 120, forceLayout: true })
+      .then((mounted) => {
+        if (!mounted || !state.readingViewOpen || !isReaderMode()) {
+          return;
+        }
+        applyReaderPageFocus();
+        moveReadingMainInline();
+        layoutReaderPlayerHost();
+        syncReadingViewPlayback(true);
+        settleReaderModePresentation();
+      })
+      .catch((error) => {
+        logWarn("[BOC] ensure reader player mounted failed", error);
+      });
   }, 60);
 }
 
@@ -2305,10 +2294,11 @@ function closeReadingView() {
     node.style.removeProperty("--blr-reader-transcript-width");
     node.style.removeProperty("--blr-reader-center-offset");
     node.style.removeProperty("--blr-reader-main-width");
+    node.style.removeProperty("--blr-reader-player-left");
+    node.style.removeProperty("--blr-reader-player-top");
+    node.style.removeProperty("--blr-reader-player-bottom");
+    node.style.removeProperty("--blr-reader-player-width");
   });
-  readingView.style.removeProperty("--blr-reader-player-left");
-  readingView.style.removeProperty("--blr-reader-player-bottom");
-  readingView.style.removeProperty("--blr-reader-player-width");
   restoreReadingMainInline();
   stopReadingViewSync();
   unbindReaderLayout();
@@ -2431,7 +2421,6 @@ function renderReadingView() {
 function renderReadingCollection() {
   const episodeTitle = byId(ids.readingEpisodeTitle);
   const collectionNav = byId(ids.readingCollectionNav);
-  const collectionName = byId(ids.readingCollectionName);
   const collectionList = byId(ids.readingCollectionList);
   const collection = state.collection;
   const episodes = Array.isArray(collection?.episodes) ? collection.episodes : [];
@@ -2442,7 +2431,6 @@ function renderReadingCollection() {
     episodeTitle.textContent = "";
     episodeTitle.removeAttribute("title");
     collectionNav.hidden = true;
-    collectionName.textContent = "";
     collectionList.innerHTML = "";
     return;
   }
@@ -2452,7 +2440,6 @@ function renderReadingCollection() {
   episodeTitle.textContent = currentEpisode?.title || state.pageTitle || state.title || "";
   episodeTitle.hidden = !episodeTitle.textContent;
   episodeTitle.title = episodeTitle.textContent;
-  collectionName.textContent = collection.title || "合集";
   collectionList.innerHTML = episodes
     .map((episode, index) => {
       const isCurrent = index === currentIndex;
@@ -3213,10 +3200,11 @@ function cleanupReaderPlayerHost() {
   [document.documentElement, document.body, readingView].filter(Boolean).forEach((node) => {
     node.style.removeProperty("--blr-reader-player-rendered-width");
     node.style.removeProperty("--blr-reader-player-rendered-height");
+    node.style.removeProperty("--blr-reader-player-left");
+    node.style.removeProperty("--blr-reader-player-top");
+    node.style.removeProperty("--blr-reader-player-bottom");
+    node.style.removeProperty("--blr-reader-player-width");
   });
-  readingView?.style.removeProperty("--blr-reader-player-left");
-  readingView?.style.removeProperty("--blr-reader-player-bottom");
-  readingView?.style.removeProperty("--blr-reader-player-width");
   const playerHost = state.readingPlayerHost;
   if (!playerHost) {
     return;
@@ -4799,6 +4787,8 @@ function onReadingCollectionClick(event) {
   }
 
   target.setAttribute("aria-busy", "true");
+  setReadingViewReady(false);
+  renderReadingStatus("正在切换选集并重新整理阅读布局...");
   const nextUrl = new URL(`https://www.bilibili.com/video/${bvid}/`);
   const pageIndex = Number(target.dataset.page || 0);
   if (pageIndex > 1) {
@@ -4937,6 +4927,37 @@ async function getSettings() {
   } catch (error) {
     return { ...DEFAULT_SETTINGS };
   }
+}
+
+async function refreshOpenReadingView(statusText, runId = state.fetchRunId) {
+  if (runId !== state.fetchRunId || !state.readingViewOpen || !isReaderMode()) {
+    return;
+  }
+
+  setReadingViewReady(false);
+  let mounted = false;
+  try {
+    mounted = await ensureReaderPlayerMounted({ retries: 24, delayMs: 120, forceLayout: true });
+  } catch (error) {
+    logWarn("[BOC] failed to remount reader after clip change", error);
+  }
+  if (runId !== state.fetchRunId || !state.readingViewOpen || !isReaderMode()) {
+    return;
+  }
+
+  applyReaderPageFocus();
+  moveReadingMainInline();
+  renderReadingView();
+  renderReadingStatus(statusText);
+  startReadingViewSync();
+  startReaderPlayerObserver();
+  if (mounted) {
+    layoutReaderPlayerHost();
+    settleReaderModePresentation();
+  } else {
+    scheduleReaderPlayerRetry();
+  }
+  syncReadingViewPlayback(true);
 }
 
 function migrateReaderDefaults(savedSettings) {

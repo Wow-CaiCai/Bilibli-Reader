@@ -487,8 +487,8 @@ body[data-blr-reader-mode="1"] #blr-page-reader-entry {
 
 .blr-reading-episode-title {
   color: var(--blr-reader-muted, #64748b);
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 600;
   line-height: 1.35;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -505,17 +505,6 @@ body[data-blr-reader-mode="1"] #blr-page-reader-entry {
 .blr-reading-episode-title[hidden],
 .blr-reading-collection-nav[hidden] {
   display: none !important;
-}
-
-.blr-reading-collection-name {
-  color: var(--blr-reader-text, #0f172a);
-  flex: 0 1 auto;
-  font-size: 13px;
-  line-height: 30px;
-  max-width: 220px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .blr-reading-collection-list {
@@ -550,6 +539,7 @@ body[data-blr-reader-mode="1"] #blr-page-reader-entry {
   height: 32px;
   max-width: 260px;
   padding: 0 10px 0 7px;
+  font-weight: 600;
 }
 
 .blr-reading-collection-item:hover {
@@ -570,6 +560,7 @@ body[data-blr-reader-mode="1"] #blr-page-reader-entry {
   display: inline-flex;
   flex: 0 0 auto;
   font-size: 10px;
+  font-weight: 700;
   height: 18px;
   justify-content: center;
   min-width: 18px;
@@ -578,6 +569,7 @@ body[data-blr-reader-mode="1"] #blr-page-reader-entry {
 
 .blr-reading-collection-item-title {
   font-size: 12px;
+  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1536,7 +1528,7 @@ body[data-blr-reader-mode="1"] .blr-reading-episode-title {
   max-width: min(340px, 25vw);
   pointer-events: none;
   position: fixed;
-  top: 49px;
+  top: 56px;
   z-index: 2147483646;
 }
 
@@ -1558,10 +1550,6 @@ body[data-blr-reader-mode="1"] .blr-reading-collection-nav {
   body[data-blr-reader-mode="1"] .blr-reading-collection-nav {
     left: 270px;
   }
-
-  body[data-blr-reader-mode="1"] .blr-reading-collection-name {
-    max-width: 140px;
-  }
 }
 
 @media (max-width: 760px) {
@@ -1572,10 +1560,6 @@ body[data-blr-reader-mode="1"] .blr-reading-collection-nav {
   body[data-blr-reader-mode="1"] .blr-reading-collection-nav {
     left: 220px;
     right: 150px;
-  }
-
-  body[data-blr-reader-mode="1"] .blr-reading-collection-name {
-    display: none;
   }
 }
 
@@ -2068,7 +2052,7 @@ body[data-blr-reader-mode="1"][data-blr-reader-timestamp-visible="0"] .blr-readi
 
   body[data-blr-reader-mode="1"] #blr-reading-inline-host {
     position: fixed !important;
-    top: 98px !important;
+    top: var(--blr-reader-player-top, 98px) !important;
     right: var(--blr-reader-page-padding) !important;
     bottom: 24px !important;
     left: auto !important;
@@ -2141,7 +2125,7 @@ body[data-blr-reader-mode="1"][data-blr-reader-timestamp-visible="0"] .blr-readi
 
   body[data-blr-reader-mode="1"] .blr-reading-resize-handle {
     position: fixed;
-    top: 88px;
+    top: var(--blr-reader-player-top, 88px);
     bottom: 24px;
     width: 14px;
     z-index: 2147483646;
