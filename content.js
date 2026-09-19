@@ -1201,17 +1201,6 @@ function bindUiEvents() {
   transcriptList.addEventListener("pointerdown", () => noteManualReaderInteraction(3500));
   chapterList.addEventListener("click", onReadingChapterClick);
   readingCollectionList.addEventListener("click", onReadingCollectionClick);
-  readingCollectionList.addEventListener(
-    "wheel",
-    (event) => {
-      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) {
-        return;
-      }
-      readingCollectionList.scrollLeft += event.deltaY;
-      event.preventDefault();
-    },
-    { passive: false }
-  );
   transcriptList.addEventListener("click", onReadingTranscriptClick);
   readingView.addEventListener("transitionend", () => {
     if (!state.readingViewOpen) {
@@ -2489,8 +2478,8 @@ function renderReadingCollection() {
   window.requestAnimationFrame(() => {
     collectionList.querySelector(".is-active")?.scrollIntoView({
       behavior: "auto",
-      block: "nearest",
-      inline: "center"
+      block: "center",
+      inline: "nearest"
     });
   });
 }
