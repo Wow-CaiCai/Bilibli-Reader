@@ -1,7 +1,7 @@
 # Bilibili Reader 哔哩哔哩阅读视图
 
 供脚本猫、Tampermonkey 等用户脚本管理器使用的[Bilibili](https://www.bilibili.com)阅读模式。
-![alt text](示例图.png)
+![Bilibili Reader 示例图](https://raw.githubusercontent.com/Wow-CaiCai/Bilibli-Reader/main/%E7%A4%BA%E4%BE%8B%E5%9B%BE.png)
 脚本链接：[脚本猫](https://scriptcat.org/zh-CN/script-show-page/8038)
 
 
