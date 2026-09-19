@@ -10,7 +10,7 @@ CONTENT_PATH = ROOT / "content.js"
 CSS_PATH = ROOT / "content.css"
 ICON_PATH = ROOT / "icons" / "icon48.png"
 OUTPUT_PATH = ROOT / "Bilibli-Reader.user.js"
-RELEASE_PATH = ROOT / "release" / "bilibli-reader-v0.0.1.user.js"
+RELEASE_PATH = ROOT / "release" / "bilibli-reader-v0.0.3.user.js"
 
 
 def main() -> None:
@@ -21,7 +21,7 @@ def main() -> None:
     header = f"""// ==UserScript==
 // @name         Bilibili Reader｜B站阅读模式
 // @namespace    https://github.com/bilibli-reader
-// @version      0.0.1
+// @version      0.0.3
 // @description  将 B 站视频切换为视频、章节与字幕联动的阅读视图
 // @author       Local
 // @homepageURL  https://github.com/Wow-CaiCai/Bilibli-Reader
