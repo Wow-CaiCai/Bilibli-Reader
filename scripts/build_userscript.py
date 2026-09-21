@@ -3,6 +3,8 @@ from __future__ import annotations
 import base64
 import json
 from pathlib import Path
+import re
+from urllib.parse import urlsplit
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -11,6 +13,48 @@ CSS_PATH = ROOT / "content.css"
 ICON_PATH = ROOT / "icons" / "icon48.png"
 OUTPUT_PATH = ROOT / "Bilibli-Reader.user.js"
 RELEASE_PATH = ROOT / "release" / "bilibli-reader-v0.0.3.user.js"
+README_PATH = ROOT / "README.md"
+SCRIPT_CAT_README_PATH = ROOT / "README.scriptcat.md"
+GITHUB_CDN_BASE_URL = "https://cdn.jsdelivr.net/gh/Wow-CaiCai/Bilibli-Reader@main/"
+
+MARKDOWN_IMAGE_RE = re.compile(
+    r"(!\[[^\]]*\]\(\s*)(<[^>]*>|[^\s)]+)(?=\s*(?:[\"'][^\"']*[\"']\s*)?\))"
+)
+HTML_IMAGE_SRC_RE = re.compile(
+    r"(<img\b[^>]*?\bsrc\s*=\s*)([\"'])(.*?)(\2)", re.IGNORECASE
+)
+
+
+def to_github_cdn_url(image_path: str) -> str:
+    """Return the CDN URL for a local relative image path."""
+    if image_path.startswith(("/", "\\", "#", "//")) or urlsplit(image_path).scheme:
+        return image_path
+
+    normalized_path = image_path.replace("\\", "/")
+    while normalized_path.startswith("./"):
+        normalized_path = normalized_path[2:]
+    return GITHUB_CDN_BASE_URL + normalized_path
+
+
+def build_scriptcat_readme() -> None:
+    """Create the ScriptCat README with local image paths rewritten to jsDelivr."""
+    readme = README_PATH.read_text(encoding="utf-8")
+
+    def replace_markdown_image(match: re.Match[str]) -> str:
+        image_path = match.group(2)
+        if image_path.startswith("<") and image_path.endswith(">"):
+            image_path = f"<{to_github_cdn_url(image_path[1:-1])}>"
+        else:
+            image_path = to_github_cdn_url(image_path)
+        return match.group(1) + image_path
+
+    def replace_html_image(match: re.Match[str]) -> str:
+        return match.group(1) + match.group(2) + to_github_cdn_url(match.group(3)) + match.group(4)
+
+    scriptcat_readme = MARKDOWN_IMAGE_RE.sub(replace_markdown_image, readme)
+    scriptcat_readme = HTML_IMAGE_SRC_RE.sub(replace_html_image, scriptcat_readme)
+    SCRIPT_CAT_README_PATH.write_text(scriptcat_readme, encoding="utf-8", newline="\n")
+    print(SCRIPT_CAT_README_PATH)
 
 
 def main() -> None:
@@ -269,6 +313,7 @@ def main() -> None:
     OUTPUT_PATH.write_text(output, encoding="utf-8", newline="\n")
     RELEASE_PATH.parent.mkdir(exist_ok=True)
     RELEASE_PATH.write_text(output, encoding="utf-8", newline="\n")
+    build_scriptcat_readme()
     print(OUTPUT_PATH)
     print(RELEASE_PATH)
 

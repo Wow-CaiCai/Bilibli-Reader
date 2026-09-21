@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Bilibili Reader｜哔哩哔哩阅读模式
+// @name         Bilibili Reader｜B站阅读模式
 // @namespace    https://github.com/bilibli-reader
-// @version      0.0.4
+// @version      0.0.3
 // @description  将 B 站视频切换为视频、章节与字幕联动的阅读视图
 // @author       Local
 // @license      MIT
@@ -38,7 +38,7 @@
   const runtimeListeners = [];
   const storageListeners = [];
 
-  GM_addStyle("#viewbox_report.blr-page-reader-entry-host,\n.video-info-container.blr-page-reader-entry-host,\n.video-info-title.blr-page-reader-entry-host {\n  position: relative !important;\n}\n\n#viewbox_report.blr-page-reader-entry-host h1.video-title,\n.video-info-container.blr-page-reader-entry-host h1.video-title {\n  padding-right: 108px !important;\n  box-sizing: border-box;\n}\n\n#blr-page-reader-entry {\n  -webkit-appearance: none;\n  appearance: none;\n  position: absolute;\n  top: auto;\n  right: 2px;\n  bottom: 4px;\n  z-index: 20;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: 6px;\n  min-width: 82px;\n  height: 34px;\n  margin: 0;\n  padding: 0 14px;\n  box-sizing: border-box;\n  border: 1px solid rgba(0, 174, 236, 0.42);\n  border-radius: 9px;\n  background: rgba(255, 255, 255, 0.96);\n  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.08);\n  color: #18191c;\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", sans-serif;\n  font-size: 14px;\n  font-weight: 600;\n  line-height: 1;\n  cursor: pointer;\n  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease,\n    transform 0.16s ease, box-shadow 0.16s ease;\n}\n\n#blr-page-reader-entry svg {\n  width: 17px;\n  height: 17px;\n  flex: 0 0 auto;\n  fill: none;\n  stroke: currentColor;\n  stroke-width: 1.8;\n  stroke-linecap: round;\n  stroke-linejoin: round;\n}\n\n#blr-page-reader-entry:hover {\n  border-color: #00aeec;\n  background: #00aeec;\n  color: #fff;\n  box-shadow: 0 7px 20px rgba(0, 174, 236, 0.22);\n  transform: translateY(-1px);\n}\n\n#blr-page-reader-entry:active {\n  transform: translateY(0);\n}\n\n#blr-page-reader-entry:focus-visible {\n  outline: 2px solid rgba(0, 174, 236, 0.42);\n  outline-offset: 2px;\n}\n\n#blr-page-reader-entry:disabled,\n#blr-page-reader-entry.is-loading {\n  cursor: wait;\n  opacity: 0.68;\n  transform: none;\n}\n\nhtml[data-blr-reader-mode=\"1\"] #blr-page-reader-entry,\nbody[data-blr-reader-mode=\"1\"] #blr-page-reader-entry {\n  display: none !important;\n}\n\n@media (max-width: 760px) {\n  #viewbox_report.blr-page-reader-entry-host h1.video-title,\n  .video-info-container.blr-page-reader-entry-host h1.video-title {\n    padding-right: 0 !important;\n  }\n\n  #blr-page-reader-entry {\n    position: relative;\n    top: auto;\n    right: auto;\n    bottom: auto;\n    margin-top: 8px;\n  }\n}\n\n#blr-panel {\n  position: fixed;\n  right: 16px;\n  top: 72px;\n  width: min(420px, calc(100vw - 24px));\n  height: min(820px, calc(100vh - 88px));\n  z-index: 2147483647;\n  background: #f1f1f1;\n  border: 1px solid #d8d8d8;\n  border-radius: 14px;\n  box-shadow: 0 24px 46px rgba(0, 0, 0, 0.24);\n  padding: 12px;\n  box-sizing: border-box;\n  display: none;\n  flex-direction: column;\n  gap: 8px;\n  font-family: -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"PingFang SC\", \"Helvetica Neue\",\n    Arial, sans-serif;\n}\n\n#blr-panel.open {\n  display: flex;\n}\n\n.blr-header {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 0 0 4px;\n}\n\n.blr-header strong {\n  font-size: 17px;\n  font-weight: 600;\n  letter-spacing: 0.01em;\n  color: #3d3d3d;\n}\n\n.blr-header-actions {\n  display: flex;\n  gap: 6px;\n}\n\n.blr-header button {\n  border: 1px solid #cfcfcf;\n  background: #f8f8f8;\n  border-radius: 10px;\n  padding: 7px 10px;\n  cursor: pointer;\n  color: #4a4a4a;\n}\n\n.blr-status {\n  margin: 0;\n  font-size: 12px;\n  color: #555;\n  background: #e8e8e8;\n  border-radius: 8px;\n  padding: 7px 8px;\n}\n\n.blr-props-head {\n  font-size: 15px;\n  font-weight: 600;\n  color: #4a4a4a;\n  margin-top: 0;\n}\n\n.blr-meta {\n  border: 1px solid #d5d5d5;\n  border-radius: 10px;\n  padding: 8px 10px;\n  background: #f7f7f7;\n  display: grid;\n  gap: 6px;\n  font-size: 13px;\n  color: #3f3f3f;\n}\n\n.blr-meta-item {\n  word-break: break-word;\n}\n\n.blr-label {\n  font-size: 12px;\n  font-weight: 600;\n  color: #4d4d4d;\n  margin-top: 2px;\n}\n\n#blr-subtitle-select {\n  height: 36px;\n  border: 1px solid #cfcfcf;\n  border-radius: 8px;\n  padding: 0 10px;\n  background: #fff;\n  color: #2d2d2d;\n}\n\n.blr-player-ai-wrap {\n  align-items: center;\n  background: rgba(20, 24, 32, 0.68);\n  border: 1px solid rgba(255, 255, 255, 0.18);\n  border-radius: 999px;\n  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);\n  display: inline-flex;\n  flex: 0 0 var(--blr-player-ai-action-hit-size, 28px);\n  height: var(--blr-player-ai-action-hit-size, 28px);\n  justify-content: center;\n  margin: 0;\n  min-width: var(--blr-player-ai-action-hit-size, 28px);\n  opacity: 0;\n  overflow: hidden;\n  pointer-events: none;\n  position: absolute;\n  right: 14px;\n  top: 50%;\n  transform: translate(8px, -50%);\n  transition: opacity 0.18s ease, background-color 0.18s ease, transform 0.18s ease;\n  width: var(--blr-player-ai-action-hit-size, 28px);\n  z-index: 30;\n}\n\n.blr-player-ai-wrap.is-active,\n.blr-player-ai-wrap:hover,\n.blr-player-ai-wrap:focus-within {\n  background: rgba(20, 24, 32, 0.78);\n  opacity: 1;\n  pointer-events: auto;\n  transform: translate(0, -50%);\n}\n\n#blr-player-ai-quick-action {\n  -webkit-appearance: none;\n  appearance: none;\n  align-items: center;\n  align-self: center;\n  background: transparent;\n  border: 0;\n  border-radius: 0;\n  box-sizing: border-box;\n  color: var(--blr-player-ai-action-color, currentColor);\n  display: inline-flex;\n  flex: 0 0 auto;\n  justify-content: center;\n  width: 100%;\n  height: 100%;\n  cursor: pointer;\n  line-height: 0;\n  margin-bottom: 0;\n  margin-top: 0;\n  min-width: 0;\n  overflow: hidden;\n  padding: 0;\n  position: relative;\n  top: 0;\n  vertical-align: top;\n  transition: transform 0.16s ease, color 0.16s ease, opacity 0.16s ease;\n}\n\n#blr-player-ai-quick-action svg {\n  width: var(--blr-player-ai-action-icon-size, 24px);\n  height: var(--blr-player-ai-action-icon-size, 24px);\n  display: block;\n  flex: 0 0 auto;\n  stroke: currentColor;\n  fill: none;\n  stroke-linecap: round;\n  stroke-linejoin: round;\n}\n\n#blr-player-ai-quick-action:hover {\n  color: var(--blr-player-ai-action-hover-color, var(--blr-player-ai-action-color, currentColor));\n}\n\n#blr-player-ai-quick-action:disabled {\n  opacity: 0.62;\n  cursor: wait;\n  transform: none;\n}\n\n.blr-confirm-overlay {\n  align-items: center;\n  background: rgba(17, 24, 39, 0.28);\n  display: flex;\n  inset: 0;\n  justify-content: center;\n  padding: 18px;\n  position: fixed;\n  z-index: 2147483647;\n}\n\n.blr-confirm-dialog {\n  background: #ffffff;\n  border: 1px solid #e5e7eb;\n  border-radius: 16px;\n  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.22);\n  color: #111827;\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;\n  max-width: 360px;\n  padding: 18px;\n  width: calc(100vw - 36px);\n}\n\n.blr-confirm-title {\n  font-size: 15px;\n  font-weight: 700;\n  margin-bottom: 8px;\n}\n\n.blr-confirm-body {\n  color: #4b5563;\n  font-size: 13px;\n  margin-bottom: 8px;\n}\n\n.blr-confirm-path {\n  background: #f7f8fb;\n  border: 1px solid #edf0f4;\n  border-radius: 10px;\n  color: #374151;\n  font-size: 12px;\n  line-height: 1.45;\n  max-height: 96px;\n  overflow: auto;\n  padding: 9px 10px;\n  word-break: break-all;\n}\n\n.blr-confirm-actions {\n  display: flex;\n  gap: 8px;\n  justify-content: flex-end;\n  margin-top: 14px;\n}\n\n.blr-confirm-actions button {\n  border: 1px solid #d9dee7;\n  border-radius: 10px;\n  cursor: pointer;\n  font-size: 13px;\n  height: 34px;\n  padding: 0 14px;\n}\n\n.blr-confirm-cancel {\n  background: #ffffff;\n  color: #374151;\n}\n\n.blr-confirm-primary {\n  background: #111827;\n  border-color: #111827 !important;\n  color: #ffffff;\n}\n\n#blr-preview {\n  width: 100%;\n  flex: 1;\n  min-height: 180px;\n  box-sizing: border-box;\n  border: 1px solid #d0d0d0;\n  border-radius: 10px;\n  padding: 10px;\n  resize: vertical;\n  font-size: 13px;\n  line-height: 1.55;\n  background: #fff;\n  color: #2f2f2f;\n  font-family: \"SF Mono\", \"JetBrains Mono\", \"PingFang SC\", Menlo, Monaco, Consolas, monospace;\n}\n\n.blr-actions {\n  display: grid;\n  grid-template-columns: repeat(2, minmax(0, 1fr));\n  gap: 8px;\n  margin-top: 0;\n}\n\n.blr-actions button {\n  border: 1px solid #cfcfcf;\n  background: #f8f8f8;\n  border-radius: 9px;\n  padding: 8px 8px;\n  cursor: pointer;\n  color: #3d3d3d;\n  font-size: 13px;\n}\n\n#blr-send-btn {\n  grid-column: span 2;\n  border: 1px solid #a88fff;\n  background: linear-gradient(180deg, #9c82ff 0%, #8f75ef 100%);\n  color: #fff;\n  font-weight: 600;\n}\n\n.blr-actions button:disabled {\n  cursor: not-allowed;\n  opacity: 0.55;\n}\n\n.blr-message {\n  margin: 0;\n  font-size: 12px;\n  color: #0f766e;\n  min-height: 18px;\n  padding: 0 2px;\n}\n\n#blr-reading-view {\n  position: fixed;\n  left: 16px;\n  right: 16px;\n  bottom: 16px;\n  height: min(76vh, 860px);\n  z-index: 2147483646;\n  display: none;\n  padding: 20px 22px;\n  box-sizing: border-box;\n  background: #fff;\n  border: 1px solid #e5e7eb;\n  border-radius: 18px;\n  box-shadow: 0 28px 60px rgba(15, 23, 42, 0.16);\n  font-family: -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"PingFang SC\", \"Helvetica Neue\",\n    Arial, sans-serif;\n}\n\n#blr-reading-view.open {\n  display: block;\n}\n\n#blr-reading-view[data-blr-reader-ready=\"0\"] {\n  opacity: 0;\n  visibility: hidden;\n  pointer-events: none;\n}\n\n.blr-reading-layout {\n  min-height: 0;\n  height: 100%;\n  display: grid;\n  grid-template-columns: 240px minmax(0, 1fr);\n  gap: 28px;\n}\n\n.blr-reading-rail {\n  min-height: 0;\n  display: grid;\n  grid-template-rows: auto auto minmax(0, 1fr);\n  gap: 10px;\n  align-content: start;\n}\n\n.blr-reading-stage {\n  min-height: 0;\n  display: grid;\n  grid-template-rows: auto auto minmax(320px, 1fr) minmax(0, 1fr);\n  gap: 14px;\n}\n\n.blr-reading-header {\n  display: flex;\n  align-items: flex-start;\n  justify-content: space-between;\n  gap: 18px;\n}\n\n.blr-reading-header-copy {\n  min-width: 0;\n}\n\n.blr-reading-eyebrow {\n  font-size: 11px;\n  font-weight: 700;\n  letter-spacing: 0.08em;\n  color: #9ca3af;\n  text-transform: uppercase;\n}\n\n.blr-reading-title {\n  display: block;\n  margin: 0;\n  font-size: 16px;\n  line-height: 1.15;\n  color: #0f172a;\n  word-break: break-word;\n}\n\n.blr-reading-topbar,\n.blr-reading-heading-group {\n  min-width: 0;\n}\n\n.blr-reading-page-title {\n  color: var(--blr-reader-text, #0f172a);\n  display: -webkit-box;\n  font-size: 18px;\n  font-weight: 500;\n  line-height: 1.2;\n  overflow: hidden;\n  overflow-wrap: anywhere;\n  -webkit-box-orient: vertical;\n  -webkit-line-clamp: 2;\n}\n\n.blr-reading-episode-title {\n  color: var(--blr-reader-muted, #64748b);\n  display: -webkit-box;\n  font-size: 14px;\n  font-weight: 600;\n  line-height: 1.3;\n  overflow: hidden;\n  overflow-wrap: anywhere;\n  -webkit-box-orient: vertical;\n  -webkit-line-clamp: 2;\n}\n\n.blr-reading-collection-nav {\n  align-items: flex-start;\n  display: flex;\n  gap: 10px;\n  min-width: 0;\n}\n\n.blr-reading-episode-title[hidden],\n.blr-reading-collection-nav[hidden] {\n  display: none !important;\n}\n\n.blr-reading-collection-list {\n  align-content: flex-start;\n  align-items: center;\n  display: flex;\n  flex: 1 1 auto;\n  flex-wrap: wrap;\n  gap: 6px;\n  height: 70px;\n  min-width: 0;\n  overflow-x: hidden;\n  overflow-y: auto;\n  overscroll-behavior-y: contain;\n  scrollbar-width: none;\n}\n\n.blr-reading-collection-list::-webkit-scrollbar {\n  display: none;\n}\n\n.blr-reading-collection-item {\n  align-items: center;\n  background: transparent;\n  border: 1px solid var(--blr-reader-border, #e2e8f0);\n  border-radius: 999px;\n  color: var(--blr-reader-muted, #64748b);\n  cursor: pointer;\n  display: inline-flex;\n  flex: 0 0 auto;\n  gap: 6px;\n  height: 32px;\n  max-width: 260px;\n  padding: 0 10px 0 7px;\n  font-weight: 600;\n}\n\n.blr-reading-collection-item:hover {\n  border-color: var(--blr-reader-accent, #22c55e);\n  color: var(--blr-reader-text, #0f172a);\n}\n\n.blr-reading-collection-item.is-active {\n  background: var(--blr-reader-accent-soft, #ecfdf5);\n  border-color: var(--blr-reader-accent, #22c55e);\n  color: var(--blr-reader-accent, #16a34a);\n}\n\n.blr-reading-collection-index {\n  align-items: center;\n  background: color-mix(in srgb, currentColor 10%, transparent);\n  border-radius: 999px;\n  display: inline-flex;\n  flex: 0 0 auto;\n  font-size: 10px;\n  font-weight: 700;\n  height: 18px;\n  justify-content: center;\n  min-width: 18px;\n  padding: 0 4px;\n}\n\n.blr-reading-collection-item-title {\n  font-size: 12px;\n  font-weight: 600;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.blr-reading-meta,\n.blr-reading-status {\n  font-size: 14px;\n  line-height: 1.5;\n  color: #6b7280;\n}\n\n.blr-reading-meta {\n  margin-top: 8px;\n}\n\n.blr-reading-actions {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex-wrap: wrap;\n  justify-content: flex-end;\n  transition: opacity 0.2s ease;\n}\n\n.blr-reading-actions[data-blr-icon-hidden=\"1\"] {\n  opacity: 0;\n  pointer-events: none;\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .blr-reading-actions {\n    transition: none;\n  }\n}\n\n.blr-reading-actions button,\n.blr-reading-toggle {\n  border: 1px solid #e5e7eb;\n  background: #fff;\n  border-radius: 999px;\n  min-height: 36px;\n  padding: 0 14px;\n  font-size: 13px;\n  color: #1f2937;\n  box-sizing: border-box;\n}\n\n.blr-reading-actions button {\n  cursor: pointer;\n}\n\n.blr-reading-toggle {\n  display: inline-flex;\n  align-items: center;\n  gap: 8px;\n}\n\n.blr-reading-toggle input {\n  margin: 0;\n}\n\n.blr-reading-icon-btn {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 34px;\n  height: 34px;\n  border: 1px solid #e5e7eb;\n  background: #fff;\n  border-radius: 8px;\n  cursor: pointer;\n  padding: 0;\n  color: #1f2937;\n}\n\n.blr-reading-icon-btn svg {\n  width: 18px;\n  height: 18px;\n  flex: 0 0 auto;\n}\n\n.blr-reading-icon-btn:hover {\n  background: #f3f4f6;\n  border-color: #d1d5db;\n}\n\n.blr-reading-icon-btn.is-active {\n  background: #eff6ff;\n  border-color: #2563eb;\n  color: #2563eb;\n}\n\n.blr-reading-panel-row {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex-wrap: wrap;\n}\n\n.blr-reading-inline-label {\n  display: inline-flex;\n  align-items: center;\n  gap: 4px;\n  font-size: 12px;\n  color: #6b7280;\n}\n\n.blr-reading-inline-label span {\n  white-space: nowrap;\n}\n\n.blr-reading-select-sm {\n  min-height: 28px;\n  padding: 0 6px;\n  font-size: 12px;\n  border-radius: 6px;\n  border: 1px solid #e5e7eb;\n  background: #fff;\n  color: #1f2937;\n  cursor: pointer;\n}\n\n.blr-reading-select-sm:focus {\n  outline: none;\n  border-color: #2563eb;\n  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);\n}\n\n.blr-reading-list,\n.blr-reading-transcript {\n  min-height: 0;\n  overflow: auto;\n}\n\n.blr-reading-list {\n  padding-right: 6px;\n}\n\n.blr-reading-player-shell {\n  min-height: 0;\n  display: flex;\n  justify-content: center;\n  align-items: flex-start;\n  pointer-events: none;\n}\n\n.blr-reading-player-slot {\n  width: min(100%, 960px);\n  aspect-ratio: 16 / 9;\n  max-height: 100%;\n  min-height: 0;\n  overflow: hidden;\n  background: #fff;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  pointer-events: none;\n}\n\n.blr-reading-player-slot > * {\n  width: 100% !important;\n  max-width: 100% !important;\n  height: 100% !important;\n}\n\n.blr-reading-player-slot > video {\n  width: 100% !important;\n  height: 100% !important;\n  display: block;\n  background: #000;\n  object-fit: contain;\n}\n\n.blr-reading-player-slot #bilibili-player,\n.blr-reading-player-slot .bpx-player-container,\n.blr-reading-player-slot .bpx-player-video-area,\n.blr-reading-player-slot .bpx-player-primary-area,\n.blr-reading-player-slot .bpx-player-inner {\n  width: 100% !important;\n  height: 100% !important;\n}\n\n.blr-reading-main {\n  min-height: 0;\n  overflow: hidden;\n  display: flex;\n  justify-content: center;\n  pointer-events: auto;\n}\n\n.blr-reading-transcript {\n  width: min(100%, 960px);\n  height: 100%;\n  max-height: 100%;\n  margin: 0 auto;\n  padding: 6px 8px 12px;\n  overflow-x: hidden;\n  overflow-y: auto;\n  pointer-events: auto;\n}\n\n.blr-reading-chapter,\n.blr-reading-item {\n  width: 100%;\n  border: 0;\n  background: transparent;\n  border-radius: 14px;\n  text-align: left;\n  cursor: pointer;\n  user-select: text;\n  -webkit-user-select: text;\n}\n\n.blr-reading-chapter {\n  display: grid;\n  gap: 4px;\n  padding: 8px 10px;\n  color: #4b5563;\n}\n\n.blr-reading-item {\n  display: grid;\n  grid-template-columns: 64px minmax(0, 1fr);\n  gap: 10px;\n  align-items: start;\n  padding: 6px 8px;\n  color: #111827;\n  position: relative;\n}\n\n.blr-reading-chapter:hover {\n  background: #f9fafb;\n}\n\n.blr-reading-chapter.is-active,\n.blr-reading-item.is-active {\n  background: transparent;\n  box-shadow: none;\n}\n\n.blr-reading-chapter-time,\n.blr-reading-time {\n  font-size: var(--blr-reader-transcript-font-size);\n  font-weight: 600;\n  color: #16a34a;\n  padding-top: 2px;\n  line-height: 1.4;\n}\n\n.blr-reading-chapter-title {\n  font-size: 13px;\n  line-height: 1.45;\n  color: inherit;\n}\n\n.blr-reading-chapter.is-active .blr-reading-chapter-title,\n.blr-reading-item.is-active .blr-reading-text {\n  text-decoration-line: underline;\n  text-decoration-color: #22c55e;\n  text-decoration-thickness: 2px;\n  text-underline-offset: 3px;\n}\n\n.blr-reading-text {\n  font-size: 12px;\n  line-height: 1.5;\n  color: inherit;\n}\n\n.blr-reading-empty {\n  padding: 12px 4px;\n  font-size: 14px;\n  color: #94a3b8;\n}\n\n@media (max-width: 1100px) {\n  #blr-reading-view {\n    left: 12px;\n    right: 12px;\n    bottom: 12px;\n    padding: 18px;\n  }\n\n  .blr-reading-layout {\n    grid-template-columns: 210px minmax(0, 1fr);\n    gap: 20px;\n  }\n\n  .blr-reading-title {\n    font-size: 16px;\n  }\n}\n\n@media (max-width: 760px) {\n  #blr-reading-view {\n    top: 72px;\n    height: auto;\n  }\n\n  .blr-reading-layout {\n    grid-template-columns: 1fr;\n    gap: 18px;\n  }\n\n  .blr-reading-stage {\n    grid-template-rows: auto auto minmax(220px, auto) minmax(0, 1fr);\n  }\n\n  .blr-reading-header {\n    flex-direction: column;\n    align-items: stretch;\n  }\n\n  .blr-reading-actions {\n    justify-content: flex-start;\n  }\n\n  .blr-reading-title {\n    font-size: 16px;\n  }\n\n  .blr-reading-item {\n    grid-template-columns: 56px minmax(0, 1fr);\n    gap: 10px;\n  }\n\n  .blr-reading-text {\n    font-size: 13px;\n  }\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] {\n  margin: 0 !important;\n  padding: 0 !important;\n  width: 100% !important;\n  min-height: 100% !important;\n  background: #fff !important;\n  overflow-x: hidden !important;\n  overflow-y: auto !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-root {\n  position: absolute;\n  inset: 0;\n  z-index: 2147483646;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-panel {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view {\n  position: absolute;\n  inset: 0;\n  width: auto;\n  max-width: none;\n  height: 100vh;\n  display: none;\n  margin: 0;\n  padding: 0;\n  box-sizing: border-box;\n  border: 0;\n  border-radius: 0;\n  box-shadow: none;\n  background: transparent;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view.open {\n  display: block;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-ready=\"0\"] {\n  opacity: 0;\n  visibility: hidden;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-header-copy,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-status {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #viewbox_report,\nbody[data-blr-reader-mode=\"1\"] .video-info-container,\nbody[data-blr-reader-mode=\"1\"] .video-info-title,\nbody[data-blr-reader-mode=\"1\"] .video-info-title-inner {\n  margin: 0 !important;\n  padding: 0 !important;\n  row-gap: 0 !important;\n  column-gap: 0 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #viewbox_report,\nbody[data-blr-reader-mode=\"1\"] .video-info-container {\n  margin-bottom: 4px !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .left-container,\nbody[data-blr-reader-mode=\"1\"] .scroll-sticky {\n  row-gap: 8px !important;\n  padding-top: 0 !important;\n  overflow: visible !important;\n  transition: none !important;\n  animation: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap,\nbody[data-blr-reader-mode=\"1\"] .player-wrap,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n  transition: none !important;\n  animation: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .video-info-detail,\nbody[data-blr-reader-mode=\"1\"] .video-info-meta,\nbody[data-blr-reader-mode=\"1\"] .video-data {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-follow=\"manual\"] .blr-reading-main,\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-follow=\"manual\"] .blr-reading-rail {\n  border-color: rgba(148, 163, 184, 0.8);\n  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-follow=\"manual\"] .blr-reading-eyebrow::after {\n  content: \"手动浏览中\";\n  display: inline-block;\n  margin-left: 8px;\n  font-size: 11px;\n  font-weight: 500;\n  color: #94a3b8;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reader-player-host {\n  background: #000 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap {\n  position: static !important;\n  top: auto !important;\n  z-index: auto !important;\n  background: transparent !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .player-wrap,\nbody[data-blr-reader-mode=\"1\"] .scroll-sticky {\n  position: static !important;\n  top: auto !important;\n  z-index: auto !important;\n  background: transparent !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] [data-blr-reader-player-reset=\"1\"] {\n  position: static !important;\n  inset: auto !important;\n  width: auto !important;\n  height: auto !important;\n  transform: none !important;\n  margin: 0 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .strip-ad-inner,\nbody[data-blr-reader-mode=\"1\"] .inside-wrp,\nbody[data-blr-reader-mode=\"1\"] .inside-bg,\nbody[data-blr-reader-mode=\"1\"] .hinter-msg,\nbody[data-blr-reader-mode=\"1\"] .slide,\nbody[data-blr-reader-mode=\"1\"] .cover.b-img,\nbody[data-blr-reader-mode=\"1\"] .cover.b-img.sleepy,\nbody[data-blr-reader-mode=\"1\"] .b-img.clickable {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] [data-blr-reader-hidden=\"1\"] {\n  display: none !important;\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"],\n#blr-reading-view {\n  --blr-reader-page-bg: #f4f6f8;\n  --blr-reader-surface: #ffffff;\n  --blr-reader-surface-2: #f7f9fc;\n  --blr-reader-surface-3: #edf2f7;\n  --blr-reader-border: rgba(15, 23, 42, 0.1);\n  --blr-reader-text: #0f172a;\n  --blr-reader-muted: #64748b;\n  --blr-reader-accent: #16a34a;\n  --blr-reader-accent-soft: rgba(34, 197, 94, 0.12);\n  --blr-reader-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);\n  --blr-reader-transcript-font-size: 14px;\n  --blr-reader-transcript-font-weight: 500;\n  --blr-reader-transcript-line-height: 1.5;\n  --blr-reader-letter-spacing: 0em;\n  --blr-reader-content-max: 980px;\n  color: var(--blr-reader-text);\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"dark\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"dark\"],\n#blr-reading-view[data-theme=\"dark\"] {\n  --blr-reader-page-bg: #09111f;\n  --blr-reader-surface: #0f172a;\n  --blr-reader-surface-2: #132038;\n  --blr-reader-surface-3: #1a2a46;\n  --blr-reader-border: rgba(148, 163, 184, 0.22);\n  --blr-reader-text: #e5eefb;\n  --blr-reader-muted: #9fb0c8;\n  --blr-reader-accent: #4ade80;\n  --blr-reader-accent-soft: rgba(74, 222, 128, 0.14);\n  --blr-reader-shadow: 0 18px 42px rgba(2, 6, 23, 0.42);\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"paper\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"paper\"],\n#blr-reading-view[data-theme=\"paper\"] {\n  --blr-reader-page-bg: #f4eddc;\n  --blr-reader-surface: #f4eddc;\n  --blr-reader-surface-2: #f4eddc;\n  --blr-reader-surface-3: #f4eddc;\n  --blr-reader-border: rgba(180, 155, 112, 0.22);\n  --blr-reader-text: #3b3124;\n  --blr-reader-muted: #756653;\n  --blr-reader-accent: #2f9e44;\n  --blr-reader-accent-soft: rgba(47, 158, 68, 0.12);\n  --blr-reader-shadow: 0 18px 40px rgba(112, 93, 64, 0.12);\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"s\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"s\"],\n#blr-reading-view[data-font-scale=\"s\"] {\n  --blr-reader-transcript-font-size: 12.8px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xs\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xs\"],\n#blr-reading-view[data-font-scale=\"xs\"] {\n  --blr-reader-transcript-font-size: 11.6px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"l\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"l\"],\n#blr-reading-view[data-font-scale=\"l\"] {\n  --blr-reader-transcript-font-size: 16.4px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xl\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xl\"],\n#blr-reading-view[data-font-scale=\"xl\"] {\n  --blr-reader-transcript-font-size: 18.8px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"light\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"light\"],\n#blr-reading-view[data-font-weight=\"light\"] {\n  --blr-reader-transcript-font-weight: 300;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"regular\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"regular\"],\n#blr-reading-view[data-font-weight=\"regular\"] {\n  --blr-reader-transcript-font-weight: 400;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"semibold\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"semibold\"],\n#blr-reading-view[data-font-weight=\"semibold\"] {\n  --blr-reader-transcript-font-weight: 600;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"bold\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"bold\"],\n#blr-reading-view[data-font-weight=\"bold\"] {\n  --blr-reader-transcript-font-weight: 700;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tighter\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tighter\"],\n#blr-reading-view[data-letter-spacing=\"tighter\"] {\n  --blr-reader-letter-spacing: -0.072em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tight\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tight\"],\n#blr-reading-view[data-letter-spacing=\"tight\"] {\n  --blr-reader-letter-spacing: -0.036em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"relaxed\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"relaxed\"],\n#blr-reading-view[data-letter-spacing=\"relaxed\"] {\n  --blr-reader-letter-spacing: 0.036em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"loose\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"loose\"],\n#blr-reading-view[data-letter-spacing=\"loose\"] {\n  --blr-reader-letter-spacing: 0.072em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"compact\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"compact\"],\n#blr-reading-view[data-content-width=\"compact\"] {\n  --blr-reader-content-max: 720px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"narrow\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"narrow\"],\n#blr-reading-view[data-content-width=\"narrow\"] {\n  --blr-reader-content-max: 820px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"],\n#blr-reading-view[data-content-width=\"wide\"] {\n  --blr-reader-content-max: 1120px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"full\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"full\"],\n#blr-reading-view[data-content-width=\"full\"] {\n  --blr-reader-content-max: 1280px;\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] #app,\nbody[data-blr-reader-mode=\"1\"] .left-container,\nbody[data-blr-reader-mode=\"1\"] .right-container,\nbody[data-blr-reader-mode=\"1\"] .right-container-inner,\nbody[data-blr-reader-mode=\"1\"] .video-info-container,\nbody[data-blr-reader-mode=\"1\"] .video-info-detail,\nbody[data-blr-reader-mode=\"1\"] .video-sections-content-list,\nbody[data-blr-reader-mode=\"1\"] .video-container-v1,\nbody[data-blr-reader-mode=\"1\"] .video-container-v3 {\n  background: var(--blr-reader-page-bg) !important;\n  color: var(--blr-reader-text);\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] #app {\n  min-height: 100vh !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #app {\n  min-width: 0 !important;\n  width: 100% !important;\n  max-width: none !important;\n}\n\n#blr-reading-view,\n#blr-reading-view .blr-reading-meta,\n#blr-reading-view .blr-reading-status,\n#blr-reading-view .blr-reading-chapter,\n#blr-reading-view .blr-reading-item,\n#blr-reading-view .blr-reading-panel,\n#blr-reading-view .blr-reading-select {\n  color: var(--blr-reader-text);\n}\n\n#blr-reading-view .blr-reading-layout {\n  gap: 22px;\n}\n\n#blr-reading-view .blr-reading-stage {\n  display: grid;\n  gap: 16px;\n}\n\n#blr-reading-view .blr-reading-header {\n  align-items: flex-start;\n}\n\n#blr-reading-view .blr-reading-title {\n  font-size: 20px;\n  color: var(--blr-reader-text);\n  margin-top: 10px;\n}\n\n#blr-reading-view .blr-reading-meta,\n#blr-reading-view .blr-reading-status,\n#blr-reading-view .blr-reading-panel-grid label,\n#blr-reading-view .blr-reading-info-label {\n  font-size: 14px;\n  color: var(--blr-reader-muted);\n}\n\n#blr-reading-view .blr-reading-actions {\n  gap: 10px;\n}\n\n#blr-reading-view .blr-reading-actions button,\n#blr-reading-view .blr-reading-toggle,\n#blr-reading-view .blr-reading-select {\n  border: 1px solid var(--blr-reader-border);\n  background: var(--blr-reader-surface);\n  color: var(--blr-reader-text);\n  box-shadow: none;\n}\n\n#blr-reading-view .blr-reading-actions button.is-active,\n#blr-reading-view .blr-reading-toggle.is-active,\n#blr-reading-view .blr-reading-select:focus {\n  background: var(--blr-reader-accent-soft);\n  color: var(--blr-reader-accent);\n}\n\n#blr-reading-view .blr-reading-select {\n  min-height: 36px;\n  border-radius: 999px;\n  padding: 0 12px;\n  width: auto;\n  margin: 0;\n}\n\n#blr-reading-view .blr-reading-panel {\n  border-radius: 18px;\n  padding: 14px 16px;\n  pointer-events: auto;\n  background: var(--blr-reader-surface);\n  border: 1px solid var(--blr-reader-border);\n  box-shadow: var(--blr-reader-shadow);\n}\n\n#blr-reading-view .blr-reading-panel-grid {\n  display: grid;\n  grid-template-columns: repeat(2, minmax(0, 1fr));\n  gap: 12px;\n}\n\n#blr-reading-view .blr-reading-panel-grid label,\n#blr-reading-view .blr-reading-info-group {\n  display: grid;\n  gap: 6px;\n  font-size: 13px;\n}\n\n#blr-reading-view .blr-reading-info-panel,\n#blr-reading-view .blr-reading-info-list {\n  display: grid;\n  gap: 6px;\n}\n\n#blr-reading-view .blr-reading-info-panel {\n  gap: 16px;\n}\n\n#blr-reading-view .blr-reading-info-item {\n  display: grid;\n  grid-template-columns: auto minmax(0, 1fr);\n  gap: 12px;\n  align-items: start;\n}\n\n#blr-reading-view .blr-reading-info-value,\n#blr-reading-view .blr-reading-info-copy {\n  font-size: 14px;\n  line-height: 1.45;\n  color: var(--blr-reader-text);\n  word-break: break-word;\n}\n\n#blr-reading-view .blr-reading-control-field {\n  display: grid;\n  gap: 4px;\n  font-size: 13px;\n  color: var(--blr-reader-muted);\n}\n\n#blr-reading-view .blr-reading-text-btn {\n  border: 0;\n  background: transparent;\n  color: var(--blr-reader-accent);\n  padding: 0;\n  cursor: pointer;\n  width: fit-content;\n  font-size: 13px;\n}\n\n#blr-reading-view .blr-reading-main {\n  justify-content: center;\n  background: transparent;\n}\n\n#blr-reading-view .blr-reading-transcript {\n  width: min(100%, var(--blr-reader-content-max));\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-transcript-visible=\"0\"] #blr-reading-view .blr-reading-main,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-transcript-visible=\"0\"] #blr-reading-view .blr-reading-main,\n#blr-reading-view[data-transcript-visible=\"0\"] .blr-reading-main {\n  display: none !important;\n}\n\n#blr-reading-view[data-transcript-visible=\"0\"] #blr-reading-inline-host {\n  border: none;\n  background: transparent;\n}\n\n#blr-reading-view .blr-reading-item {\n  grid-template-columns: 70px minmax(0, 1fr);\n  gap: 12px;\n  padding: 10px 12px;\n  border-radius: 18px;\n  background: transparent;\n}\n\n#blr-reading-view .blr-reading-chapter:hover {\n  background: var(--blr-reader-surface-2);\n}\n\n#blr-reading-view .blr-reading-item.is-active,\n#blr-reading-view .blr-reading-chapter.is-active {\n  background: var(--blr-reader-accent-soft);\n}\n\n#blr-reading-view .blr-reading-time,\n#blr-reading-view .blr-reading-chapter-time {\n  color: var(--blr-reader-accent);\n}\n\n#blr-reading-view .blr-reading-text {\n  font-size: var(--blr-reader-transcript-font-size);\n  font-weight: var(--blr-reader-transcript-font-weight);\n  line-height: var(--blr-reader-transcript-line-height);\n  letter-spacing: var(--blr-reader-letter-spacing);\n  color: var(--blr-reader-text);\n}\n\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-subtitle-wrap,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-subtitle-panel,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-subtitle-container,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bilibili-player-video-subtitle,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .subtitle-wrap,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host [class*=\"subtitle\"],\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-sending-bar,\nbody[data-blr-reading-active=\"1\"] .bpx-player-sending-bar {\n  display: none !important;\n}\n\nbody[data-blr-reading-active=\"1\"] [data-blr-reader-fading] {\n  visibility: hidden !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view {\n  background: transparent;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-header {\n  left: auto;\n  right: 24px;\n  max-width: min(1100px, calc(100vw - 48px));\n  gap: 14px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-actions {\n  pointer-events: auto;\n  justify-content: flex-end;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-panel {\n  position: fixed;\n  right: 24px;\n  top: 76px;\n  width: min(380px, calc(100vw - 48px));\n  z-index: 2147483646;\n  background: var(--blr-reader-surface-2);\n}\n\n/* Simplified reader layout: player in normal flow, transcript box below with its own scroll. */\nbody[data-blr-reader-mode=\"1\"] .blr-reading-player-shell {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-layout,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-stage {\n  display: block;\n  height: auto;\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] {\n  --blr-reader-page-padding: clamp(16px, 2.8vw, 32px);\n  --blr-reader-layout-gap: clamp(16px, 2vw, 24px);\n  --blr-reader-rail-target-width: clamp(168px, 15vw, 220px);\n  --blr-reader-main-width: min(\n    var(--blr-reader-content-max),\n    calc(100vw - (var(--blr-reader-page-padding) * 2))\n  );\n  --blr-reader-rail-width: min(\n    var(--blr-reader-rail-target-width),\n    max(\n      0px,\n      calc(\n        ((100vw - var(--blr-reader-main-width)) / 2) - var(--blr-reader-page-padding) - var(--blr-reader-layout-gap)\n      )\n    )\n  );\n  --blr-reader-transcript-line-height: 1.404;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"compact\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"compact\"],\n#blr-reading-view[data-line-height=\"compact\"] {\n  --blr-reader-transcript-line-height: 1.32;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"tight\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"tight\"],\n#blr-reading-view[data-line-height=\"tight\"] {\n  --blr-reader-transcript-line-height: 1.404;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"normal\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"normal\"],\n#blr-reading-view[data-line-height=\"normal\"] {\n  --blr-reader-transcript-line-height: 1.5;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"relaxed\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"relaxed\"],\n#blr-reading-view[data-line-height=\"relaxed\"] {\n  --blr-reader-transcript-line-height: 1.596;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"loose\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"loose\"],\n#blr-reading-view[data-line-height=\"loose\"] {\n  --blr-reader-transcript-line-height: 1.692;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-actions {\n  gap: 12px;\n  margin-right: -20px;\n  margin-top: -8px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-header {\n  position: fixed;\n  top: 18px;\n  right: var(--blr-reader-page-padding);\n  left: auto;\n  max-width: calc(100vw - (var(--blr-reader-page-padding) * 2));\n  margin-bottom: 0;\n  z-index: 2147483646;\n  pointer-events: auto;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-topbar {\n  display: grid;\n  gap: clamp(12px, 1.2vw, 20px);\n  grid-template-columns: clamp(300px, 28vw, 520px) minmax(0, 1fr);\n  height: 84px;\n  left: var(--blr-reader-page-padding);\n  min-width: 0;\n  overflow: hidden;\n  pointer-events: auto;\n  position: fixed;\n  right: 174px;\n  top: 6px;\n  z-index: 2147483646;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-heading-group {\n  align-content: center;\n  display: grid;\n  gap: 2px;\n  max-height: 84px;\n  overflow: hidden;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-page-title {\n  font-size: clamp(16px, 1.05vw, 19px);\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-collection-nav {\n  align-self: center;\n  height: 70px;\n  min-width: 0;\n  pointer-events: auto;\n  position: static;\n}\n\n@media (max-width: 1000px) {\n  body[data-blr-reader-mode=\"1\"] .blr-reading-topbar {\n    grid-template-columns: clamp(240px, 34vw, 330px) minmax(0, 1fr);\n  }\n}\n\n@media (max-width: 760px) {\n  body[data-blr-reader-mode=\"1\"] .blr-reading-topbar {\n    grid-template-columns: minmax(190px, 42vw) minmax(0, 1fr);\n    right: 150px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-page-title {\n    font-size: 15px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-episode-title {\n    font-size: 12px;\n  }\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-panel {\n  position: fixed;\n  right: var(--blr-reader-page-padding);\n  top: 72px;\n  width: min(286px, calc(100vw - (var(--blr-reader-page-padding) * 2)));\n  max-height: calc(100vh - 96px);\n  overflow: auto;\n  display: grid;\n  gap: 10px;\n  background: var(--blr-reader-surface-2);\n}\n\n.blr-reading-stepper-list {\n  display: grid;\n  gap: 7px;\n}\n\n.blr-reading-stepper {\n  align-items: center;\n  display: grid;\n  grid-template-columns: 56px minmax(0, 1fr);\n  gap: 8px;\n}\n\n.blr-reading-stepper-title {\n  min-width: 0;\n  color: var(--blr-reader-text);\n  font-size: 12px;\n  font-weight: 600;\n  white-space: nowrap;\n}\n\n.blr-reading-stepper-buttons {\n  display: grid;\n  grid-template-columns: repeat(5, minmax(0, 1fr));\n  border: 1px solid var(--blr-reader-border);\n  border-radius: 12px;\n  overflow: hidden;\n  background: var(--blr-reader-surface);\n}\n\n.blr-reading-stepper-btn {\n  min-height: 28px;\n  border: 0;\n  border-right: 1px solid var(--blr-reader-border);\n  background: transparent;\n  color: var(--blr-reader-muted);\n  font-size: 11px;\n  font-weight: 600;\n  cursor: pointer;\n  transition: background 0.18s ease, color 0.18s ease;\n}\n\n.blr-reading-stepper-btn:last-child {\n  border-right: 0;\n}\n\n.blr-reading-stepper-btn:hover {\n  background: var(--blr-reader-accent-soft);\n  color: var(--blr-reader-accent);\n}\n\n.blr-reading-stepper-btn.is-active {\n  background: var(--blr-reader-accent-soft);\n  color: var(--blr-reader-accent);\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-group {\n  display: grid;\n  gap: 6px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-group + .blr-reading-settings-group {\n  border-top: 1px solid var(--blr-reader-border);\n  padding-top: 10px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-info-group-chapters {\n  display: grid;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-controls {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  flex-wrap: wrap;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-controls .blr-reading-select {\n  min-width: 118px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-control-field .blr-reading-select {\n  min-width: 118px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-secondary-btn {\n  border: 1px solid var(--blr-reader-border);\n  background: var(--blr-reader-surface);\n  color: var(--blr-reader-text);\n  min-height: 32px;\n  padding: 0 12px;\n  border-radius: 999px;\n  cursor: pointer;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-toggle-inline {\n  width: fit-content;\n  background: var(--blr-reader-surface);\n  color: var(--blr-reader-text);\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-panel .blr-reading-eyebrow {\n  font-size: 10px;\n  letter-spacing: 0.06em;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-panel .blr-reading-toggle,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-panel .blr-reading-select {\n  min-height: 32px;\n  padding: 0 11px;\n  font-size: 12px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-panel .blr-reading-toggle {\n  gap: 6px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-panel .blr-reading-info-list {\n  gap: 4px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-panel .blr-reading-info-item {\n  gap: 8px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-panel .blr-reading-info-label,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-panel .blr-reading-info-value,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-panel .blr-reading-info-copy,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-panel .blr-reading-empty,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-panel .blr-reading-text-btn {\n  font-size: 12px;\n  line-height: 1.42;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-panel .blr-reading-info-copy {\n  white-space: pre-wrap;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-panel .blr-reading-info-copy.is-collapsed {\n  display: -webkit-box;\n  overflow: hidden;\n  -webkit-box-orient: vertical;\n  -webkit-line-clamp: 5;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n  position: fixed;\n  display: grid !important;\n  left: var(--blr-reader-page-padding) !important;\n  top: 112px !important;\n  width: var(--blr-reader-rail-width) !important;\n  max-height: calc(100vh - 136px) !important;\n  padding: 12px;\n  box-sizing: border-box;\n  background: var(--blr-reader-surface);\n  border: 1px solid var(--blr-reader-border);\n  border-radius: 14px;\n  box-shadow: var(--blr-reader-shadow);\n  pointer-events: auto;\n  z-index: 2147483646;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-chapter-visibility=\"hide\"] .blr-reading-rail,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-chapter-visibility=\"hide\"] .blr-reading-rail,\n#blr-reading-view[data-chapter-visibility=\"hide\"] .blr-reading-rail,\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-chapter-visibility=\"auto\"][data-blr-reader-has-chapters=\"0\"] .blr-reading-rail,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-chapter-visibility=\"auto\"][data-blr-reader-has-chapters=\"0\"] .blr-reading-rail,\n#blr-reading-view[data-chapter-visibility=\"auto\"][data-has-chapters=\"0\"] .blr-reading-rail {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .left-container,\nbody[data-blr-reader-mode=\"1\"] .scroll-sticky,\nbody[data-blr-reader-mode=\"1\"] #playerWrap,\nbody[data-blr-reader-mode=\"1\"] .player-wrap,\nbody[data-blr-reader-mode=\"1\"] h1.video-title,\nbody[data-blr-reader-mode=\"1\"] .video-info-container,\nbody[data-blr-reader-mode=\"1\"] #viewbox_report,\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n  width: min(\n    var(--blr-reader-main-width),\n    var(--blr-reader-player-rendered-width, var(--blr-reader-main-width))\n  ) !important;\n  max-width: min(\n    var(--blr-reader-main-width),\n    var(--blr-reader-player-rendered-width, var(--blr-reader-main-width))\n  ) !important;\n  margin-left: auto !important;\n  margin-right: auto !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n  min-height: 100vh;\n  margin-top: -1px;\n  padding: 0;\n  border: 1px solid var(--blr-reader-border);\n  border-top: 0;\n  border-radius: 0 0 20px 20px;\n  background: var(--blr-reader-surface-2);\n  box-shadow: var(--blr-reader-shadow);\n  box-sizing: border-box;\n  overflow: auto;\n  height: 100vh;\n  scrollbar-width: thin;\n  scrollbar-color: rgba(100, 116, 139, 0.1) transparent;\n  position: relative;\n  isolation: isolate;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap,\nbody[data-blr-reader-mode=\"1\"] .player-wrap {\n  border: 1px solid var(--blr-reader-border);\n  border-bottom: 0;\n  border-radius: 0;\n  background: var(--blr-reader-surface);\n  box-shadow: var(--blr-reader-shadow);\n  box-sizing: border-box;\n  overflow: visible !important;\n  margin-top: -35px !important;\n  height: var(--blr-reader-player-rendered-height, auto) !important;\n  max-height: var(--blr-reader-player-rendered-height, none) !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap > *,\nbody[data-blr-reader-mode=\"1\"] .player-wrap > *,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-container,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-video-area,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-primary-area,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-inner,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-container,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-video-area,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-primary-area,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-inner {\n  width: 100% !important;\n  max-width: 100% !important;\n  height: 100% !important;\n  max-height: 100% !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-main {\n  overflow: visible;\n  display: block;\n  width: 100%;\n  background: transparent;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-transcript,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-item,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-item .blr-reading-text,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-time,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-chapter-title,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-empty,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-info-value,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-info-copy {\n  color: var(--blr-reader-text) !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-item .blr-reading-text {\n  font-size: var(--blr-reader-transcript-font-size) !important;\n  font-weight: var(--blr-reader-transcript-font-weight) !important;\n  line-height: var(--blr-reader-transcript-line-height) !important;\n  letter-spacing: var(--blr-reader-letter-spacing) !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-tail-spacer {\n  width: 100%;\n  min-height: 320px;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-status {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] h1.video-title {\n  display: -webkit-box !important;\n  margin-top: 8px !important;\n  color: transparent !important;\n  font-size: clamp(16px, 1.05vw, 20px) !important;\n  line-height: 1.2 !important;\n  padding: 0 !important;\n  height: auto !important;\n  max-height: 48px !important;\n  overflow: hidden !important;\n  overflow-wrap: anywhere !important;\n  pointer-events: none !important;\n  user-select: none !important;\n  visibility: hidden !important;\n  -webkit-box-orient: vertical !important;\n  -webkit-line-clamp: 2 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar {\n  width: 6px;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar-track {\n  background: transparent;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar-thumb {\n  background: rgba(100, 116, 139, 0.1);\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar-thumb:hover {\n  background: rgba(100, 116, 139, 0.16);\n}\n\n@media (max-width: 1320px) {\n  html[data-blr-reader-mode=\"1\"],\n  body[data-blr-reader-mode=\"1\"] {\n    --blr-reader-layout-gap: clamp(12px, 1.4vw, 16px);\n    --blr-reader-rail-target-width: clamp(144px, 12vw, 168px);\n  }\n}\n\n@media (max-width: 1320px) {\n  html[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"] .blr-reading-rail,\n  body[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"] .blr-reading-rail,\n  #blr-reading-view[data-content-width=\"wide\"] .blr-reading-rail {\n    display: none !important;\n  }\n}\n\n@media (max-width: 1180px) {\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n    display: none !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .left-container,\n  body[data-blr-reader-mode=\"1\"] .scroll-sticky,\n  body[data-blr-reader-mode=\"1\"] #playerWrap,\n  body[data-blr-reader-mode=\"1\"] .player-wrap,\n  body[data-blr-reader-mode=\"1\"] h1.video-title,\n  body[data-blr-reader-mode=\"1\"] .video-info-container,\n  body[data-blr-reader-mode=\"1\"] #viewbox_report,\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n    margin-left: auto !important;\n    margin-right: auto !important;\n  }\n}\n\nbody[data-blr-reader-mode=\"1\"] .bpx-player-mini-warp,\nbody[data-blr-reader-mode=\"1\"] .bpx-player-mini-close,\nbody[data-blr-reader-mode=\"1\"] .bpx-player-ending-panel,\nbody[data-blr-reader-mode=\"1\"] .bpx-player-ending-related,\nbody[data-blr-reader-mode=\"1\"] .ad-report,\nbody[data-blr-reader-mode=\"1\"] [class*=\"ad-report\"],\nbody[data-blr-reader-mode=\"1\"] [class*=\"mini-player\"],\nbody[data-blr-reader-mode=\"1\"] [class*=\"picture-in-picture\"] {\n  display: none !important;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-timestamp-visible=\"0\"] .blr-reading-time,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-timestamp-visible=\"0\"] .blr-reading-time,\n#blr-reading-view[data-timestamp-visible=\"0\"] .blr-reading-time {\n  display: none !important;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-timestamp-visible=\"0\"] .blr-reading-item,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-timestamp-visible=\"0\"] .blr-reading-item,\n#blr-reading-view[data-timestamp-visible=\"0\"] .blr-reading-item {\n  grid-template-columns: minmax(0, 1fr);\n}\n\n.blr-reading-complete {\n  padding: 12px 10px 20px;\n  font-size: var(--blr-reader-transcript-font-size);\n  font-weight: var(--blr-reader-transcript-font-weight);\n  line-height: var(--blr-reader-transcript-line-height);\n  letter-spacing: var(--blr-reader-letter-spacing);\n  color: var(--blr-reader-text);\n  text-align: left;\n}\n\n.blr-reading-complete-segment {\n  display: inline;\n  margin: 0;\n  padding: 1px 0;\n  border: 0;\n  border-radius: 2px;\n  background: transparent;\n  color: inherit;\n  font: inherit;\n  letter-spacing: inherit;\n  text-align: inherit;\n  cursor: pointer;\n  user-select: text;\n  -webkit-user-select: text;\n}\n\n.blr-reading-complete-segment:hover {\n  background: var(--blr-reader-accent-soft);\n}\n\n.blr-reading-complete-segment.is-active {\n  text-decoration-line: underline;\n  text-decoration-color: var(--blr-reader-accent);\n  text-decoration-thickness: 2px;\n  text-underline-offset: 4px;\n}\n\n/* Desktop reader: title/player with chapters below | transcript. */\n@media (min-width: 1181px) {\n  html[data-blr-reader-mode=\"1\"],\n  body[data-blr-reader-mode=\"1\"] {\n    --blr-reader-three-column-gap: clamp(16px, 1.4vw, 24px);\n    --blr-reader-three-column-half-gap: clamp(8px, 0.7vw, 12px);\n    --blr-reader-rail-width: clamp(176px, 13vw, 220px);\n    --blr-reader-transcript-width: clamp(320px, 24vw, 440px);\n    --blr-reader-center-offset: clamp(-110px, -5.5vw, -72px);\n    --blr-reader-main-width: max(\n      420px,\n      calc(\n        100vw - (var(--blr-reader-page-padding) * 2) - var(--blr-reader-transcript-width) -\n          var(--blr-reader-three-column-gap)\n      )\n    );\n    overflow: hidden !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n    left: var(--blr-reader-player-left, var(--blr-reader-page-padding)) !important;\n    top: calc(var(--blr-reader-player-bottom, 72vh) + 12px) !important;\n    bottom: auto !important;\n    width: var(--blr-reader-player-width, var(--blr-reader-main-width)) !important;\n    height: min(112px, calc(100vh - var(--blr-reader-player-bottom, 72vh) - 36px)) !important;\n    min-height: 72px;\n    max-height: none !important;\n    grid-template-rows: auto minmax(0, 1fr);\n    gap: 6px;\n    padding: 10px 12px;\n    border-radius: 10px;\n    overflow: hidden;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail .blr-reading-list {\n    display: flex;\n    align-items: stretch;\n    gap: 8px;\n    min-width: 0;\n    padding: 0 0 4px;\n    overflow-x: auto;\n    overflow-y: hidden;\n    scrollbar-width: thin;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail .blr-reading-chapter {\n    flex: 0 0 auto;\n    width: auto;\n    min-width: 120px;\n    max-width: 190px;\n    padding: 6px 10px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .left-container,\n  body[data-blr-reader-mode=\"1\"] .scroll-sticky,\n  body[data-blr-reader-mode=\"1\"] #playerWrap,\n  body[data-blr-reader-mode=\"1\"] .player-wrap,\n  body[data-blr-reader-mode=\"1\"] h1.video-title,\n  body[data-blr-reader-mode=\"1\"] .video-info-container,\n  body[data-blr-reader-mode=\"1\"] #viewbox_report {\n    width: var(--blr-reader-main-width) !important;\n    max-width: var(--blr-reader-main-width) !important;\n    margin-left: auto !important;\n    margin-right: auto !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .left-container {\n    transform: translateX(var(--blr-reader-center-offset)) !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] h1.video-title {\n    margin-top: 28px !important;\n    margin-bottom: 14px !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #playerWrap,\n  body[data-blr-reader-mode=\"1\"] .player-wrap {\n    margin-top: 0 !important;\n    border: 1px solid var(--blr-reader-border);\n    border-radius: 4px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n    position: fixed !important;\n    top: var(--blr-reader-player-top, 98px) !important;\n    right: var(--blr-reader-page-padding) !important;\n    bottom: 24px !important;\n    left: auto !important;\n    width: var(--blr-reader-transcript-width) !important;\n    max-width: var(--blr-reader-transcript-width) !important;\n    min-height: 0 !important;\n    height: auto !important;\n    margin: 0 !important;\n    padding: 0 !important;\n    border: 1px solid var(--blr-reader-border) !important;\n    border-radius: 0 !important;\n    background: var(--blr-reader-surface-2) !important;\n    box-shadow: var(--blr-reader-shadow) !important;\n    overflow-y: auto !important;\n    scroll-padding-top: 46px;\n    z-index: 2147483645;\n  }\n\n  html[data-blr-reader-mode=\"1\"][data-blr-reader-transcript-visible=\"0\"]\n    #blr-reading-inline-host,\n  body[data-blr-reader-mode=\"1\"][data-blr-reader-transcript-visible=\"0\"]\n    #blr-reading-inline-host {\n    display: none !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-transcript-heading {\n    position: sticky;\n    top: 0;\n    display: flex;\n    align-items: center;\n    height: 38px;\n    margin: 0;\n    padding: 0 14px;\n    box-sizing: border-box;\n    color: var(--blr-reader-muted);\n    background: var(--blr-reader-surface-2);\n    border-bottom: 1px solid var(--blr-reader-border);\n    font-size: 12px;\n    font-weight: 700;\n    letter-spacing: 0.08em;\n    z-index: 3;\n    pointer-events: auto;\n    user-select: none;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-main,\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-transcript {\n    width: 100% !important;\n    max-width: none !important;\n    height: auto !important;\n    margin: 0 !important;\n    box-sizing: border-box;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-transcript {\n    padding: 8px 10px 24px;\n    overflow: visible;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-item {\n    grid-template-columns: 52px minmax(0, 1fr);\n    gap: 8px;\n    padding: 7px 8px;\n    border-radius: 10px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-tail-spacer {\n    min-height: 45vh;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle {\n    position: fixed;\n    top: var(--blr-reader-player-top, 88px);\n    bottom: 24px;\n    width: 14px;\n    z-index: 2147483646;\n    cursor: col-resize;\n    pointer-events: auto;\n    touch-action: none;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle::before {\n    content: \"\";\n    position: absolute;\n    top: 0;\n    bottom: 0;\n    left: 6px;\n    width: 2px;\n    border-radius: 999px;\n    background: transparent;\n    transition: background 0.16s ease, box-shadow 0.16s ease;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle:hover::before,\n  body[data-blr-reader-resizing] .blr-reading-resize-handle::before {\n    background: var(--blr-reader-accent);\n    box-shadow: 0 0 0 3px var(--blr-reader-accent-soft);\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle-left {\n    display: block !important;\n    left: var(--blr-reader-player-left, var(--blr-reader-page-padding)) !important;\n    right: auto !important;\n    top: calc(var(--blr-reader-player-bottom, 72vh) + 1px) !important;\n    bottom: auto !important;\n    width: var(--blr-reader-player-width, var(--blr-reader-main-width)) !important;\n    height: 10px;\n    cursor: row-resize;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle-left::before {\n    top: 4px;\n    right: 0;\n    bottom: auto;\n    left: 0;\n    width: auto;\n    height: 2px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle-right {\n    right: calc(\n      var(--blr-reader-page-padding) + var(--blr-reader-transcript-width) +\n        var(--blr-reader-three-column-half-gap) - 7px\n    );\n  }\n\n  body[data-blr-reader-resizing=\"transcript\"],\n  body[data-blr-reader-resizing=\"transcript\"] * {\n    cursor: col-resize !important;\n    user-select: none !important;\n  }\n\n  body[data-blr-reader-resizing=\"chapter\"],\n  body[data-blr-reader-resizing=\"chapter\"] * {\n    cursor: row-resize !important;\n    user-select: none !important;\n  }\n\n  body[data-blr-reader-transcript-visible=\"0\"] .blr-reading-resize-handle-right {\n    display: none !important;\n  }\n}\n\n@media (max-width: 1180px) {\n  .blr-reading-resize-handle {\n    display: none !important;\n  }\n}\n\n/* Timestamp-free transcript rows must not retain the desktop time column. */\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-timestamp-visible=\"0\"]\n  .blr-reading-item,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-timestamp-visible=\"0\"]\n  .blr-reading-item,\n#blr-reading-view[data-timestamp-visible=\"0\"] .blr-reading-item {\n  grid-template-columns: minmax(0, 1fr) !important;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-timestamp-visible=\"0\"]\n  .blr-reading-item\n  .blr-reading-text,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-timestamp-visible=\"0\"]\n  .blr-reading-item\n  .blr-reading-text,\n#blr-reading-view[data-timestamp-visible=\"0\"] .blr-reading-item .blr-reading-text {\n  grid-column: 1 / -1;\n  min-width: 0;\n}\n");
+  GM_addStyle("#viewbox_report.blr-page-reader-entry-host,\n.video-info-container.blr-page-reader-entry-host,\n.video-info-title.blr-page-reader-entry-host {\n  position: relative !important;\n}\n\n#viewbox_report.blr-page-reader-entry-host h1.video-title,\n.video-info-container.blr-page-reader-entry-host h1.video-title {\n  padding-right: 108px !important;\n  box-sizing: border-box;\n}\n\n#blr-page-reader-entry {\n  -webkit-appearance: none;\n  appearance: none;\n  position: absolute;\n  top: auto;\n  right: 2px;\n  bottom: 4px;\n  z-index: 20;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: 6px;\n  min-width: 82px;\n  height: 34px;\n  margin: 0;\n  padding: 0 14px;\n  box-sizing: border-box;\n  border: 1px solid rgba(0, 174, 236, 0.42);\n  border-radius: 9px;\n  background: rgba(255, 255, 255, 0.96);\n  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.08);\n  color: #18191c;\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", sans-serif;\n  font-size: 14px;\n  font-weight: 600;\n  line-height: 1;\n  cursor: pointer;\n  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease,\n    transform 0.16s ease, box-shadow 0.16s ease;\n}\n\n#blr-page-reader-entry svg {\n  width: 17px;\n  height: 17px;\n  flex: 0 0 auto;\n  fill: none;\n  stroke: currentColor;\n  stroke-width: 1.8;\n  stroke-linecap: round;\n  stroke-linejoin: round;\n}\n\n#blr-page-reader-entry:hover {\n  border-color: #00aeec;\n  background: #00aeec;\n  color: #fff;\n  box-shadow: 0 7px 20px rgba(0, 174, 236, 0.22);\n  transform: translateY(-1px);\n}\n\n#blr-page-reader-entry:active {\n  transform: translateY(0);\n}\n\n#blr-page-reader-entry:focus-visible {\n  outline: 2px solid rgba(0, 174, 236, 0.42);\n  outline-offset: 2px;\n}\n\n#blr-page-reader-entry:disabled,\n#blr-page-reader-entry.is-loading {\n  cursor: wait;\n  opacity: 0.68;\n  transform: none;\n}\n\nhtml[data-blr-reader-mode=\"1\"] #blr-page-reader-entry,\nbody[data-blr-reader-mode=\"1\"] #blr-page-reader-entry {\n  display: none !important;\n}\n\n@media (max-width: 760px) {\n  #viewbox_report.blr-page-reader-entry-host h1.video-title,\n  .video-info-container.blr-page-reader-entry-host h1.video-title {\n    padding-right: 0 !important;\n  }\n\n  #blr-page-reader-entry {\n    position: relative;\n    top: auto;\n    right: auto;\n    bottom: auto;\n    margin-top: 8px;\n  }\n}\n\n#blr-native-transcript-panel {\n  --blr-native-transcript-body-height: 439px;\n  --blr-native-transcript-font-size: 14px;\n  --blr-native-transcript-font-weight: 500;\n  --blr-native-transcript-surface: var(--bg1, #fff);\n  --blr-native-transcript-text: var(--text1, #18191c);\n  --blr-native-transcript-border: var(--line_regular, #e3e5e7);\n  --blr-native-transcript-active: rgba(0, 174, 236, 0.12);\n  width: 100%;\n  min-width: 0;\n  position: relative;\n  z-index: 20;\n  margin: 0 0 12px;\n  box-sizing: border-box;\n  isolation: isolate;\n  pointer-events: auto;\n  color: var(--text1, #18191c);\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", sans-serif;\n}\n\n#blr-native-transcript-panel button,\n#blr-native-transcript-panel select,\n#blr-native-transcript-panel .blr-native-transcript-body,\n#blr-native-transcript-panel .blr-native-transcript-list {\n  pointer-events: auto;\n}\n\n.blr-native-transcript-header {\n  width: 100%;\n  height: 44px;\n  display: flex;\n  align-items: center;\n  gap: 4px;\n  margin: 0;\n  padding: 0 6px 0 10px;\n  box-sizing: border-box;\n  border-radius: 6px;\n  background: var(--bg2, #f1f2f3);\n  color: var(--text1, #18191c);\n  font: inherit;\n}\n\n.blr-native-transcript-title-button {\n  -webkit-appearance: none;\n  appearance: none;\n  min-width: 32px;\n  flex: 1 1 auto;\n  align-self: stretch;\n  margin: 0;\n  padding: 0;\n  overflow: hidden;\n  border: 0;\n  background: transparent;\n  color: inherit;\n  font: inherit;\n  font-size: 15px;\n  font-weight: 500;\n  line-height: 1;\n  text-align: left;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  cursor: pointer;\n}\n\n.blr-native-transcript-controls {\n  min-width: 0;\n  display: flex;\n  flex: 0 0 auto;\n  align-items: center;\n  gap: 4px;\n}\n\n.blr-native-transcript-return-button,\n.blr-native-transcript-theme-button {\n  -webkit-appearance: none;\n  appearance: none;\n  width: 26px;\n  height: 26px;\n  display: inline-flex;\n  flex: 0 0 26px;\n  align-items: center;\n  justify-content: center;\n  margin: 0;\n  padding: 0;\n  border: 1px solid var(--line_regular, #e3e5e7);\n  border-radius: 50%;\n  background: var(--bg1, #fff);\n  color: var(--text1, #18191c);\n  cursor: pointer;\n}\n\n.blr-native-transcript-return-button svg,\n.blr-native-transcript-theme-button svg {\n  width: 17px;\n  height: 17px;\n}\n\n.blr-native-transcript-return-button:hover,\n.blr-native-transcript-return-button.is-active,\n.blr-native-transcript-theme-button:hover,\n.blr-native-transcript-theme-button.is-active {\n  border-color: var(--brand_blue, #00aeec);\n  color: var(--brand_blue, #00aeec);\n}\n\n.blr-native-transcript-controls select {\n  -webkit-appearance: none;\n  appearance: none;\n  flex: 0 0 auto;\n  height: 28px;\n  min-width: 0;\n  padding: 0 25px 0 8px;\n  box-sizing: border-box;\n  border: 1px solid var(--line_regular, #e3e5e7);\n  border-radius: 5px;\n  background-color: var(--bg1, #fff);\n  background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m3 4.5 3 3 3-3' fill='none' stroke='%2318191c' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\");\n  background-position: right 7px center;\n  background-repeat: no-repeat;\n  background-size: 12px 12px;\n  color: var(--text1, #18191c);\n  font-size: 12px;\n  outline: none;\n}\n\n.blr-native-transcript-controls select:focus {\n  border-color: var(--brand_blue, #00aeec);\n}\n\n#blr-native-transcript-select {\n  width: 72px;\n}\n\n#blr-native-transcript-font-size {\n  width: 56px;\n}\n\n#blr-native-transcript-font-weight {\n  width: 64px;\n}\n\n.blr-native-transcript-arrow-button {\n  -webkit-appearance: none;\n  appearance: none;\n  width: 28px;\n  height: 28px;\n  display: inline-flex;\n  flex: 0 0 28px;\n  align-items: center;\n  justify-content: center;\n  margin: 0;\n  padding: 0;\n  border: 0;\n  border-radius: 4px;\n  background: transparent;\n  color: inherit;\n  cursor: pointer;\n}\n\n.blr-native-transcript-title-button:focus-visible,\n.blr-native-transcript-return-button:focus-visible,\n.blr-native-transcript-theme-button:focus-visible,\n.blr-native-transcript-arrow-button:focus-visible {\n  outline: 2px solid var(--brand_blue, #00aeec);\n  outline-offset: 1px;\n}\n\n.blr-native-transcript-arrow-button:hover {\n  background: rgba(0, 0, 0, 0.06);\n}\n\n.blr-native-transcript-arrow {\n  width: 16px;\n  height: 16px;\n  flex: 0 0 auto;\n  fill: none;\n  stroke: currentColor;\n  stroke-width: 1.6;\n  stroke-linecap: round;\n  stroke-linejoin: round;\n  transform: rotate(90deg);\n  transition: transform 0.18s ease;\n}\n\n#blr-native-transcript-panel.is-folded .blr-native-transcript-arrow {\n  transform: rotate(0deg);\n}\n\n.blr-native-transcript-body {\n  height: var(--blr-native-transcript-body-height);\n  min-height: 0;\n  display: flex;\n  flex-direction: column;\n  margin-top: 12px;\n  overflow: hidden;\n  box-sizing: border-box;\n  border: 1px solid var(--blr-native-transcript-border);\n  border-radius: 6px;\n  background: var(--blr-native-transcript-surface);\n  color: var(--blr-native-transcript-text);\n}\n\n#blr-native-transcript-panel[data-theme=\"dark\"] {\n  --blr-native-transcript-surface: #0f172a;\n  --blr-native-transcript-text: #e5eefb;\n  --blr-native-transcript-border: rgba(148, 163, 184, 0.28);\n  --blr-native-transcript-active: rgba(74, 222, 128, 0.16);\n}\n\n#blr-native-transcript-panel[data-theme=\"paper\"] {\n  --blr-native-transcript-surface: #f4eddc;\n  --blr-native-transcript-text: #3b3124;\n  --blr-native-transcript-border: rgba(180, 155, 112, 0.34);\n  --blr-native-transcript-active: rgba(47, 158, 68, 0.14);\n}\n\n.blr-native-transcript-body[hidden] {\n  display: none !important;\n}\n\n.blr-native-transcript-list {\n  min-height: 0;\n  flex: 1 1 auto;\n  overflow-x: hidden;\n  overflow-y: auto;\n  overscroll-behavior: contain;\n  scrollbar-width: thin;\n  scrollbar-color: rgba(148, 153, 160, 0.72) transparent;\n}\n\n.blr-native-transcript-list::-webkit-scrollbar {\n  width: 6px;\n}\n\n.blr-native-transcript-list::-webkit-scrollbar-track {\n  background: transparent;\n}\n\n.blr-native-transcript-list::-webkit-scrollbar-thumb {\n  border-radius: 999px;\n  background: rgba(148, 153, 160, 0.72);\n}\n\n.blr-native-transcript-complete {\n  padding: 12px 14px 36px;\n  color: var(--blr-native-transcript-text);\n  font-size: var(--blr-native-transcript-font-size);\n  font-weight: var(--blr-native-transcript-font-weight);\n  line-height: 1.8;\n  letter-spacing: 0;\n  text-align: left;\n  word-break: break-word;\n}\n\n.blr-native-transcript-segment {\n  -webkit-appearance: none;\n  appearance: none;\n  display: inline;\n  margin: 0;\n  padding: 1px 0;\n  border: 0;\n  border-radius: 2px;\n  background: transparent;\n  color: inherit;\n  font: inherit;\n  letter-spacing: inherit;\n  text-align: inherit;\n  cursor: pointer;\n  user-select: text;\n  -webkit-user-select: text;\n}\n\n.blr-native-transcript-segment:hover {\n  background: rgba(0, 174, 236, 0.1);\n}\n\n.blr-native-transcript-segment.is-active {\n  background: var(--blr-native-transcript-active);\n  text-decoration-line: underline;\n  text-decoration-color: var(--brand_blue, #00aeec);\n  text-decoration-thickness: 2px;\n  text-underline-offset: 4px;\n}\n\n.blr-native-transcript-segment:focus-visible {\n  outline: 2px solid rgba(0, 174, 236, 0.42);\n  outline-offset: 1px;\n}\n\n.blr-native-transcript-state {\n  min-height: 100%;\n  display: flex;\n  flex: 1 1 auto;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  gap: 12px;\n  padding: 24px;\n  box-sizing: border-box;\n  color: var(--text3, #9499a0);\n  font-size: 13px;\n  text-align: center;\n}\n\n.blr-native-transcript-state button {\n  height: 30px;\n  padding: 0 14px;\n  border: 1px solid var(--brand_blue, #00aeec);\n  border-radius: 5px;\n  background: transparent;\n  color: var(--brand_blue, #00aeec);\n  cursor: pointer;\n}\n\n.blr-native-transcript-state button:hover {\n  background: rgba(0, 174, 236, 0.08);\n}\n\n#blr-panel {\n  position: fixed;\n  right: 16px;\n  top: 72px;\n  width: min(420px, calc(100vw - 24px));\n  height: min(820px, calc(100vh - 88px));\n  z-index: 2147483647;\n  background: #f1f1f1;\n  border: 1px solid #d8d8d8;\n  border-radius: 14px;\n  box-shadow: 0 24px 46px rgba(0, 0, 0, 0.24);\n  padding: 12px;\n  box-sizing: border-box;\n  display: none;\n  flex-direction: column;\n  gap: 8px;\n  font-family: -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"PingFang SC\", \"Helvetica Neue\",\n    Arial, sans-serif;\n}\n\n#blr-panel.open {\n  display: flex;\n}\n\n.blr-header {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 0 0 4px;\n}\n\n.blr-header strong {\n  font-size: 17px;\n  font-weight: 600;\n  letter-spacing: 0.01em;\n  color: #3d3d3d;\n}\n\n.blr-header-actions {\n  display: flex;\n  gap: 6px;\n}\n\n.blr-header button {\n  border: 1px solid #cfcfcf;\n  background: #f8f8f8;\n  border-radius: 10px;\n  padding: 7px 10px;\n  cursor: pointer;\n  color: #4a4a4a;\n}\n\n.blr-status {\n  margin: 0;\n  font-size: 12px;\n  color: #555;\n  background: #e8e8e8;\n  border-radius: 8px;\n  padding: 7px 8px;\n}\n\n.blr-props-head {\n  font-size: 15px;\n  font-weight: 600;\n  color: #4a4a4a;\n  margin-top: 0;\n}\n\n.blr-meta {\n  border: 1px solid #d5d5d5;\n  border-radius: 10px;\n  padding: 8px 10px;\n  background: #f7f7f7;\n  display: grid;\n  gap: 6px;\n  font-size: 13px;\n  color: #3f3f3f;\n}\n\n.blr-meta-item {\n  word-break: break-word;\n}\n\n.blr-label {\n  font-size: 12px;\n  font-weight: 600;\n  color: #4d4d4d;\n  margin-top: 2px;\n}\n\n#blr-subtitle-select {\n  height: 36px;\n  border: 1px solid #cfcfcf;\n  border-radius: 8px;\n  padding: 0 10px;\n  background: #fff;\n  color: #2d2d2d;\n}\n\n.blr-player-ai-wrap {\n  align-items: center;\n  background: rgba(20, 24, 32, 0.68);\n  border: 1px solid rgba(255, 255, 255, 0.18);\n  border-radius: 999px;\n  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);\n  display: inline-flex;\n  flex: 0 0 var(--blr-player-ai-action-hit-size, 28px);\n  height: var(--blr-player-ai-action-hit-size, 28px);\n  justify-content: center;\n  margin: 0;\n  min-width: var(--blr-player-ai-action-hit-size, 28px);\n  opacity: 0;\n  overflow: hidden;\n  pointer-events: none;\n  position: absolute;\n  right: 14px;\n  top: 50%;\n  transform: translate(8px, -50%);\n  transition: opacity 0.18s ease, background-color 0.18s ease, transform 0.18s ease;\n  width: var(--blr-player-ai-action-hit-size, 28px);\n  z-index: 30;\n}\n\n.blr-player-ai-wrap.is-active,\n.blr-player-ai-wrap:hover,\n.blr-player-ai-wrap:focus-within {\n  background: rgba(20, 24, 32, 0.78);\n  opacity: 1;\n  pointer-events: auto;\n  transform: translate(0, -50%);\n}\n\n#blr-player-ai-quick-action {\n  -webkit-appearance: none;\n  appearance: none;\n  align-items: center;\n  align-self: center;\n  background: transparent;\n  border: 0;\n  border-radius: 0;\n  box-sizing: border-box;\n  color: var(--blr-player-ai-action-color, currentColor);\n  display: inline-flex;\n  flex: 0 0 auto;\n  justify-content: center;\n  width: 100%;\n  height: 100%;\n  cursor: pointer;\n  line-height: 0;\n  margin-bottom: 0;\n  margin-top: 0;\n  min-width: 0;\n  overflow: hidden;\n  padding: 0;\n  position: relative;\n  top: 0;\n  vertical-align: top;\n  transition: transform 0.16s ease, color 0.16s ease, opacity 0.16s ease;\n}\n\n#blr-player-ai-quick-action svg {\n  width: var(--blr-player-ai-action-icon-size, 24px);\n  height: var(--blr-player-ai-action-icon-size, 24px);\n  display: block;\n  flex: 0 0 auto;\n  stroke: currentColor;\n  fill: none;\n  stroke-linecap: round;\n  stroke-linejoin: round;\n}\n\n#blr-player-ai-quick-action:hover {\n  color: var(--blr-player-ai-action-hover-color, var(--blr-player-ai-action-color, currentColor));\n}\n\n#blr-player-ai-quick-action:disabled {\n  opacity: 0.62;\n  cursor: wait;\n  transform: none;\n}\n\n.blr-confirm-overlay {\n  align-items: center;\n  background: rgba(17, 24, 39, 0.28);\n  display: flex;\n  inset: 0;\n  justify-content: center;\n  padding: 18px;\n  position: fixed;\n  z-index: 2147483647;\n}\n\n.blr-confirm-dialog {\n  background: #ffffff;\n  border: 1px solid #e5e7eb;\n  border-radius: 16px;\n  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.22);\n  color: #111827;\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;\n  max-width: 360px;\n  padding: 18px;\n  width: calc(100vw - 36px);\n}\n\n.blr-confirm-title {\n  font-size: 15px;\n  font-weight: 700;\n  margin-bottom: 8px;\n}\n\n.blr-confirm-body {\n  color: #4b5563;\n  font-size: 13px;\n  margin-bottom: 8px;\n}\n\n.blr-confirm-path {\n  background: #f7f8fb;\n  border: 1px solid #edf0f4;\n  border-radius: 10px;\n  color: #374151;\n  font-size: 12px;\n  line-height: 1.45;\n  max-height: 96px;\n  overflow: auto;\n  padding: 9px 10px;\n  word-break: break-all;\n}\n\n.blr-confirm-actions {\n  display: flex;\n  gap: 8px;\n  justify-content: flex-end;\n  margin-top: 14px;\n}\n\n.blr-confirm-actions button {\n  border: 1px solid #d9dee7;\n  border-radius: 10px;\n  cursor: pointer;\n  font-size: 13px;\n  height: 34px;\n  padding: 0 14px;\n}\n\n.blr-confirm-cancel {\n  background: #ffffff;\n  color: #374151;\n}\n\n.blr-confirm-primary {\n  background: #111827;\n  border-color: #111827 !important;\n  color: #ffffff;\n}\n\n#blr-preview {\n  width: 100%;\n  flex: 1;\n  min-height: 180px;\n  box-sizing: border-box;\n  border: 1px solid #d0d0d0;\n  border-radius: 10px;\n  padding: 10px;\n  resize: vertical;\n  font-size: 13px;\n  line-height: 1.55;\n  background: #fff;\n  color: #2f2f2f;\n  font-family: \"SF Mono\", \"JetBrains Mono\", \"PingFang SC\", Menlo, Monaco, Consolas, monospace;\n}\n\n.blr-actions {\n  display: grid;\n  grid-template-columns: repeat(2, minmax(0, 1fr));\n  gap: 8px;\n  margin-top: 0;\n}\n\n.blr-actions button {\n  border: 1px solid #cfcfcf;\n  background: #f8f8f8;\n  border-radius: 9px;\n  padding: 8px 8px;\n  cursor: pointer;\n  color: #3d3d3d;\n  font-size: 13px;\n}\n\n#blr-send-btn {\n  grid-column: span 2;\n  border: 1px solid #a88fff;\n  background: linear-gradient(180deg, #9c82ff 0%, #8f75ef 100%);\n  color: #fff;\n  font-weight: 600;\n}\n\n.blr-actions button:disabled {\n  cursor: not-allowed;\n  opacity: 0.55;\n}\n\n.blr-message {\n  margin: 0;\n  font-size: 12px;\n  color: #0f766e;\n  min-height: 18px;\n  padding: 0 2px;\n}\n\n#blr-reading-view {\n  position: fixed;\n  left: 16px;\n  right: 16px;\n  bottom: 16px;\n  height: min(76vh, 860px);\n  z-index: 2147483646;\n  display: none;\n  padding: 20px 22px;\n  box-sizing: border-box;\n  background: #fff;\n  border: 1px solid #e5e7eb;\n  border-radius: 18px;\n  box-shadow: 0 28px 60px rgba(15, 23, 42, 0.16);\n  font-family: -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"PingFang SC\", \"Helvetica Neue\",\n    Arial, sans-serif;\n}\n\n#blr-reading-view.open {\n  display: block;\n}\n\n#blr-reading-view[data-blr-reader-ready=\"0\"] {\n  opacity: 0;\n  visibility: hidden;\n  pointer-events: none;\n}\n\n.blr-reading-layout {\n  min-height: 0;\n  height: 100%;\n  display: grid;\n  grid-template-columns: 240px minmax(0, 1fr);\n  gap: 28px;\n}\n\n.blr-reading-rail {\n  min-height: 0;\n  display: grid;\n  grid-template-rows: auto auto minmax(0, 1fr);\n  gap: 10px;\n  align-content: start;\n}\n\n.blr-reading-stage {\n  min-height: 0;\n  display: grid;\n  grid-template-rows: auto auto minmax(320px, 1fr) minmax(0, 1fr);\n  gap: 14px;\n}\n\n.blr-reading-header {\n  display: flex;\n  align-items: flex-start;\n  justify-content: space-between;\n  gap: 18px;\n}\n\n.blr-reading-header-copy {\n  min-width: 0;\n}\n\n.blr-reading-eyebrow {\n  font-size: 11px;\n  font-weight: 700;\n  letter-spacing: 0.08em;\n  color: #9ca3af;\n  text-transform: uppercase;\n}\n\n.blr-reading-title {\n  display: block;\n  margin: 0;\n  font-size: 16px;\n  line-height: 1.15;\n  color: #0f172a;\n  word-break: break-word;\n}\n\n.blr-reading-topbar,\n.blr-reading-heading-group {\n  min-width: 0;\n}\n\n.blr-reading-page-title {\n  color: var(--blr-reader-text, #0f172a);\n  display: -webkit-box;\n  font-size: 18px;\n  font-weight: 500;\n  line-height: 1.2;\n  overflow: hidden;\n  overflow-wrap: anywhere;\n  -webkit-box-orient: vertical;\n  -webkit-line-clamp: 2;\n}\n\n.blr-reading-episode-title {\n  color: var(--blr-reader-muted, #64748b);\n  display: -webkit-box;\n  font-size: 14px;\n  font-weight: 600;\n  line-height: 1.3;\n  overflow: hidden;\n  overflow-wrap: anywhere;\n  -webkit-box-orient: vertical;\n  -webkit-line-clamp: 2;\n}\n\n.blr-reading-collection-nav {\n  align-items: flex-start;\n  display: flex;\n  gap: 10px;\n  min-width: 0;\n}\n\n.blr-reading-episode-title[hidden],\n.blr-reading-collection-nav[hidden] {\n  display: none !important;\n}\n\n.blr-reading-collection-list {\n  align-content: flex-start;\n  align-items: center;\n  display: flex;\n  flex: 1 1 auto;\n  flex-wrap: wrap;\n  gap: 6px;\n  height: 70px;\n  min-width: 0;\n  overflow-x: hidden;\n  overflow-y: auto;\n  overscroll-behavior-y: contain;\n  scrollbar-width: none;\n}\n\n.blr-reading-collection-list::-webkit-scrollbar {\n  display: none;\n}\n\n.blr-reading-collection-item {\n  align-items: center;\n  background: transparent;\n  border: 1px solid var(--blr-reader-border, #e2e8f0);\n  border-radius: 999px;\n  color: var(--blr-reader-muted, #64748b);\n  cursor: pointer;\n  display: inline-flex;\n  flex: 0 0 auto;\n  gap: 6px;\n  height: 32px;\n  max-width: 260px;\n  padding: 0 10px 0 7px;\n  font-weight: 600;\n}\n\n.blr-reading-collection-item:hover {\n  border-color: var(--blr-reader-accent, #22c55e);\n  color: var(--blr-reader-text, #0f172a);\n}\n\n.blr-reading-collection-item.is-active {\n  background: var(--blr-reader-accent-soft, #ecfdf5);\n  border-color: var(--blr-reader-accent, #22c55e);\n  color: var(--blr-reader-accent, #16a34a);\n}\n\n.blr-reading-collection-index {\n  align-items: center;\n  background: color-mix(in srgb, currentColor 10%, transparent);\n  border-radius: 999px;\n  display: inline-flex;\n  flex: 0 0 auto;\n  font-size: 10px;\n  font-weight: 700;\n  height: 18px;\n  justify-content: center;\n  min-width: 18px;\n  padding: 0 4px;\n}\n\n.blr-reading-collection-item-title {\n  font-size: 12px;\n  font-weight: 600;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.blr-reading-meta,\n.blr-reading-status {\n  font-size: 14px;\n  line-height: 1.5;\n  color: #6b7280;\n}\n\n.blr-reading-meta {\n  margin-top: 8px;\n}\n\n.blr-reading-actions {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex-wrap: wrap;\n  justify-content: flex-end;\n  transition: opacity 0.2s ease;\n}\n\n.blr-reading-actions[data-blr-icon-hidden=\"1\"] {\n  opacity: 0;\n  pointer-events: none;\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .blr-reading-actions {\n    transition: none;\n  }\n}\n\n.blr-reading-actions button,\n.blr-reading-toggle {\n  border: 1px solid #e5e7eb;\n  background: #fff;\n  border-radius: 999px;\n  min-height: 36px;\n  padding: 0 14px;\n  font-size: 13px;\n  color: #1f2937;\n  box-sizing: border-box;\n}\n\n.blr-reading-actions button {\n  cursor: pointer;\n}\n\n.blr-reading-toggle {\n  display: inline-flex;\n  align-items: center;\n  gap: 8px;\n}\n\n.blr-reading-toggle input {\n  margin: 0;\n}\n\n.blr-reading-icon-btn {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 34px;\n  height: 34px;\n  border: 1px solid #e5e7eb;\n  background: #fff;\n  border-radius: 8px;\n  cursor: pointer;\n  padding: 0;\n  color: #1f2937;\n}\n\n.blr-reading-icon-btn svg {\n  width: 18px;\n  height: 18px;\n  flex: 0 0 auto;\n}\n\n.blr-reading-icon-btn:hover {\n  background: #f3f4f6;\n  border-color: #d1d5db;\n}\n\n.blr-reading-icon-btn.is-active {\n  background: #eff6ff;\n  border-color: #2563eb;\n  color: #2563eb;\n}\n\n.blr-reading-panel-row {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex-wrap: wrap;\n}\n\n.blr-reading-inline-label {\n  display: inline-flex;\n  align-items: center;\n  gap: 4px;\n  font-size: 12px;\n  color: #6b7280;\n}\n\n.blr-reading-inline-label span {\n  white-space: nowrap;\n}\n\n.blr-reading-select-sm {\n  min-height: 28px;\n  padding: 0 6px;\n  font-size: 12px;\n  border-radius: 6px;\n  border: 1px solid #e5e7eb;\n  background: #fff;\n  color: #1f2937;\n  cursor: pointer;\n}\n\n.blr-reading-select-sm:focus {\n  outline: none;\n  border-color: #2563eb;\n  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);\n}\n\n.blr-reading-list,\n.blr-reading-transcript {\n  min-height: 0;\n  overflow: auto;\n}\n\n.blr-reading-list {\n  padding-right: 6px;\n}\n\n.blr-reading-player-shell {\n  min-height: 0;\n  display: flex;\n  justify-content: center;\n  align-items: flex-start;\n  pointer-events: none;\n}\n\n.blr-reading-player-slot {\n  width: min(100%, 960px);\n  aspect-ratio: 16 / 9;\n  max-height: 100%;\n  min-height: 0;\n  overflow: hidden;\n  background: #fff;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  pointer-events: none;\n}\n\n.blr-reading-player-slot > * {\n  width: 100% !important;\n  max-width: 100% !important;\n  height: 100% !important;\n}\n\n.blr-reading-player-slot > video {\n  width: 100% !important;\n  height: 100% !important;\n  display: block;\n  background: #000;\n  object-fit: contain;\n}\n\n.blr-reading-player-slot #bilibili-player,\n.blr-reading-player-slot .bpx-player-container,\n.blr-reading-player-slot .bpx-player-video-area,\n.blr-reading-player-slot .bpx-player-primary-area,\n.blr-reading-player-slot .bpx-player-inner {\n  width: 100% !important;\n  height: 100% !important;\n}\n\n.blr-reading-main {\n  min-height: 0;\n  overflow: hidden;\n  display: flex;\n  justify-content: center;\n  pointer-events: auto;\n}\n\n.blr-reading-transcript {\n  width: min(100%, 960px);\n  height: 100%;\n  max-height: 100%;\n  margin: 0 auto;\n  padding: 6px 8px 12px;\n  overflow-x: hidden;\n  overflow-y: auto;\n  pointer-events: auto;\n}\n\n.blr-reading-chapter,\n.blr-reading-item {\n  width: 100%;\n  border: 0;\n  background: transparent;\n  border-radius: 14px;\n  text-align: left;\n  cursor: pointer;\n  user-select: text;\n  -webkit-user-select: text;\n}\n\n.blr-reading-chapter {\n  display: grid;\n  gap: 4px;\n  padding: 8px 10px;\n  color: #4b5563;\n}\n\n.blr-reading-item {\n  display: grid;\n  grid-template-columns: 64px minmax(0, 1fr);\n  gap: 10px;\n  align-items: start;\n  padding: 6px 8px;\n  color: #111827;\n  position: relative;\n}\n\n.blr-reading-chapter:hover {\n  background: #f9fafb;\n}\n\n.blr-reading-chapter.is-active,\n.blr-reading-item.is-active {\n  background: transparent;\n  box-shadow: none;\n}\n\n.blr-reading-chapter-time,\n.blr-reading-time {\n  font-size: var(--blr-reader-transcript-font-size);\n  font-weight: 600;\n  color: #16a34a;\n  padding-top: 2px;\n  line-height: 1.4;\n}\n\n.blr-reading-chapter-title {\n  font-size: 13px;\n  line-height: 1.45;\n  color: inherit;\n}\n\n.blr-reading-chapter.is-active .blr-reading-chapter-title,\n.blr-reading-item.is-active .blr-reading-text {\n  text-decoration-line: underline;\n  text-decoration-color: #22c55e;\n  text-decoration-thickness: 2px;\n  text-underline-offset: 3px;\n}\n\n.blr-reading-text {\n  font-size: 12px;\n  line-height: 1.5;\n  color: inherit;\n}\n\n.blr-reading-empty {\n  padding: 12px 4px;\n  font-size: 14px;\n  color: #94a3b8;\n}\n\n@media (max-width: 1100px) {\n  #blr-reading-view {\n    left: 12px;\n    right: 12px;\n    bottom: 12px;\n    padding: 18px;\n  }\n\n  .blr-reading-layout {\n    grid-template-columns: 210px minmax(0, 1fr);\n    gap: 20px;\n  }\n\n  .blr-reading-title {\n    font-size: 16px;\n  }\n}\n\n@media (max-width: 760px) {\n  #blr-reading-view {\n    top: 72px;\n    height: auto;\n  }\n\n  .blr-reading-layout {\n    grid-template-columns: 1fr;\n    gap: 18px;\n  }\n\n  .blr-reading-stage {\n    grid-template-rows: auto auto minmax(220px, auto) minmax(0, 1fr);\n  }\n\n  .blr-reading-header {\n    flex-direction: column;\n    align-items: stretch;\n  }\n\n  .blr-reading-actions {\n    justify-content: flex-start;\n  }\n\n  .blr-reading-title {\n    font-size: 16px;\n  }\n\n  .blr-reading-item {\n    grid-template-columns: 56px minmax(0, 1fr);\n    gap: 10px;\n  }\n\n  .blr-reading-text {\n    font-size: 13px;\n  }\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] {\n  margin: 0 !important;\n  padding: 0 !important;\n  width: 100% !important;\n  min-height: 100% !important;\n  background: #fff !important;\n  overflow-x: hidden !important;\n  overflow-y: auto !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-root {\n  position: absolute;\n  inset: 0;\n  z-index: 2147483646;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-panel {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view {\n  position: absolute;\n  inset: 0;\n  width: auto;\n  max-width: none;\n  height: 100vh;\n  display: none;\n  margin: 0;\n  padding: 0;\n  box-sizing: border-box;\n  border: 0;\n  border-radius: 0;\n  box-shadow: none;\n  background: transparent;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view.open {\n  display: block;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-ready=\"0\"] {\n  opacity: 0;\n  visibility: hidden;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-header-copy,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-status {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #viewbox_report,\nbody[data-blr-reader-mode=\"1\"] .video-info-container,\nbody[data-blr-reader-mode=\"1\"] .video-info-title,\nbody[data-blr-reader-mode=\"1\"] .video-info-title-inner {\n  margin: 0 !important;\n  padding: 0 !important;\n  row-gap: 0 !important;\n  column-gap: 0 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #viewbox_report,\nbody[data-blr-reader-mode=\"1\"] .video-info-container {\n  margin-bottom: 4px !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .left-container,\nbody[data-blr-reader-mode=\"1\"] .scroll-sticky {\n  row-gap: 8px !important;\n  padding-top: 0 !important;\n  overflow: visible !important;\n  transition: none !important;\n  animation: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap,\nbody[data-blr-reader-mode=\"1\"] .player-wrap,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n  transition: none !important;\n  animation: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .video-info-detail,\nbody[data-blr-reader-mode=\"1\"] .video-info-meta,\nbody[data-blr-reader-mode=\"1\"] .video-data {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-follow=\"manual\"] .blr-reading-main,\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-follow=\"manual\"] .blr-reading-rail {\n  border-color: rgba(148, 163, 184, 0.8);\n  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-follow=\"manual\"] .blr-reading-eyebrow::after {\n  content: \"手动浏览中\";\n  display: inline-block;\n  margin-left: 8px;\n  font-size: 11px;\n  font-weight: 500;\n  color: #94a3b8;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reader-player-host {\n  background: #000 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap {\n  position: static !important;\n  top: auto !important;\n  z-index: auto !important;\n  background: transparent !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .player-wrap,\nbody[data-blr-reader-mode=\"1\"] .scroll-sticky {\n  position: static !important;\n  top: auto !important;\n  z-index: auto !important;\n  background: transparent !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] [data-blr-reader-player-reset=\"1\"] {\n  position: static !important;\n  inset: auto !important;\n  width: auto !important;\n  height: auto !important;\n  transform: none !important;\n  margin: 0 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .strip-ad-inner,\nbody[data-blr-reader-mode=\"1\"] .inside-wrp,\nbody[data-blr-reader-mode=\"1\"] .inside-bg,\nbody[data-blr-reader-mode=\"1\"] .hinter-msg,\nbody[data-blr-reader-mode=\"1\"] .slide,\nbody[data-blr-reader-mode=\"1\"] .cover.b-img,\nbody[data-blr-reader-mode=\"1\"] .cover.b-img.sleepy,\nbody[data-blr-reader-mode=\"1\"] .b-img.clickable {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] [data-blr-reader-hidden=\"1\"] {\n  display: none !important;\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"],\n#blr-reading-view {\n  --blr-reader-page-bg: #f4f6f8;\n  --blr-reader-surface: #ffffff;\n  --blr-reader-surface-2: #f7f9fc;\n  --blr-reader-surface-3: #edf2f7;\n  --blr-reader-border: rgba(15, 23, 42, 0.1);\n  --blr-reader-text: #0f172a;\n  --blr-reader-muted: #64748b;\n  --blr-reader-accent: #16a34a;\n  --blr-reader-accent-soft: rgba(34, 197, 94, 0.12);\n  --blr-reader-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);\n  --blr-reader-transcript-font-size: 14px;\n  --blr-reader-transcript-font-weight: 500;\n  --blr-reader-transcript-line-height: 1.5;\n  --blr-reader-letter-spacing: 0em;\n  --blr-reader-content-max: 980px;\n  color: var(--blr-reader-text);\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"dark\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"dark\"],\n#blr-reading-view[data-theme=\"dark\"] {\n  --blr-reader-page-bg: #09111f;\n  --blr-reader-surface: #0f172a;\n  --blr-reader-surface-2: #132038;\n  --blr-reader-surface-3: #1a2a46;\n  --blr-reader-border: rgba(148, 163, 184, 0.22);\n  --blr-reader-text: #e5eefb;\n  --blr-reader-muted: #9fb0c8;\n  --blr-reader-accent: #4ade80;\n  --blr-reader-accent-soft: rgba(74, 222, 128, 0.14);\n  --blr-reader-shadow: 0 18px 42px rgba(2, 6, 23, 0.42);\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"paper\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"paper\"],\n#blr-reading-view[data-theme=\"paper\"] {\n  --blr-reader-page-bg: #f4eddc;\n  --blr-reader-surface: #f4eddc;\n  --blr-reader-surface-2: #f4eddc;\n  --blr-reader-surface-3: #f4eddc;\n  --blr-reader-border: rgba(180, 155, 112, 0.22);\n  --blr-reader-text: #3b3124;\n  --blr-reader-muted: #756653;\n  --blr-reader-accent: #2f9e44;\n  --blr-reader-accent-soft: rgba(47, 158, 68, 0.12);\n  --blr-reader-shadow: 0 18px 40px rgba(112, 93, 64, 0.12);\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"s\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"s\"],\n#blr-reading-view[data-font-scale=\"s\"] {\n  --blr-reader-transcript-font-size: 12.8px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xs\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xs\"],\n#blr-reading-view[data-font-scale=\"xs\"] {\n  --blr-reader-transcript-font-size: 11.6px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"l\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"l\"],\n#blr-reading-view[data-font-scale=\"l\"] {\n  --blr-reader-transcript-font-size: 16.4px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xl\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xl\"],\n#blr-reading-view[data-font-scale=\"xl\"] {\n  --blr-reader-transcript-font-size: 18.8px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"light\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"light\"],\n#blr-reading-view[data-font-weight=\"light\"] {\n  --blr-reader-transcript-font-weight: 300;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"regular\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"regular\"],\n#blr-reading-view[data-font-weight=\"regular\"] {\n  --blr-reader-transcript-font-weight: 400;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"semibold\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"semibold\"],\n#blr-reading-view[data-font-weight=\"semibold\"] {\n  --blr-reader-transcript-font-weight: 600;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"bold\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"bold\"],\n#blr-reading-view[data-font-weight=\"bold\"] {\n  --blr-reader-transcript-font-weight: 700;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tighter\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tighter\"],\n#blr-reading-view[data-letter-spacing=\"tighter\"] {\n  --blr-reader-letter-spacing: -0.072em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tight\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tight\"],\n#blr-reading-view[data-letter-spacing=\"tight\"] {\n  --blr-reader-letter-spacing: -0.036em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"relaxed\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"relaxed\"],\n#blr-reading-view[data-letter-spacing=\"relaxed\"] {\n  --blr-reader-letter-spacing: 0.036em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"loose\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"loose\"],\n#blr-reading-view[data-letter-spacing=\"loose\"] {\n  --blr-reader-letter-spacing: 0.072em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"compact\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"compact\"],\n#blr-reading-view[data-content-width=\"compact\"] {\n  --blr-reader-content-max: 720px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"narrow\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"narrow\"],\n#blr-reading-view[data-content-width=\"narrow\"] {\n  --blr-reader-content-max: 820px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"],\n#blr-reading-view[data-content-width=\"wide\"] {\n  --blr-reader-content-max: 1120px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"full\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"full\"],\n#blr-reading-view[data-content-width=\"full\"] {\n  --blr-reader-content-max: 1280px;\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] #app,\nbody[data-blr-reader-mode=\"1\"] .left-container,\nbody[data-blr-reader-mode=\"1\"] .right-container,\nbody[data-blr-reader-mode=\"1\"] .right-container-inner,\nbody[data-blr-reader-mode=\"1\"] .video-info-container,\nbody[data-blr-reader-mode=\"1\"] .video-info-detail,\nbody[data-blr-reader-mode=\"1\"] .video-sections-content-list,\nbody[data-blr-reader-mode=\"1\"] .video-container-v1,\nbody[data-blr-reader-mode=\"1\"] .video-container-v3 {\n  background: var(--blr-reader-page-bg) !important;\n  color: var(--blr-reader-text);\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] #app {\n  min-height: 100vh !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #app {\n  min-width: 0 !important;\n  width: 100% !important;\n  max-width: none !important;\n}\n\n#blr-reading-view,\n#blr-reading-view .blr-reading-meta,\n#blr-reading-view .blr-reading-status,\n#blr-reading-view .blr-reading-chapter,\n#blr-reading-view .blr-reading-item,\n#blr-reading-view .blr-reading-panel,\n#blr-reading-view .blr-reading-select {\n  color: var(--blr-reader-text);\n}\n\n#blr-reading-view .blr-reading-layout {\n  gap: 22px;\n}\n\n#blr-reading-view .blr-reading-stage {\n  display: grid;\n  gap: 16px;\n}\n\n#blr-reading-view .blr-reading-header {\n  align-items: flex-start;\n}\n\n#blr-reading-view .blr-reading-title {\n  font-size: 20px;\n  color: var(--blr-reader-text);\n  margin-top: 10px;\n}\n\n#blr-reading-view .blr-reading-meta,\n#blr-reading-view .blr-reading-status,\n#blr-reading-view .blr-reading-panel-grid label,\n#blr-reading-view .blr-reading-info-label {\n  font-size: 14px;\n  color: var(--blr-reader-muted);\n}\n\n#blr-reading-view .blr-reading-actions {\n  gap: 10px;\n}\n\n#blr-reading-view .blr-reading-actions button,\n#blr-reading-view .blr-reading-toggle,\n#blr-reading-view .blr-reading-select {\n  border: 1px solid var(--blr-reader-border);\n  background: var(--blr-reader-surface);\n  color: var(--blr-reader-text);\n  box-shadow: none;\n}\n\n#blr-reading-view .blr-reading-actions button.is-active,\n#blr-reading-view .blr-reading-toggle.is-active,\n#blr-reading-view .blr-reading-select:focus {\n  background: var(--blr-reader-accent-soft);\n  color: var(--blr-reader-accent);\n}\n\n#blr-reading-view .blr-reading-select {\n  min-height: 36px;\n  border-radius: 999px;\n  padding: 0 12px;\n  width: auto;\n  margin: 0;\n}\n\n#blr-reading-view .blr-reading-panel {\n  border-radius: 18px;\n  padding: 14px 16px;\n  pointer-events: auto;\n  background: var(--blr-reader-surface);\n  border: 1px solid var(--blr-reader-border);\n  box-shadow: var(--blr-reader-shadow);\n}\n\n#blr-reading-view .blr-reading-panel-grid {\n  display: grid;\n  grid-template-columns: repeat(2, minmax(0, 1fr));\n  gap: 12px;\n}\n\n#blr-reading-view .blr-reading-panel-grid label,\n#blr-reading-view .blr-reading-info-group {\n  display: grid;\n  gap: 6px;\n  font-size: 13px;\n}\n\n#blr-reading-view .blr-reading-info-panel,\n#blr-reading-view .blr-reading-info-list {\n  display: grid;\n  gap: 6px;\n}\n\n#blr-reading-view .blr-reading-info-panel {\n  gap: 16px;\n}\n\n#blr-reading-view .blr-reading-info-item {\n  display: grid;\n  grid-template-columns: auto minmax(0, 1fr);\n  gap: 12px;\n  align-items: start;\n}\n\n#blr-reading-view .blr-reading-info-value,\n#blr-reading-view .blr-reading-info-copy {\n  font-size: 14px;\n  line-height: 1.45;\n  color: var(--blr-reader-text);\n  word-break: break-word;\n}\n\n#blr-reading-view .blr-reading-control-field {\n  display: grid;\n  gap: 4px;\n  font-size: 13px;\n  color: var(--blr-reader-muted);\n}\n\n#blr-reading-view .blr-reading-text-btn {\n  border: 0;\n  background: transparent;\n  color: var(--blr-reader-accent);\n  padding: 0;\n  cursor: pointer;\n  width: fit-content;\n  font-size: 13px;\n}\n\n#blr-reading-view .blr-reading-main {\n  justify-content: center;\n  background: transparent;\n}\n\n#blr-reading-view .blr-reading-transcript {\n  width: min(100%, var(--blr-reader-content-max));\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-transcript-visible=\"0\"] #blr-reading-view .blr-reading-main,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-transcript-visible=\"0\"] #blr-reading-view .blr-reading-main,\n#blr-reading-view[data-transcript-visible=\"0\"] .blr-reading-main {\n  display: none !important;\n}\n\n#blr-reading-view[data-transcript-visible=\"0\"] #blr-reading-inline-host {\n  border: none;\n  background: transparent;\n}\n\n#blr-reading-view .blr-reading-item {\n  grid-template-columns: 70px minmax(0, 1fr);\n  gap: 12px;\n  padding: 10px 12px;\n  border-radius: 18px;\n  background: transparent;\n}\n\n#blr-reading-view .blr-reading-chapter:hover {\n  background: var(--blr-reader-surface-2);\n}\n\n#blr-reading-view .blr-reading-item.is-active,\n#blr-reading-view .blr-reading-chapter.is-active {\n  background: var(--blr-reader-accent-soft);\n}\n\n#blr-reading-view .blr-reading-time,\n#blr-reading-view .blr-reading-chapter-time {\n  color: var(--blr-reader-accent);\n}\n\n#blr-reading-view .blr-reading-text {\n  font-size: var(--blr-reader-transcript-font-size);\n  font-weight: var(--blr-reader-transcript-font-weight);\n  line-height: var(--blr-reader-transcript-line-height);\n  letter-spacing: var(--blr-reader-letter-spacing);\n  color: var(--blr-reader-text);\n}\n\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-subtitle-wrap,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-subtitle-panel,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-subtitle-container,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bilibili-player-video-subtitle,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .subtitle-wrap,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host [class*=\"subtitle\"],\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-sending-bar,\nbody[data-blr-reading-active=\"1\"] .bpx-player-sending-bar {\n  display: none !important;\n}\n\nbody[data-blr-reading-active=\"1\"] [data-blr-reader-fading] {\n  visibility: hidden !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view {\n  background: transparent;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-header {\n  left: auto;\n  right: 24px;\n  max-width: min(1100px, calc(100vw - 48px));\n  gap: 14px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-actions {\n  pointer-events: auto;\n  justify-content: flex-end;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-panel {\n  position: fixed;\n  right: 24px;\n  top: 76px;\n  width: min(380px, calc(100vw - 48px));\n  z-index: 2147483646;\n  background: var(--blr-reader-surface-2);\n}\n\n/* Simplified reader layout: player in normal flow, transcript box below with its own scroll. */\nbody[data-blr-reader-mode=\"1\"] .blr-reading-player-shell {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-layout,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-stage {\n  display: block;\n  height: auto;\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] {\n  --blr-reader-page-padding: clamp(16px, 2.8vw, 32px);\n  --blr-reader-layout-gap: clamp(16px, 2vw, 24px);\n  --blr-reader-rail-target-width: clamp(168px, 15vw, 220px);\n  --blr-reader-main-width: min(\n    var(--blr-reader-content-max),\n    calc(100vw - (var(--blr-reader-page-padding) * 2))\n  );\n  --blr-reader-rail-width: min(\n    var(--blr-reader-rail-target-width),\n    max(\n      0px,\n      calc(\n        ((100vw - var(--blr-reader-main-width)) / 2) - var(--blr-reader-page-padding) - var(--blr-reader-layout-gap)\n      )\n    )\n  );\n  --blr-reader-transcript-line-height: 1.404;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"compact\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"compact\"],\n#blr-reading-view[data-line-height=\"compact\"] {\n  --blr-reader-transcript-line-height: 1.32;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"tight\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"tight\"],\n#blr-reading-view[data-line-height=\"tight\"] {\n  --blr-reader-transcript-line-height: 1.404;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"normal\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"normal\"],\n#blr-reading-view[data-line-height=\"normal\"] {\n  --blr-reader-transcript-line-height: 1.5;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"relaxed\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"relaxed\"],\n#blr-reading-view[data-line-height=\"relaxed\"] {\n  --blr-reader-transcript-line-height: 1.596;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"loose\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"loose\"],\n#blr-reading-view[data-line-height=\"loose\"] {\n  --blr-reader-transcript-line-height: 1.692;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-actions {\n  gap: 12px;\n  margin-right: -20px;\n  margin-top: -8px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-header {\n  position: fixed;\n  top: 18px;\n  right: var(--blr-reader-page-padding);\n  left: auto;\n  max-width: calc(100vw - (var(--blr-reader-page-padding) * 2));\n  margin-bottom: 0;\n  z-index: 2147483646;\n  pointer-events: auto;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-topbar {\n  display: grid;\n  gap: clamp(12px, 1.2vw, 20px);\n  grid-template-columns: clamp(300px, 28vw, 520px) minmax(0, 1fr);\n  height: 84px;\n  left: var(--blr-reader-page-padding);\n  min-width: 0;\n  overflow: hidden;\n  pointer-events: auto;\n  position: fixed;\n  right: 174px;\n  top: 6px;\n  z-index: 2147483646;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-heading-group {\n  align-content: center;\n  display: grid;\n  gap: 2px;\n  max-height: 84px;\n  overflow: hidden;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-page-title {\n  font-size: clamp(16px, 1.05vw, 19px);\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-collection-nav {\n  align-self: center;\n  height: 70px;\n  min-width: 0;\n  pointer-events: auto;\n  position: static;\n}\n\n@media (max-width: 1000px) {\n  body[data-blr-reader-mode=\"1\"] .blr-reading-topbar {\n    grid-template-columns: clamp(240px, 34vw, 330px) minmax(0, 1fr);\n  }\n}\n\n@media (max-width: 760px) {\n  body[data-blr-reader-mode=\"1\"] .blr-reading-topbar {\n    grid-template-columns: minmax(190px, 42vw) minmax(0, 1fr);\n    right: 150px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-page-title {\n    font-size: 15px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-episode-title {\n    font-size: 12px;\n  }\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-panel {\n  position: fixed;\n  right: var(--blr-reader-page-padding);\n  top: 72px;\n  width: min(286px, calc(100vw - (var(--blr-reader-page-padding) * 2)));\n  max-height: calc(100vh - 96px);\n  overflow: auto;\n  display: grid;\n  gap: 10px;\n  background: var(--blr-reader-surface-2);\n}\n\n.blr-reading-stepper-list {\n  display: grid;\n  gap: 7px;\n}\n\n.blr-reading-stepper {\n  align-items: center;\n  display: grid;\n  grid-template-columns: 56px minmax(0, 1fr);\n  gap: 8px;\n}\n\n.blr-reading-stepper-title {\n  min-width: 0;\n  color: var(--blr-reader-text);\n  font-size: 12px;\n  font-weight: 600;\n  white-space: nowrap;\n}\n\n.blr-reading-stepper-buttons {\n  display: grid;\n  grid-template-columns: repeat(5, minmax(0, 1fr));\n  border: 1px solid var(--blr-reader-border);\n  border-radius: 12px;\n  overflow: hidden;\n  background: var(--blr-reader-surface);\n}\n\n.blr-reading-stepper-btn {\n  min-height: 28px;\n  border: 0;\n  border-right: 1px solid var(--blr-reader-border);\n  background: transparent;\n  color: var(--blr-reader-muted);\n  font-size: 11px;\n  font-weight: 600;\n  cursor: pointer;\n  transition: background 0.18s ease, color 0.18s ease;\n}\n\n.blr-reading-stepper-btn:last-child {\n  border-right: 0;\n}\n\n.blr-reading-stepper-btn:hover {\n  background: var(--blr-reader-accent-soft);\n  color: var(--blr-reader-accent);\n}\n\n.blr-reading-stepper-btn.is-active {\n  background: var(--blr-reader-accent-soft);\n  color: var(--blr-reader-accent);\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-group {\n  display: grid;\n  gap: 6px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-group + .blr-reading-settings-group {\n  border-top: 1px solid var(--blr-reader-border);\n  padding-top: 10px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-info-group-chapters {\n  display: grid;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-controls {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  flex-wrap: wrap;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-controls .blr-reading-select {\n  min-width: 118px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-control-field .blr-reading-select {\n  min-width: 118px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-secondary-btn {\n  border: 1px solid var(--blr-reader-border);\n  background: var(--blr-reader-surface);\n  color: var(--blr-reader-text);\n  min-height: 32px;\n  padding: 0 12px;\n  border-radius: 999px;\n  cursor: pointer;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-toggle-inline {\n  width: fit-content;\n  background: var(--blr-reader-surface);\n  color: var(--blr-reader-text);\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-panel .blr-reading-eyebrow {\n  font-size: 10px;\n  letter-spacing: 0.06em;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-panel .blr-reading-toggle,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-panel .blr-reading-select {\n  min-height: 32px;\n  padding: 0 11px;\n  font-size: 12px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-panel .blr-reading-toggle {\n  gap: 6px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-panel .blr-reading-info-list {\n  gap: 4px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-panel .blr-reading-info-item {\n  gap: 8px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-panel .blr-reading-info-label,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-panel .blr-reading-info-value,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-panel .blr-reading-info-copy,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-panel .blr-reading-empty,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-panel .blr-reading-text-btn {\n  font-size: 12px;\n  line-height: 1.42;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-panel .blr-reading-info-copy {\n  white-space: pre-wrap;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-settings-panel .blr-reading-info-copy.is-collapsed {\n  display: -webkit-box;\n  overflow: hidden;\n  -webkit-box-orient: vertical;\n  -webkit-line-clamp: 5;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n  position: fixed;\n  display: grid !important;\n  left: var(--blr-reader-page-padding) !important;\n  top: 112px !important;\n  width: var(--blr-reader-rail-width) !important;\n  max-height: calc(100vh - 136px) !important;\n  padding: 12px;\n  box-sizing: border-box;\n  background: var(--blr-reader-surface);\n  border: 1px solid var(--blr-reader-border);\n  border-radius: 14px;\n  box-shadow: var(--blr-reader-shadow);\n  pointer-events: auto;\n  z-index: 2147483646;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-chapter-visibility=\"hide\"] .blr-reading-rail,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-chapter-visibility=\"hide\"] .blr-reading-rail,\n#blr-reading-view[data-chapter-visibility=\"hide\"] .blr-reading-rail,\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-chapter-visibility=\"auto\"][data-blr-reader-has-chapters=\"0\"] .blr-reading-rail,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-chapter-visibility=\"auto\"][data-blr-reader-has-chapters=\"0\"] .blr-reading-rail,\n#blr-reading-view[data-chapter-visibility=\"auto\"][data-has-chapters=\"0\"] .blr-reading-rail {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .left-container,\nbody[data-blr-reader-mode=\"1\"] .scroll-sticky,\nbody[data-blr-reader-mode=\"1\"] #playerWrap,\nbody[data-blr-reader-mode=\"1\"] .player-wrap,\nbody[data-blr-reader-mode=\"1\"] h1.video-title,\nbody[data-blr-reader-mode=\"1\"] .video-info-container,\nbody[data-blr-reader-mode=\"1\"] #viewbox_report,\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n  width: min(\n    var(--blr-reader-main-width),\n    var(--blr-reader-player-rendered-width, var(--blr-reader-main-width))\n  ) !important;\n  max-width: min(\n    var(--blr-reader-main-width),\n    var(--blr-reader-player-rendered-width, var(--blr-reader-main-width))\n  ) !important;\n  margin-left: auto !important;\n  margin-right: auto !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n  min-height: 100vh;\n  margin-top: -1px;\n  padding: 0;\n  border: 1px solid var(--blr-reader-border);\n  border-top: 0;\n  border-radius: 0 0 20px 20px;\n  background: var(--blr-reader-surface-2);\n  box-shadow: var(--blr-reader-shadow);\n  box-sizing: border-box;\n  overflow: auto;\n  height: 100vh;\n  scrollbar-width: thin;\n  scrollbar-color: rgba(100, 116, 139, 0.1) transparent;\n  position: relative;\n  isolation: isolate;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap,\nbody[data-blr-reader-mode=\"1\"] .player-wrap {\n  border: 1px solid var(--blr-reader-border);\n  border-bottom: 0;\n  border-radius: 0;\n  background: var(--blr-reader-surface);\n  box-shadow: var(--blr-reader-shadow);\n  box-sizing: border-box;\n  overflow: visible !important;\n  margin-top: -35px !important;\n  height: var(--blr-reader-player-rendered-height, auto) !important;\n  max-height: var(--blr-reader-player-rendered-height, none) !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap > *,\nbody[data-blr-reader-mode=\"1\"] .player-wrap > *,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-container,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-video-area,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-primary-area,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-inner,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-container,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-video-area,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-primary-area,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-inner {\n  width: 100% !important;\n  max-width: 100% !important;\n  height: 100% !important;\n  max-height: 100% !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-main {\n  overflow: visible;\n  display: block;\n  width: 100%;\n  background: transparent;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-transcript,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-item,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-item .blr-reading-text,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-time,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-chapter-title,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-empty,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-info-value,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-info-copy {\n  color: var(--blr-reader-text) !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-item .blr-reading-text {\n  font-size: var(--blr-reader-transcript-font-size) !important;\n  font-weight: var(--blr-reader-transcript-font-weight) !important;\n  line-height: var(--blr-reader-transcript-line-height) !important;\n  letter-spacing: var(--blr-reader-letter-spacing) !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-tail-spacer {\n  width: 100%;\n  min-height: 320px;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-status {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] h1.video-title {\n  display: -webkit-box !important;\n  margin-top: 8px !important;\n  color: transparent !important;\n  font-size: clamp(16px, 1.05vw, 20px) !important;\n  line-height: 1.2 !important;\n  padding: 0 !important;\n  height: auto !important;\n  max-height: 48px !important;\n  overflow: hidden !important;\n  overflow-wrap: anywhere !important;\n  pointer-events: none !important;\n  user-select: none !important;\n  visibility: hidden !important;\n  -webkit-box-orient: vertical !important;\n  -webkit-line-clamp: 2 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar {\n  width: 6px;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar-track {\n  background: transparent;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar-thumb {\n  background: rgba(100, 116, 139, 0.1);\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar-thumb:hover {\n  background: rgba(100, 116, 139, 0.16);\n}\n\n@media (max-width: 1320px) {\n  html[data-blr-reader-mode=\"1\"],\n  body[data-blr-reader-mode=\"1\"] {\n    --blr-reader-layout-gap: clamp(12px, 1.4vw, 16px);\n    --blr-reader-rail-target-width: clamp(144px, 12vw, 168px);\n  }\n}\n\n@media (max-width: 1320px) {\n  html[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"] .blr-reading-rail,\n  body[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"] .blr-reading-rail,\n  #blr-reading-view[data-content-width=\"wide\"] .blr-reading-rail {\n    display: none !important;\n  }\n}\n\n@media (max-width: 1180px) {\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n    display: none !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .left-container,\n  body[data-blr-reader-mode=\"1\"] .scroll-sticky,\n  body[data-blr-reader-mode=\"1\"] #playerWrap,\n  body[data-blr-reader-mode=\"1\"] .player-wrap,\n  body[data-blr-reader-mode=\"1\"] h1.video-title,\n  body[data-blr-reader-mode=\"1\"] .video-info-container,\n  body[data-blr-reader-mode=\"1\"] #viewbox_report,\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n    margin-left: auto !important;\n    margin-right: auto !important;\n  }\n}\n\nbody[data-blr-reader-mode=\"1\"] .bpx-player-mini-warp,\nbody[data-blr-reader-mode=\"1\"] .bpx-player-mini-close,\nbody[data-blr-reader-mode=\"1\"] .bpx-player-ending-panel,\nbody[data-blr-reader-mode=\"1\"] .bpx-player-ending-related,\nbody[data-blr-reader-mode=\"1\"] .ad-report,\nbody[data-blr-reader-mode=\"1\"] [class*=\"ad-report\"],\nbody[data-blr-reader-mode=\"1\"] [class*=\"mini-player\"],\nbody[data-blr-reader-mode=\"1\"] [class*=\"picture-in-picture\"] {\n  display: none !important;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-timestamp-visible=\"0\"] .blr-reading-time,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-timestamp-visible=\"0\"] .blr-reading-time,\n#blr-reading-view[data-timestamp-visible=\"0\"] .blr-reading-time {\n  display: none !important;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-timestamp-visible=\"0\"] .blr-reading-item,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-timestamp-visible=\"0\"] .blr-reading-item,\n#blr-reading-view[data-timestamp-visible=\"0\"] .blr-reading-item {\n  grid-template-columns: minmax(0, 1fr);\n}\n\n.blr-reading-complete {\n  padding: 12px 10px 20px;\n  font-size: var(--blr-reader-transcript-font-size);\n  font-weight: var(--blr-reader-transcript-font-weight);\n  line-height: var(--blr-reader-transcript-line-height);\n  letter-spacing: var(--blr-reader-letter-spacing);\n  color: var(--blr-reader-text);\n  text-align: left;\n}\n\n.blr-reading-complete-segment {\n  display: inline;\n  margin: 0;\n  padding: 1px 0;\n  border: 0;\n  border-radius: 2px;\n  background: transparent;\n  color: inherit;\n  font: inherit;\n  letter-spacing: inherit;\n  text-align: inherit;\n  cursor: pointer;\n  user-select: text;\n  -webkit-user-select: text;\n}\n\n.blr-reading-complete-segment:hover {\n  background: var(--blr-reader-accent-soft);\n}\n\n.blr-reading-complete-segment.is-active {\n  background: var(--blr-reader-accent-soft);\n  box-shadow: 0 0 0 2px var(--blr-reader-accent-soft);\n  -webkit-box-decoration-break: clone;\n  box-decoration-break: clone;\n  text-decoration-line: underline;\n  text-decoration-color: var(--blr-reader-accent);\n  text-decoration-thickness: 2px;\n  text-underline-offset: 4px;\n}\n\n/* Desktop reader: title/player with chapters below | transcript. */\n@media (min-width: 1181px) {\n  html[data-blr-reader-mode=\"1\"],\n  body[data-blr-reader-mode=\"1\"] {\n    --blr-reader-three-column-gap: clamp(16px, 1.4vw, 24px);\n    --blr-reader-three-column-half-gap: clamp(8px, 0.7vw, 12px);\n    --blr-reader-rail-width: clamp(176px, 13vw, 220px);\n    --blr-reader-transcript-width: clamp(320px, 24vw, 440px);\n    --blr-reader-center-offset: clamp(-110px, -5.5vw, -72px);\n    --blr-reader-main-width: max(\n      420px,\n      calc(\n        100vw - (var(--blr-reader-page-padding) * 2) - var(--blr-reader-transcript-width) -\n          var(--blr-reader-three-column-gap)\n      )\n    );\n    overflow: hidden !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n    left: var(--blr-reader-player-left, var(--blr-reader-page-padding)) !important;\n    top: calc(var(--blr-reader-player-bottom, 72vh) + 12px) !important;\n    bottom: auto !important;\n    width: var(--blr-reader-player-width, var(--blr-reader-main-width)) !important;\n    height: min(112px, calc(100vh - var(--blr-reader-player-bottom, 72vh) - 36px)) !important;\n    min-height: 72px;\n    max-height: none !important;\n    grid-template-rows: auto minmax(0, 1fr);\n    gap: 6px;\n    padding: 10px 12px;\n    border-radius: 10px;\n    overflow: hidden;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail .blr-reading-list {\n    display: flex;\n    align-items: stretch;\n    gap: 8px;\n    min-width: 0;\n    padding: 0 0 4px;\n    overflow-x: auto;\n    overflow-y: hidden;\n    scrollbar-width: thin;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail .blr-reading-chapter {\n    flex: 0 0 auto;\n    width: auto;\n    min-width: 120px;\n    max-width: 190px;\n    padding: 6px 10px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .left-container,\n  body[data-blr-reader-mode=\"1\"] .scroll-sticky,\n  body[data-blr-reader-mode=\"1\"] #playerWrap,\n  body[data-blr-reader-mode=\"1\"] .player-wrap,\n  body[data-blr-reader-mode=\"1\"] h1.video-title,\n  body[data-blr-reader-mode=\"1\"] .video-info-container,\n  body[data-blr-reader-mode=\"1\"] #viewbox_report {\n    width: var(--blr-reader-main-width) !important;\n    max-width: var(--blr-reader-main-width) !important;\n    margin-left: auto !important;\n    margin-right: auto !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .left-container {\n    transform: translateX(var(--blr-reader-center-offset)) !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] h1.video-title {\n    margin-top: 28px !important;\n    margin-bottom: 14px !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #playerWrap,\n  body[data-blr-reader-mode=\"1\"] .player-wrap {\n    margin-top: 0 !important;\n    border: 1px solid var(--blr-reader-border);\n    border-radius: 4px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n    position: fixed !important;\n    top: var(--blr-reader-player-top, 98px) !important;\n    right: var(--blr-reader-page-padding) !important;\n    bottom: 24px !important;\n    left: auto !important;\n    width: var(--blr-reader-transcript-width) !important;\n    max-width: var(--blr-reader-transcript-width) !important;\n    min-height: 0 !important;\n    height: auto !important;\n    margin: 0 !important;\n    padding: 0 !important;\n    border: 1px solid var(--blr-reader-border) !important;\n    border-radius: 0 !important;\n    background: var(--blr-reader-surface-2) !important;\n    box-shadow: var(--blr-reader-shadow) !important;\n    overflow-y: auto !important;\n    scroll-padding-top: 46px;\n    z-index: 2147483645;\n  }\n\n  html[data-blr-reader-mode=\"1\"][data-blr-reader-transcript-visible=\"0\"]\n    #blr-reading-inline-host,\n  body[data-blr-reader-mode=\"1\"][data-blr-reader-transcript-visible=\"0\"]\n    #blr-reading-inline-host {\n    display: none !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-transcript-heading {\n    position: sticky;\n    top: 0;\n    display: flex;\n    align-items: center;\n    height: 38px;\n    margin: 0;\n    justify-content: space-between;\n    gap: 6px;\n    padding: 0 6px 0 10px;\n    box-sizing: border-box;\n    color: var(--blr-reader-muted);\n    background: var(--blr-reader-surface-2);\n    border-bottom: 1px solid var(--blr-reader-border);\n    font-size: 12px;\n    font-weight: 700;\n    letter-spacing: 0.08em;\n    z-index: 3;\n    pointer-events: auto;\n    user-select: none;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-heading-title {\n    min-width: 24px;\n    flex: 1 1 auto;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-heading-controls {\n    display: flex;\n    flex: 0 0 auto;\n    align-items: center;\n    gap: 4px;\n    letter-spacing: 0;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-tool-button {\n    -webkit-appearance: none;\n    appearance: none;\n    width: 26px;\n    height: 26px;\n    display: inline-flex;\n    flex: 0 0 26px;\n    align-items: center;\n    justify-content: center;\n    margin: 0;\n    padding: 0;\n    border: 1px solid var(--blr-reader-border);\n    border-radius: 50%;\n    background: var(--blr-reader-surface);\n    color: var(--blr-reader-text);\n    cursor: pointer;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-tool-button svg {\n    width: 17px;\n    height: 17px;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-tool-button:hover,\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-tool-button.is-active {\n    border-color: var(--blr-reader-accent);\n    color: var(--blr-reader-accent);\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-heading-controls\n    select {\n    -webkit-appearance: none;\n    appearance: none;\n    height: 26px;\n    flex: 0 0 auto;\n    padding: 0 23px 0 7px;\n    box-sizing: border-box;\n    border: 1px solid var(--blr-reader-border);\n    border-radius: 5px;\n    background-color: var(--blr-reader-surface);\n    background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m3 4.5 3 3 3-3' fill='none' stroke='%2364748b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\");\n    background-position: right 6px center;\n    background-repeat: no-repeat;\n    background-size: 12px 12px;\n    color: var(--blr-reader-text);\n    font-size: 12px;\n    font-weight: 500;\n    line-height: 1;\n    outline: none;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-heading-controls\n    select:focus {\n    border-color: var(--blr-reader-accent);\n  }\n\n  #blr-reading-transcript-language {\n    width: 72px;\n  }\n\n  #blr-reading-transcript-font-size {\n    width: 56px;\n  }\n\n  #blr-reading-transcript-font-weight {\n    width: 64px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-main,\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-transcript {\n    width: 100% !important;\n    max-width: none !important;\n    height: auto !important;\n    margin: 0 !important;\n    box-sizing: border-box;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-transcript {\n    padding: 8px 10px 24px;\n    overflow: visible;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-item {\n    grid-template-columns: 52px minmax(0, 1fr);\n    gap: 8px;\n    padding: 7px 8px;\n    border-radius: 10px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-tail-spacer {\n    min-height: 45vh;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle {\n    position: fixed;\n    top: var(--blr-reader-player-top, 88px);\n    bottom: 24px;\n    width: 14px;\n    z-index: 2147483646;\n    cursor: col-resize;\n    pointer-events: auto;\n    touch-action: none;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle::before {\n    content: \"\";\n    position: absolute;\n    top: 0;\n    bottom: 0;\n    left: 6px;\n    width: 2px;\n    border-radius: 999px;\n    background: transparent;\n    transition: background 0.16s ease, box-shadow 0.16s ease;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle:hover::before,\n  body[data-blr-reader-resizing] .blr-reading-resize-handle::before {\n    background: var(--blr-reader-accent);\n    box-shadow: 0 0 0 3px var(--blr-reader-accent-soft);\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle-left {\n    display: block !important;\n    left: var(--blr-reader-player-left, var(--blr-reader-page-padding)) !important;\n    right: auto !important;\n    top: calc(var(--blr-reader-player-bottom, 72vh) + 1px) !important;\n    bottom: auto !important;\n    width: var(--blr-reader-player-width, var(--blr-reader-main-width)) !important;\n    height: 10px;\n    cursor: row-resize;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle-left::before {\n    top: 4px;\n    right: 0;\n    bottom: auto;\n    left: 0;\n    width: auto;\n    height: 2px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle-right {\n    right: calc(\n      var(--blr-reader-page-padding) + var(--blr-reader-transcript-width) +\n        var(--blr-reader-three-column-half-gap) - 7px\n    );\n  }\n\n  body[data-blr-reader-resizing=\"transcript\"],\n  body[data-blr-reader-resizing=\"transcript\"] * {\n    cursor: col-resize !important;\n    user-select: none !important;\n  }\n\n  body[data-blr-reader-resizing=\"chapter\"],\n  body[data-blr-reader-resizing=\"chapter\"] * {\n    cursor: row-resize !important;\n    user-select: none !important;\n  }\n\n  body[data-blr-reader-transcript-visible=\"0\"] .blr-reading-resize-handle-right {\n    display: none !important;\n  }\n}\n\n@media (max-width: 1180px) {\n  .blr-reading-resize-handle {\n    display: none !important;\n  }\n}\n\n/* Timestamp-free transcript rows must not retain the desktop time column. */\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-timestamp-visible=\"0\"]\n  .blr-reading-item,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-timestamp-visible=\"0\"]\n  .blr-reading-item,\n#blr-reading-view[data-timestamp-visible=\"0\"] .blr-reading-item {\n  grid-template-columns: minmax(0, 1fr) !important;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-timestamp-visible=\"0\"]\n  .blr-reading-item\n  .blr-reading-text,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-timestamp-visible=\"0\"]\n  .blr-reading-item\n  .blr-reading-text,\n#blr-reading-view[data-timestamp-visible=\"0\"] .blr-reading-item .blr-reading-text {\n  grid-column: 1 / -1;\n  min-width: 0;\n}\n");
 
   const chrome = {
     runtime: {
@@ -274,6 +274,9 @@ const DEFAULT_SETTINGS = {
   readerTranscriptVisible: true,
   readerTimestampVisible: true,
   readerTranscriptMode: "complete",
+  nativeTranscriptTheme: "light",
+  nativeTranscriptFontSize: 14,
+  nativeTranscriptFontWeight: 500,
   readerDefaultsVersion: 3,
   frontmatterFields: [
     "title",
@@ -378,6 +381,24 @@ const state = {
   playerAiQuickActionSuppressedUntil: 0,
   pageReaderEntryObserver: null,
   pageReaderEntrySyncTimer: 0,
+  nativeTranscriptObserver: null,
+  nativeTranscriptSyncTimer: 0,
+  nativeTranscriptResizeObserver: null,
+  nativeTranscriptObservedPlayer: null,
+  nativeTranscriptPlaybackTimer: 0,
+  nativeTranscriptLoadPromise: null,
+  nativeTranscriptLoadSignature: "",
+  nativeTranscriptLoadedSignature: "",
+  nativeTranscriptDisplaySignature: "",
+  nativeTranscriptAutoFoldedSignature: "",
+  nativeTranscriptRenderedKey: "",
+  nativeTranscriptOpen: true,
+  nativeTranscriptTheme: "light",
+  nativeTranscriptFontSize: 14,
+  nativeTranscriptFontWeight: 500,
+  nativeTranscriptActiveIndex: -1,
+  nativeTranscriptManualScrollPauseUntil: 0,
+  nativeTranscriptProgrammaticScrollUntil: 0,
   normalPageStateObserver: null,
   readingDocumentClickBound: false,
   readingManualScrollPauseUntil: 0,
@@ -623,6 +644,20 @@ function normalizeReaderFontWeight(value) {
   return ["light", "regular", "normal", "semibold", "bold"].includes(value) ? value : "bold";
 }
 
+function normalizeNativeTranscriptFontSize(value) {
+  const size = Number(value);
+  return [12, 14, 16, 18, 20, 22].includes(size) ? size : 14;
+}
+
+function normalizeNativeTranscriptTheme(value) {
+  return ["light", "dark", "paper"].includes(value) ? value : "light";
+}
+
+function normalizeNativeTranscriptFontWeight(value) {
+  const weight = Number(value);
+  return [300, 400, 500, 600, 700].includes(weight) ? weight : 500;
+}
+
 function normalizeReaderLetterSpacing(value) {
   return ["tighter", "tight", "normal", "relaxed", "loose"].includes(value) ? value : "loose";
 }
@@ -721,7 +756,22 @@ const ids = {
   readingMeta: "blr-reading-meta",
   readingChapterList: "blr-reading-chapters",
   readingTranscriptList: "blr-reading-transcript",
-  readingTranscriptTailSpacer: "blr-reading-tail-spacer"
+  readingTranscriptTailSpacer: "blr-reading-tail-spacer",
+  readingTranscriptReturnButton: "blr-reading-transcript-return",
+  readingTranscriptThemeButton: "blr-reading-transcript-theme",
+  readingTranscriptQuickSubtitleSelect: "blr-reading-transcript-language",
+  readingTranscriptQuickFontSizeSelect: "blr-reading-transcript-font-size",
+  readingTranscriptQuickFontWeightSelect: "blr-reading-transcript-font-weight",
+  nativeTranscriptPanel: "blr-native-transcript-panel",
+  nativeTranscriptHeader: "blr-native-transcript-header",
+  nativeTranscriptBody: "blr-native-transcript-body",
+  nativeTranscriptControls: "blr-native-transcript-controls",
+  nativeTranscriptReturnButton: "blr-native-transcript-return",
+  nativeTranscriptThemeButton: "blr-native-transcript-theme",
+  nativeTranscriptSelect: "blr-native-transcript-select",
+  nativeTranscriptFontSizeSelect: "blr-native-transcript-font-size",
+  nativeTranscriptFontWeightSelect: "blr-native-transcript-font-weight",
+  nativeTranscriptList: "blr-native-transcript-list"
 };
 
 init();
@@ -744,13 +794,16 @@ function init() {
   bindNormalPageStateGuard();
   bindPlayerAiQuickActionLayoutEvents();
   startPageReaderEntryObserver();
+  startNativeTranscriptPanelObserver();
   startUrlWatcher();
   getSettings().then((settings) => {
     state.settings = settings;
     hydrateReaderStateFromSettings(settings);
+    hydrateNativeTranscriptSettings(settings);
     applyReadingViewPresentation();
     startPlayerAiQuickActionObserver();
     schedulePlayerAiQuickActionSync();
+    scheduleNativeTranscriptPanelSync(0);
     if (shouldEnterReaderMode) {
       enterReaderMode().catch((error) => {
         renderReadingStatus(`阅读视图启动失败：${getErrorMessage(error)}`);
@@ -892,6 +945,629 @@ function onPageReaderEntryClick(event) {
     logWarn("[Bilibili Reader] page entry failed", error);
     renderReadingStatus(`阅读视图启动失败：${getErrorMessage(error)}`);
   });
+}
+
+function startNativeTranscriptPanelObserver() {
+  if (state.nativeTranscriptObserver || !document.body) {
+    return;
+  }
+
+  state.nativeTranscriptObserver = new MutationObserver(() => {
+    scheduleNativeTranscriptPanelSync();
+  });
+  state.nativeTranscriptObserver.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+  window.addEventListener("resize", () => scheduleNativeTranscriptPanelSync(60), {
+    passive: true
+  });
+  startNativeTranscriptPlaybackSync();
+  scheduleNativeTranscriptPanelSync(0);
+}
+
+function scheduleNativeTranscriptPanelSync(delayMs = 120) {
+  if (state.nativeTranscriptSyncTimer) {
+    return;
+  }
+  state.nativeTranscriptSyncTimer = window.setTimeout(() => {
+    state.nativeTranscriptSyncTimer = 0;
+    ensureNativeTranscriptPanel();
+  }, Math.max(0, Number(delayMs) || 0));
+}
+
+function shouldShowNativeTranscriptPanel() {
+  return Boolean(extractBvid(location.href)) && !isReaderMode() && !state.readingViewOpen;
+}
+
+function findNativeTranscriptAnchor() {
+  const danmaku = document.getElementById("danmukuBox") || document.querySelector(".danmaku-box");
+  const rightContainer = danmaku?.closest(".right-container-inner");
+  const collaborationPanel = rightContainer?.querySelector(
+    ":scope > .up-panel-container .members-info-container"
+  );
+  const collaborationAnchor = collaborationPanel?.closest(".up-panel-container");
+  return collaborationAnchor || danmaku;
+}
+
+function ensureNativeTranscriptPanel() {
+  const existing = document.getElementById(ids.nativeTranscriptPanel);
+  if (!shouldShowNativeTranscriptPanel()) {
+    existing?.remove();
+    state.nativeTranscriptRenderedKey = "";
+    return null;
+  }
+
+  const anchor = findNativeTranscriptAnchor();
+  if (!anchor?.parentElement) {
+    return null;
+  }
+
+  let panel = existing;
+  const created = !panel;
+  if (!panel) {
+    panel = document.createElement("section");
+    panel.id = ids.nativeTranscriptPanel;
+    panel.className = "blr-native-transcript-panel";
+    panel.setAttribute("data-blr-extension-node", "native-transcript");
+    panel.innerHTML = `
+      <div id="${ids.nativeTranscriptHeader}" class="blr-native-transcript-header">
+        <button
+          class="blr-native-transcript-title-button"
+          type="button"
+          data-native-transcript-toggle
+          aria-controls="${ids.nativeTranscriptBody}"
+          aria-expanded="true"
+        >字幕</button>
+        <div id="${ids.nativeTranscriptControls}" class="blr-native-transcript-controls">
+          <button
+            id="${ids.nativeTranscriptReturnButton}"
+            class="blr-native-transcript-return-button"
+            type="button"
+            title="回到当前字幕"
+            aria-label="回到当前字幕"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+          </button>
+          <button
+            id="${ids.nativeTranscriptThemeButton}"
+            class="blr-native-transcript-theme-button"
+            type="button"
+            title="切换字幕主题"
+            aria-label="切换字幕主题"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          </button>
+          <select id="${ids.nativeTranscriptSelect}" aria-label="字幕语言" title="字幕语言" disabled>
+            <option value="">字幕</option>
+          </select>
+          <select id="${ids.nativeTranscriptFontSizeSelect}" aria-label="字幕字号" title="字幕字号">
+            ${[12, 14, 16, 18, 20, 22]
+              .map((value) => `<option value="${value}">${value}</option>`)
+              .join("")}
+          </select>
+          <select id="${ids.nativeTranscriptFontWeightSelect}" aria-label="字幕字重" title="字幕字重">
+            ${[300, 400, 500, 600, 700]
+              .map((value) => `<option value="${value}">${value}</option>`)
+              .join("")}
+          </select>
+        </div>
+        <button
+          class="blr-native-transcript-arrow-button"
+          type="button"
+          data-native-transcript-toggle
+          aria-label="折叠字幕"
+          aria-controls="${ids.nativeTranscriptBody}"
+          aria-expanded="true"
+        >
+          <svg class="blr-native-transcript-arrow" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="m6 3.75 4.25 4.25L6 12.25"></path>
+          </svg>
+        </button>
+      </div>
+      <div id="${ids.nativeTranscriptBody}" class="blr-native-transcript-body">
+        <div class="blr-native-transcript-state">正在加载字幕...</div>
+      </div>
+    `;
+    bindNativeTranscriptPanelEvents(panel);
+  }
+
+  if (panel.parentElement !== anchor.parentElement || panel.nextElementSibling !== anchor) {
+    anchor.insertAdjacentElement("beforebegin", panel);
+  }
+
+  panel.classList.toggle(
+    "is-collaboration-layout",
+    anchor.matches(".up-panel-container") && Boolean(anchor.querySelector(".members-info-container"))
+  );
+
+  setNativeTranscriptExpanded(panel, state.nativeTranscriptOpen);
+  bindNativeTranscriptPanelResize();
+  syncNativeTranscriptPanelAlignment();
+  syncNativeTranscriptPanelHeight();
+  renderNativeTranscriptPanel({ force: created });
+  ensureNativeTranscriptLoaded();
+  return panel;
+}
+
+function bindNativeTranscriptPanelEvents(panel) {
+  const body = panel.querySelector(`#${ids.nativeTranscriptBody}`);
+  const returnButton = panel.querySelector(`#${ids.nativeTranscriptReturnButton}`);
+  const themeButton = panel.querySelector(`#${ids.nativeTranscriptThemeButton}`);
+  const toggle = () => {
+    state.nativeTranscriptOpen = !state.nativeTranscriptOpen;
+    setNativeTranscriptExpanded(panel, state.nativeTranscriptOpen);
+    if (state.nativeTranscriptOpen) {
+      ensureNativeTranscriptLoaded();
+      syncNativeTranscriptPlayback(true);
+    }
+  };
+  panel.querySelectorAll("[data-native-transcript-toggle]").forEach((button) => {
+    button.addEventListener("click", toggle);
+  });
+  returnButton?.addEventListener("click", () => {
+    state.nativeTranscriptManualScrollPauseUntil = 0;
+    if (!state.nativeTranscriptOpen) {
+      state.nativeTranscriptOpen = true;
+      setNativeTranscriptExpanded(panel, true);
+      ensureNativeTranscriptLoaded().then(() => syncNativeTranscriptPlayback(true));
+    } else {
+      syncNativeTranscriptPlayback(true);
+    }
+    returnButton.classList.add("is-active");
+    window.setTimeout(() => returnButton.classList.remove("is-active"), 300);
+  });
+  themeButton?.addEventListener("click", () => {
+    const themes = ["light", "dark", "paper"];
+    const nextIndex = (themes.indexOf(state.nativeTranscriptTheme) + 1) % themes.length;
+    updateNativeTranscriptTheme(themes[nextIndex]);
+    themeButton.classList.add("is-active");
+    window.setTimeout(() => themeButton.classList.remove("is-active"), 300);
+  });
+  body?.addEventListener("click", onNativeTranscriptClick);
+  panel.addEventListener("change", onNativeTranscriptChange);
+  const noteManualScroll = () => {
+    if (Date.now() <= state.nativeTranscriptProgrammaticScrollUntil) {
+      return;
+    }
+    state.nativeTranscriptManualScrollPauseUntil = Date.now() + 3000;
+  };
+  body?.addEventListener("scroll", noteManualScroll, true);
+  body?.addEventListener("wheel", noteManualScroll, { passive: true });
+  body?.addEventListener("pointerdown", noteManualScroll, { passive: true });
+}
+
+function setNativeTranscriptExpanded(panel, expanded) {
+  if (!panel) {
+    return;
+  }
+  const isExpanded = Boolean(expanded);
+  panel.classList.toggle("is-folded", !isExpanded);
+  panel.querySelectorAll("[data-native-transcript-toggle]").forEach((button) => {
+    button.setAttribute("aria-expanded", String(isExpanded));
+  });
+  const arrowButton = panel.querySelector(".blr-native-transcript-arrow-button");
+  arrowButton?.setAttribute("aria-label", isExpanded ? "折叠字幕" : "展开字幕");
+  const body = panel.querySelector(`#${ids.nativeTranscriptBody}`);
+  if (body) {
+    body.hidden = !isExpanded;
+  }
+}
+
+function hydrateNativeTranscriptSettings(settings = state.settings) {
+  state.nativeTranscriptTheme = normalizeNativeTranscriptTheme(settings?.nativeTranscriptTheme);
+  state.nativeTranscriptFontSize = normalizeNativeTranscriptFontSize(
+    settings?.nativeTranscriptFontSize
+  );
+  state.nativeTranscriptFontWeight = normalizeNativeTranscriptFontWeight(
+    settings?.nativeTranscriptFontWeight
+  );
+  state.settings = {
+    ...state.settings,
+    nativeTranscriptTheme: state.nativeTranscriptTheme,
+    nativeTranscriptFontSize: state.nativeTranscriptFontSize,
+    nativeTranscriptFontWeight: state.nativeTranscriptFontWeight
+  };
+  applyNativeTranscriptTypography();
+}
+
+function applyNativeTranscriptTypography(panel = document.getElementById(ids.nativeTranscriptPanel)) {
+  if (!panel) {
+    return;
+  }
+  panel.dataset.theme = state.nativeTranscriptTheme;
+  const themeButton = panel.querySelector(`#${ids.nativeTranscriptThemeButton}`);
+  if (themeButton) {
+    const themeLabels = { light: "浅色", dark: "深色", paper: "纸张" };
+    const label = `切换字幕主题，当前：${themeLabels[state.nativeTranscriptTheme] || "浅色"}`;
+    themeButton.title = label;
+    themeButton.setAttribute("aria-label", label);
+  }
+  panel.style.setProperty(
+    "--blr-native-transcript-font-size",
+    `${state.nativeTranscriptFontSize}px`
+  );
+  panel.style.setProperty(
+    "--blr-native-transcript-font-weight",
+    String(state.nativeTranscriptFontWeight)
+  );
+  const fontSizeSelect = panel.querySelector(`#${ids.nativeTranscriptFontSizeSelect}`);
+  const fontWeightSelect = panel.querySelector(`#${ids.nativeTranscriptFontWeightSelect}`);
+  if (fontSizeSelect) {
+    fontSizeSelect.value = String(state.nativeTranscriptFontSize);
+  }
+  if (fontWeightSelect) {
+    fontWeightSelect.value = String(state.nativeTranscriptFontWeight);
+  }
+}
+
+function updateNativeTranscriptTheme(theme) {
+  state.nativeTranscriptTheme = normalizeNativeTranscriptTheme(theme);
+  state.settings = {
+    ...state.settings,
+    nativeTranscriptTheme: state.nativeTranscriptTheme
+  };
+  applyNativeTranscriptTypography();
+  persistReaderSettings();
+}
+
+function updateNativeTranscriptTypography({ fontSize, fontWeight } = {}) {
+  state.nativeTranscriptFontSize = normalizeNativeTranscriptFontSize(
+    fontSize ?? state.nativeTranscriptFontSize
+  );
+  state.nativeTranscriptFontWeight = normalizeNativeTranscriptFontWeight(
+    fontWeight ?? state.nativeTranscriptFontWeight
+  );
+  state.settings = {
+    ...state.settings,
+    nativeTranscriptFontSize: state.nativeTranscriptFontSize,
+    nativeTranscriptFontWeight: state.nativeTranscriptFontWeight
+  };
+  applyNativeTranscriptTypography();
+  persistReaderSettings();
+}
+
+function renderNativeTranscriptHeaderControls(panel) {
+  const languageSelect = panel.querySelector(`#${ids.nativeTranscriptSelect}`);
+  if (languageSelect) {
+    const selectedUrlKey = normalizeSubtitleUrlForCache(state.selectedSubtitleUrl);
+    const languageRenderKey = JSON.stringify([
+      state.selectedSubtitleId,
+      selectedUrlKey,
+      state.subtitles.map((item) => [item.id, item.subtitleUrl, item.lanDoc, item.lan])
+    ]);
+    const optionsHtml = state.subtitles.length
+      ? state.subtitles
+          .map((item) => {
+            const selected =
+              (state.selectedSubtitleId && String(item.id) === String(state.selectedSubtitleId)) ||
+              normalizeSubtitleUrlForCache(item.subtitleUrl) === selectedUrlKey;
+            return `<option value="${escapeHtml(item.subtitleUrl)}" data-id="${escapeHtml(
+              item.id
+            )}" data-lang="${escapeHtml(item.lanDoc || item.lan || "unknown")}"${
+              selected ? " selected" : ""
+            }>${escapeHtml(item.lanDoc || item.lan || "字幕")}</option>`;
+          })
+          .join("")
+      : '<option value="">字幕</option>';
+    if (languageSelect.dataset.renderKey !== languageRenderKey) {
+      languageSelect.innerHTML = optionsHtml;
+      languageSelect.dataset.renderKey = languageRenderKey;
+    }
+    languageSelect.disabled = state.subtitles.length === 0 || state.subtitleFetchState === "loading";
+  }
+  applyNativeTranscriptTypography(panel);
+}
+
+function getNativeTranscriptPlaceholderText() {
+  if (state.subtitleFetchState === "loading" || state.subtitleFetchState === "idle") {
+    return "正在加载字幕...";
+  }
+  if (state.subtitleFetchState === "error") {
+    return "字幕加载失败";
+  }
+  return "当前视频无字幕";
+}
+
+function renderNativeTranscriptPanel({ force = false } = {}) {
+  const panel = document.getElementById(ids.nativeTranscriptPanel);
+  const body = panel?.querySelector(`#${ids.nativeTranscriptBody}`);
+  if (!panel || !body || !shouldShowNativeTranscriptPanel()) {
+    return;
+  }
+
+  renderNativeTranscriptHeaderControls(panel);
+
+  const transcriptItems = getReadingTranscriptItems();
+  const renderKey = [
+    computeCurrentClipSignature(),
+    state.subtitleFetchState,
+    state.selectedSubtitleId,
+    normalizeSubtitleUrlForCache(state.selectedSubtitleUrl),
+    transcriptItems.length,
+    state.subtitles.length
+  ].join("|");
+  if (!force && state.nativeTranscriptRenderedKey === renderKey && body.childElementCount > 0) {
+    return;
+  }
+  state.nativeTranscriptRenderedKey = renderKey;
+  if (transcriptItems.length === 0) {
+    const retry = state.subtitleFetchState === "error";
+    body.innerHTML = `
+      <div class="blr-native-transcript-state${retry ? " is-error" : ""}">
+        <span>${escapeHtml(getNativeTranscriptPlaceholderText())}</span>
+        ${retry ? '<button type="button" data-native-transcript-retry>重试</button>' : ""}
+      </div>
+    `;
+    state.nativeTranscriptActiveIndex = -1;
+    return;
+  }
+
+  const transcriptHtml = `
+    <div class="blr-native-transcript-complete" role="document">
+      ${transcriptItems
+        .map(
+          (item) => `
+            <button
+              type="button"
+              class="blr-native-transcript-segment"
+              data-native-transcript-index="${item.index}"
+              data-seconds="${item.from}"
+              title="${escapeHtml(formatCompactTimestamp(item.from, item.from >= 3600))}"
+            >${escapeHtml(item.content)}</button>
+          `
+        )
+        .join(" ")}
+    </div>
+  `;
+
+  body.innerHTML = `
+    <div id="${ids.nativeTranscriptList}" class="blr-native-transcript-list">
+      ${transcriptHtml}
+    </div>
+  `;
+  state.nativeTranscriptActiveIndex = -1;
+  syncNativeTranscriptPlayback(true);
+}
+
+function ensureNativeTranscriptLoaded({ force = false } = {}) {
+  if (!shouldShowNativeTranscriptPanel()) {
+    return Promise.resolve();
+  }
+
+  const signature = computeCurrentClipSignature();
+  initializeNativeTranscriptForSignature(signature);
+  if (
+    !force &&
+    signature === state.nativeTranscriptLoadedSignature &&
+    ["ready", "empty", "error"].includes(state.subtitleFetchState)
+  ) {
+    autoFoldNativeTranscriptIfEmpty(signature);
+    renderNativeTranscriptPanel();
+    return Promise.resolve();
+  }
+  if (
+    state.nativeTranscriptLoadPromise &&
+    state.nativeTranscriptLoadSignature === signature
+  ) {
+    return state.nativeTranscriptLoadPromise;
+  }
+
+  state.subtitleFetchState = "loading";
+  renderNativeTranscriptPanel();
+  const loadSignature = signature;
+  const loadPromise = refreshClip()
+    .catch((error) => {
+      logWarn("[Bilibili Reader] native transcript load failed", error);
+    })
+    .finally(() => {
+      if (computeCurrentClipSignature() === loadSignature) {
+        state.nativeTranscriptLoadedSignature = loadSignature;
+        autoFoldNativeTranscriptIfEmpty(loadSignature);
+      }
+      if (state.nativeTranscriptLoadPromise === loadPromise) {
+        state.nativeTranscriptLoadPromise = null;
+        state.nativeTranscriptLoadSignature = "";
+      }
+      renderNativeTranscriptPanel();
+      syncNativeTranscriptPlayback(true);
+    });
+  state.nativeTranscriptLoadSignature = loadSignature;
+  state.nativeTranscriptLoadPromise = loadPromise;
+  return loadPromise;
+}
+
+function initializeNativeTranscriptForSignature(signature = computeCurrentClipSignature()) {
+  if (!signature || state.nativeTranscriptDisplaySignature === signature) {
+    return;
+  }
+  state.nativeTranscriptDisplaySignature = signature;
+  state.nativeTranscriptAutoFoldedSignature = "";
+  state.nativeTranscriptOpen = true;
+  setNativeTranscriptExpanded(document.getElementById(ids.nativeTranscriptPanel), true);
+}
+
+function autoFoldNativeTranscriptIfEmpty(signature = computeCurrentClipSignature()) {
+  if (
+    state.subtitleFetchState !== "empty" ||
+    state.nativeTranscriptAutoFoldedSignature === signature
+  ) {
+    return;
+  }
+  state.nativeTranscriptAutoFoldedSignature = signature;
+  state.nativeTranscriptOpen = false;
+  setNativeTranscriptExpanded(document.getElementById(ids.nativeTranscriptPanel), false);
+}
+
+function bindNativeTranscriptPanelResize() {
+  const player = document.getElementById("playerWrap") || document.getElementById("bilibili-player");
+  if (!player || state.nativeTranscriptObservedPlayer === player) {
+    return;
+  }
+  state.nativeTranscriptResizeObserver?.disconnect();
+  state.nativeTranscriptResizeObserver = new ResizeObserver(() => {
+    syncNativeTranscriptPanelAlignment();
+    syncNativeTranscriptPanelHeight();
+  });
+  state.nativeTranscriptResizeObserver.observe(player);
+  state.nativeTranscriptObservedPlayer = player;
+}
+
+function syncNativeTranscriptPanelAlignment() {
+  const panel = document.getElementById(ids.nativeTranscriptPanel);
+  if (!panel) {
+    return;
+  }
+  if (!panel.classList.contains("is-collaboration-layout")) {
+    panel.style.removeProperty("margin-top");
+    return;
+  }
+  const player = document.getElementById("playerWrap") || document.getElementById("bilibili-player");
+  if (!player) {
+    return;
+  }
+  panel.style.setProperty("margin-top", "0px");
+  const panelTop = panel.getBoundingClientRect().top;
+  const playerTop = player.getBoundingClientRect().top;
+  if (!Number.isFinite(panelTop) || !Number.isFinite(playerTop)) {
+    return;
+  }
+  panel.style.setProperty("margin-top", `${Math.max(0, Math.round(playerTop - panelTop))}px`);
+}
+
+function syncNativeTranscriptPanelHeight() {
+  const panel = document.getElementById(ids.nativeTranscriptPanel);
+  const player = document.getElementById("playerWrap") || document.getElementById("bilibili-player");
+  if (!panel || !player) {
+    return;
+  }
+  const playerHeight = player.getBoundingClientRect().height;
+  if (!(playerHeight > 120)) {
+    return;
+  }
+  panel.style.setProperty(
+    "--blr-native-transcript-body-height",
+    `${Math.max(0, Math.round(playerHeight - 56))}px`
+  );
+}
+
+function startNativeTranscriptPlaybackSync() {
+  if (state.nativeTranscriptPlaybackTimer) {
+    return;
+  }
+  state.nativeTranscriptPlaybackTimer = window.setInterval(() => {
+    syncNativeTranscriptPlayback();
+  }, 250);
+}
+
+function syncNativeTranscriptPlayback(forceScroll = false) {
+  const panel = document.getElementById(ids.nativeTranscriptPanel);
+  const list = panel?.querySelector(`#${ids.nativeTranscriptList}`);
+  if (!panel || !list || !state.nativeTranscriptOpen || state.subtitleBody.length === 0) {
+    return;
+  }
+  const video = getRuntimeVideoElement();
+  if (!video) {
+    return;
+  }
+  const nextIndex = findActiveSubtitleIndex(Number(video.currentTime || 0) || 0);
+  const current = list.querySelector(".is-active");
+  const next = list.querySelector(`[data-native-transcript-index="${nextIndex}"]`);
+  if (current && current !== next) {
+    current.classList.remove("is-active");
+  }
+  if (next) {
+    next.classList.add("is-active");
+  }
+  const changed = nextIndex !== state.nativeTranscriptActiveIndex;
+  state.nativeTranscriptActiveIndex = nextIndex;
+  if (
+    next &&
+    (changed || forceScroll) &&
+    Date.now() >= state.nativeTranscriptManualScrollPauseUntil
+  ) {
+    scrollNativeTranscriptItemIntoView(next, list, forceScroll ? "auto" : "smooth");
+  }
+}
+
+function scrollNativeTranscriptItemIntoView(node, list, behavior = "smooth") {
+  const listRect = list.getBoundingClientRect();
+  const itemRect = node.getBoundingClientRect();
+  if (!(listRect.height > 0) || !(itemRect.height > 0)) {
+    return;
+  }
+  const padding = Math.max(32, Math.min(listRect.height * 0.22, 96));
+  const target = list.scrollTop + itemRect.top - listRect.top - padding;
+  state.nativeTranscriptProgrammaticScrollUntil = Date.now() + (behavior === "auto" ? 120 : 700);
+  list.scrollTo({ top: Math.max(0, Math.round(target)), behavior });
+}
+
+function onNativeTranscriptClick(event) {
+  const retry = event.target.closest("[data-native-transcript-retry]");
+  if (retry) {
+    state.nativeTranscriptLoadedSignature = "";
+    ensureNativeTranscriptLoaded({ force: true });
+    return;
+  }
+  const target = event.target.closest("[data-native-transcript-index]");
+  if (!target || window.getSelection()?.toString().trim()) {
+    return;
+  }
+  const video = getRuntimeVideoElement();
+  if (!video) {
+    return;
+  }
+  state.nativeTranscriptManualScrollPauseUntil = 0;
+  video.currentTime = Math.max(0, Number(target.dataset.seconds || 0) || 0);
+  if (video.paused) {
+    video.play().catch(() => {});
+  }
+  syncNativeTranscriptPlayback(true);
+}
+
+function onNativeTranscriptChange(event) {
+  const fontSizeSelect = event.target.closest(`#${ids.nativeTranscriptFontSizeSelect}`);
+  if (fontSizeSelect) {
+    updateNativeTranscriptTypography({ fontSize: fontSizeSelect.value });
+    return;
+  }
+  const fontWeightSelect = event.target.closest(`#${ids.nativeTranscriptFontWeightSelect}`);
+  if (fontWeightSelect) {
+    updateNativeTranscriptTypography({ fontWeight: fontWeightSelect.value });
+    return;
+  }
+  const select = event.target.closest(`#${ids.nativeTranscriptSelect}`);
+  if (!select) {
+    return;
+  }
+  const option = select.options[select.selectedIndex];
+  const url = String(option?.value || "");
+  if (!url) {
+    return;
+  }
+  const previousFetchState = state.subtitleFetchState;
+  select.disabled = true;
+  loadSubtitle(
+    url,
+    String(option.dataset.lang || "unknown"),
+    state.fetchRunId,
+    String(option.dataset.id || "")
+  )
+    .then(() => {
+      renderNativeTranscriptPanel();
+      syncNativeTranscriptPlayback(true);
+    })
+    .catch((error) => {
+      state.subtitleFetchState = previousFetchState === "ready" ? "ready" : "error";
+      logWarn("[Bilibili Reader] native subtitle switch failed", error);
+      renderNativeTranscriptPanel({ force: true });
+    })
+    .finally(() => {
+      const currentSelect = document.getElementById(ids.nativeTranscriptSelect);
+      if (currentSelect) {
+        currentSelect.disabled = state.subtitles.length === 0;
+      }
+    });
 }
 
 function shouldForceNormalPageState(url = location.href) {
@@ -1123,7 +1799,10 @@ function bindSettingsWatcher() {
       !changes.readerChapterVisibility &&
       !changes.readerTranscriptVisible &&
       !changes.readerTimestampVisible &&
-      !changes.readerTranscriptMode
+      !changes.readerTranscriptMode &&
+      !changes.nativeTranscriptTheme &&
+      !changes.nativeTranscriptFontSize &&
+      !changes.nativeTranscriptFontWeight
     ) {
       return;
     }
@@ -1139,6 +1818,7 @@ function bindSettingsWatcher() {
           : null;
         state.settings = settings;
         hydrateReaderStateFromSettings(settings);
+        hydrateNativeTranscriptSettings(settings);
         // The open reader owns its live drag state. Storage notifications can
         // arrive out of order when two resize handles are used in quick
         // succession, so they must not restore an older column or video size.
@@ -1480,6 +2160,7 @@ function startUrlWatcher() {
     enforceNormalPageStateIfNeeded(nextUrl);
     ensureUiReady();
     resetClipState({ preserveReadingContent: state.readingViewOpen && isReaderMode(nextUrl) });
+    scheduleNativeTranscriptPanelSync(0);
     const shouldEnterReaderMode = isReaderMode(nextUrl);
     if (!state.readingViewOpen && shouldEnterReaderMode) {
       document.documentElement.setAttribute("data-blr-reader-mode", "1");
@@ -1501,7 +2182,8 @@ function startUrlWatcher() {
       });
       return;
     }
-    setStatus("检测到页面变化，请点击“刷新抓取”加载当前视频字幕。");
+    setStatus("检测到页面变化，正在自动加载当前视频字幕...");
+    ensureNativeTranscriptLoaded({ force: true });
   }, 1200);
 }
 
@@ -1536,6 +2218,12 @@ function resetClipState({ preserveReadingContent = false } = {}) {
   stopReadingViewSync();
   state.readingActiveSubtitleIndex = -1;
   state.readingActiveChapterIndex = -1;
+  state.nativeTranscriptLoadedSignature = "";
+  state.nativeTranscriptAutoFoldedSignature = "";
+  state.nativeTranscriptRenderedKey = "";
+  state.nativeTranscriptOpen = true;
+  state.nativeTranscriptActiveIndex = -1;
+  state.nativeTranscriptManualScrollPauseUntil = 0;
   state.readingVideoEl = null;
   stopReaderPlayerObserver();
 
@@ -1545,6 +2233,7 @@ function resetClipState({ preserveReadingContent = false } = {}) {
     byId(ids.preview).value = "";
   }
   setMessage("");
+  renderNativeTranscriptPanel();
   if (state.readingViewOpen && !preserveReadingContent) {
     renderReadingView();
     renderReadingStatus("请先点击“刷新抓取”加载当前视频字幕。");
@@ -1577,6 +2266,7 @@ async function refreshClip() {
     setMessage("");
     setStatus("正在抓取视频信息...");
     state.subtitleFetchState = "loading";
+    renderNativeTranscriptPanel();
     if (state.readingViewOpen) {
       renderReadingView();
     }
@@ -1775,6 +2465,7 @@ async function refreshClip() {
   } finally {
     if (runId === state.fetchRunId) {
       setBusyState(false);
+      renderNativeTranscriptPanel();
     }
   }
 }
@@ -1841,6 +2532,7 @@ async function loadSubtitle(url, lang, runId = state.fetchRunId, subtitleId = ""
           renderReadingView();
           syncReadingViewPlayback(true);
         }
+        renderNativeTranscriptPanel();
         return;
       }
     }
@@ -1874,6 +2566,7 @@ async function loadSubtitle(url, lang, runId = state.fetchRunId, subtitleId = ""
     renderReadingView();
     syncReadingViewPlayback(true);
   }
+  renderNativeTranscriptPanel();
 }
 
 function getSubtitleCacheKey({ bvid, cid, subtitleId = "", subtitleUrl = "", lang = "" }) {
@@ -1974,6 +2667,7 @@ function renderSubtitleSelect() {
   if (subtitles.length === 0) {
     select.innerHTML = '<option value="">暂无字幕</option>';
     select.disabled = true;
+    syncReadingTranscriptHeaderControls();
     return;
   }
 
@@ -2004,6 +2698,7 @@ function renderReadingSubtitleSelect() {
   if (subtitles.length === 0) {
     select.innerHTML = '<option value="">暂无字幕</option>';
     select.disabled = true;
+    syncReadingTranscriptHeaderControls();
     return;
   }
 
@@ -2025,6 +2720,151 @@ function renderReadingSubtitleSelect() {
     })
     .join("");
   select.disabled = false;
+  syncReadingTranscriptHeaderControls();
+}
+
+function buildReadingTranscriptHeadingHtml() {
+  return `
+    <span class="blr-reading-transcript-heading-title">字幕</span>
+    <div class="blr-reading-transcript-heading-controls">
+      <button id="${ids.readingTranscriptReturnButton}" class="blr-reading-transcript-tool-button" type="button" title="回到当前字幕" aria-label="回到当前字幕">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+      </button>
+      <button id="${ids.readingTranscriptThemeButton}" class="blr-reading-transcript-tool-button" type="button" title="切换字幕主题" aria-label="切换字幕主题">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </button>
+      <select id="${ids.readingTranscriptQuickSubtitleSelect}" aria-label="字幕语言" title="字幕语言" disabled><option value="">字幕</option></select>
+      <select id="${ids.readingTranscriptQuickFontSizeSelect}" aria-label="字幕字号" title="字幕字号">
+        <option value="xs">12</option><option value="s">13</option><option value="m">14</option><option value="l">16</option><option value="xl">19</option>
+      </select>
+      <select id="${ids.readingTranscriptQuickFontWeightSelect}" aria-label="字幕字重" title="字幕字重">
+        <option value="light">300</option><option value="regular">400</option><option value="normal">500</option><option value="semibold">600</option><option value="bold">700</option>
+      </select>
+    </div>
+  `;
+}
+
+function syncReadingTranscriptHeaderControls() {
+  const heading = document.getElementById("blr-reading-transcript-heading");
+  if (!heading) {
+    return;
+  }
+  const themeButton = heading.querySelector(`#${ids.readingTranscriptThemeButton}`);
+  if (themeButton) {
+    const labels = { light: "浅色", dark: "深色", paper: "纸张" };
+    const label = `切换字幕主题，当前：${labels[state.readingTheme] || "浅色"}`;
+    themeButton.title = label;
+    themeButton.setAttribute("aria-label", label);
+  }
+  const fontSizeSelect = heading.querySelector(`#${ids.readingTranscriptQuickFontSizeSelect}`);
+  const fontWeightSelect = heading.querySelector(`#${ids.readingTranscriptQuickFontWeightSelect}`);
+  if (fontSizeSelect) {
+    fontSizeSelect.value = state.readingFontScale;
+  }
+  if (fontWeightSelect) {
+    fontWeightSelect.value = state.readingFontWeight;
+  }
+  const languageSelect = heading.querySelector(`#${ids.readingTranscriptQuickSubtitleSelect}`);
+  if (!languageSelect) {
+    return;
+  }
+  const selectedUrlKey = normalizeSubtitleUrlForCache(state.selectedSubtitleUrl);
+  const languageRenderKey = JSON.stringify([
+    state.selectedSubtitleId,
+    selectedUrlKey,
+    state.subtitles.map((item) => [item.id, item.subtitleUrl, item.lanDoc, item.lan])
+  ]);
+  if (languageSelect.dataset.renderKey !== languageRenderKey) {
+    languageSelect.innerHTML = state.subtitles.length
+      ? state.subtitles
+          .map((item) => {
+            const selected =
+              (state.selectedSubtitleId && String(item.id) === String(state.selectedSubtitleId)) ||
+              normalizeSubtitleUrlForCache(item.subtitleUrl) === selectedUrlKey;
+            return `<option value="${escapeHtml(item.subtitleUrl)}" data-id="${escapeHtml(
+              item.id
+            )}" data-lang="${escapeHtml(item.lanDoc || item.lan || "unknown")}"${
+              selected ? " selected" : ""
+            }>${escapeHtml(item.lanDoc || item.lan || "字幕")}</option>`;
+          })
+          .join("")
+      : '<option value="">字幕</option>';
+    languageSelect.dataset.renderKey = languageRenderKey;
+  }
+  languageSelect.disabled = state.subtitles.length === 0 || state.subtitleFetchState === "loading";
+}
+
+function returnReadingTranscriptToCurrent() {
+  state.readingManualScrollPauseUntil = 0;
+  const video = getRuntimeVideoElement();
+  const transcriptList = document.getElementById(ids.readingTranscriptList);
+  if (!video || !transcriptList) {
+    return;
+  }
+  const subtitleIndex = findActiveSubtitleIndex(Number(video.currentTime || 0) || 0);
+  const target = transcriptList.querySelector(`[data-index="${subtitleIndex}"]`);
+  if (target) {
+    state.readingNextScrollBehavior = "smooth";
+    scrollReadingTranscriptItemIntoView(target);
+  }
+  syncReadingViewPlayback(false);
+  updateReaderFollowState();
+}
+
+function bindReadingTranscriptHeaderControls(heading) {
+  if (!heading || heading.dataset.blrControlsBound === "1") {
+    return;
+  }
+  heading.querySelector(`#${ids.readingTranscriptReturnButton}`)?.addEventListener("click", (event) => {
+    const button = event.currentTarget;
+    returnReadingTranscriptToCurrent();
+    button.classList.add("is-active");
+    window.setTimeout(() => button.classList.remove("is-active"), 300);
+  });
+  heading.querySelector(`#${ids.readingTranscriptThemeButton}`)?.addEventListener("click", (event) => {
+    const button = event.currentTarget;
+    const themes = ["light", "dark", "paper"];
+    const nextIndex = (themes.indexOf(state.readingTheme) + 1) % themes.length;
+    updateReaderPreferences({ readerTheme: themes[nextIndex] }, { persist: true });
+    button.classList.add("is-active");
+    window.setTimeout(() => button.classList.remove("is-active"), 300);
+  });
+  heading
+    .querySelector(`#${ids.readingTranscriptQuickFontSizeSelect}`)
+    ?.addEventListener("change", (event) => {
+      updateReaderPreferences({ readerFontScale: event.target.value }, { persist: true });
+    });
+  heading
+    .querySelector(`#${ids.readingTranscriptQuickFontWeightSelect}`)
+    ?.addEventListener("change", (event) => {
+      updateReaderPreferences({ readerFontWeight: event.target.value }, { persist: true });
+    });
+  heading
+    .querySelector(`#${ids.readingTranscriptQuickSubtitleSelect}`)
+    ?.addEventListener("change", (event) => {
+      const select = event.target;
+      const option = select.options[select.selectedIndex];
+      const url = String(option?.value || "");
+      if (!url) {
+        return;
+      }
+      select.disabled = true;
+      loadSubtitle(
+        url,
+        String(option.dataset.lang || "unknown"),
+        state.fetchRunId,
+        String(option.dataset.id || "")
+      )
+        .then(() => {
+          renderReadingView();
+          syncReadingViewPlayback(true);
+        })
+        .catch((error) => {
+          logWarn("[BOC] failed to switch subtitle in reading transcript header", error);
+          syncReadingTranscriptHeaderControls();
+        });
+    });
+  heading.dataset.blrControlsBound = "1";
 }
 
 function getPopupPayload() {
@@ -2844,6 +3684,7 @@ function applyReadingViewPresentation() {
       inlineHost.style.borderRadius = "0";
     }
   }
+  syncReadingTranscriptHeaderControls();
 }
 
 function updateReaderChapterPresence(hasChapters) {
@@ -3767,11 +4608,15 @@ function moveReadingMainInline() {
     transcriptHeading.className = "blr-reading-transcript-heading";
     transcriptHeading.setAttribute("role", "heading");
     transcriptHeading.setAttribute("aria-level", "2");
-    transcriptHeading.textContent = "字幕";
+    transcriptHeading.innerHTML = buildReadingTranscriptHeadingHtml();
+  } else if (!transcriptHeading.querySelector(".blr-reading-transcript-heading-controls")) {
+    transcriptHeading.innerHTML = buildReadingTranscriptHeadingHtml();
   }
   if (transcriptHeading.parentElement !== inlineHost || inlineHost.firstElementChild !== transcriptHeading) {
     inlineHost.prepend(transcriptHeading);
   }
+  bindReadingTranscriptHeaderControls(transcriptHeading);
+  syncReadingTranscriptHeaderControls();
 
   if (!inlineHost.dataset.blrScrollBound) {
     const handleInlineHostManualScroll = () => {
