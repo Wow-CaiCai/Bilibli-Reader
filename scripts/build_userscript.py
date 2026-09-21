@@ -63,11 +63,11 @@ def main() -> None:
     icon_data = base64.b64encode(ICON_PATH.read_bytes()).decode("ascii")
 
     header = f"""// ==UserScript==
-// @name         Bilibili Reader｜B站阅读模式
+// @name         Bilibili Reader｜哔哩哔哩阅读模式
 // @namespace    https://github.com/bilibli-reader
 // @version      0.0.5
 // @description  将 B 站视频切换为视频、章节与字幕联动的阅读视图
-// @author       Local
+// @author       Wow-CaiCai
 // @license      MIT
 // @homepageURL  https://github.com/Wow-CaiCai/Bilibli-Reader
 // @source       https://github.com/Wow-CaiCai/Bilibli-Reader
