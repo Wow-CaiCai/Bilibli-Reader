@@ -1,7 +1,6 @@
 // ==UserScript==
-// @name         Bilibili Reader｜B站阅读模式
-// @namespace    https://github.com/bilibli-reader
-// @version      0.0.1
+// @name         Bilibili Reader｜哔哩哔哩阅读模式
+// @version      0.0.2
 // @description  将 B 站视频切换为视频、章节与字幕联动的阅读视图
 // @author       Local
 // @homepageURL  https://github.com/Wow-CaiCai/Bilibli-Reader
