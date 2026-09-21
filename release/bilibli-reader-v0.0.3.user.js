@@ -4,6 +4,7 @@
 // @version      0.0.3
 // @description  将 B 站视频切换为视频、章节与字幕联动的阅读视图
 // @author       Local
+// @license      MIT
 // @homepageURL  https://github.com/Wow-CaiCai/Bilibli-Reader
 // @source       https://github.com/Wow-CaiCai/Bilibli-Reader
 // @supportURL   https://github.com/Wow-CaiCai/Bilibli-Reader/issues
