@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import base64
 import json
 from pathlib import Path
@@ -8,13 +9,28 @@ from urllib.parse import urlsplit
 
 
 ROOT = Path(__file__).resolve().parent.parent
-CONTENT_PATH = ROOT / "content.js"
-CSS_PATH = ROOT / "content.css"
+SOURCE_PATHS = tuple(
+    ROOT / "src" / name
+    for name in (
+        "bootstrap.js",
+        "native-transcript.js",
+        "app.js",
+        "reading-view.js",
+        "player-integration.js",
+        "reader-playback.js",
+        "bilibili-data.js",
+        "note-format.js",
+    )
+)
+STYLE_PATHS = (
+    ROOT / "src" / "styles" / "panel.css",
+    ROOT / "src" / "styles" / "reading-view.css",
+)
 ICON_PATH = ROOT / "icons" / "icon48.png"
 OUTPUT_PATH = ROOT / "Bilibli-Reader.user.js"
-RELEASE_PATH = ROOT / "release" / "bilibli-reader-v0.0.5.user.js"
+RELEASE_DIR = ROOT / "release"
 README_PATH = ROOT / "README.md"
-SCRIPT_CAT_README_PATH = ROOT / "README.scriptcat.md"
+SCRIPT_CAT_README_PATH = ROOT / "docs" / "README.scriptcat.md"
 GITHUB_CDN_BASE_URL = "https://cdn.jsdelivr.net/gh/Wow-CaiCai/Bilibli-Reader@main/"
 
 MARKDOWN_IMAGE_RE = re.compile(
@@ -23,6 +39,34 @@ MARKDOWN_IMAGE_RE = re.compile(
 HTML_IMAGE_SRC_RE = re.compile(
     r"(<img\b[^>]*?\bsrc\s*=\s*)([\"'])(.*?)(\2)", re.IGNORECASE
 )
+READER_VERSION_RE = re.compile(r'^const READER_VERSION = "([^"]+)";$', re.MULTILINE)
+VERSION_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:-alpha\.(\d+))?$")
+
+
+def next_version(current: str, *, release: bool = False) -> str:
+    """Advance the patch's alpha counter, or finish the current release."""
+    match = VERSION_RE.fullmatch(current)
+    if not match:
+        raise ValueError(f"Unsupported reader version: {current}")
+
+    major, minor, patch = (int(part) for part in match.group(1, 2, 3))
+    alpha = match.group(4)
+    if release:
+        return f"{major}.{minor}.{patch if alpha else patch + 1}"
+    if alpha:
+        return f"{major}.{minor}.{patch}-alpha.{int(alpha) + 1}"
+    return f"{major}.{minor}.{patch + 1}-alpha.1"
+
+
+def advance_content_version(content: str, *, release: bool = False) -> tuple[str, str]:
+    matches = READER_VERSION_RE.findall(content)
+    if len(matches) != 1:
+        raise ValueError("Expected exactly one READER_VERSION declaration in bootstrap.js")
+    version = next_version(matches[0], release=release)
+    updated, count = READER_VERSION_RE.subn(f'const READER_VERSION = "{version}";', content)
+    if count != 1:
+        raise ValueError("Could not update READER_VERSION in bootstrap.js")
+    return updated, version
 
 
 def to_github_cdn_url(image_path: str) -> str:
@@ -57,15 +101,20 @@ def build_scriptcat_readme() -> None:
     print(SCRIPT_CAT_README_PATH)
 
 
-def main() -> None:
-    content = CONTENT_PATH.read_text(encoding="utf-8")
-    css_literal = json.dumps(CSS_PATH.read_text(encoding="utf-8"), ensure_ascii=False)
+def main(*, release: bool = False) -> None:
+    bootstrap, version = advance_content_version(
+        SOURCE_PATHS[0].read_text(encoding="utf-8"), release=release
+    )
+    content = bootstrap + "".join(path.read_text(encoding="utf-8") for path in SOURCE_PATHS[1:])
+    css_literal = json.dumps(
+        "".join(path.read_text(encoding="utf-8") for path in STYLE_PATHS), ensure_ascii=False
+    )
     icon_data = base64.b64encode(ICON_PATH.read_bytes()).decode("ascii")
 
     header = f"""// ==UserScript==
 // @name         Bilibili Reader｜哔哩哔哩阅读模式
 // @namespace    https://github.com/bilibli-reader
-// @version      0.0.5
+// @version      {version}
 // @description  将 B 站视频切换为视频、章节与字幕联动的阅读视图
 // @author       Wow-CaiCai
 // @license      MIT
@@ -310,13 +359,21 @@ def main() -> None:
 """
 
     output = header + content + "\n})();\n"
+    SOURCE_PATHS[0].write_text(bootstrap, encoding="utf-8", newline="\n")
     OUTPUT_PATH.write_text(output, encoding="utf-8", newline="\n")
-    RELEASE_PATH.parent.mkdir(exist_ok=True)
-    RELEASE_PATH.write_text(output, encoding="utf-8", newline="\n")
+    if release:
+        release_path = RELEASE_DIR / f"bilibli-reader-v{version}.user.js"
+        RELEASE_DIR.mkdir(exist_ok=True)
+        release_path.write_text(output, encoding="utf-8", newline="\n")
+        print(release_path)
     build_scriptcat_readme()
+    print(f"Version: {version}")
     print(OUTPUT_PATH)
-    print(RELEASE_PATH)
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Build the Bilibili Reader userscript")
+    parser.add_argument(
+        "--release", action="store_true", help="Build the next stable patch release"
+    )
+    main(release=parser.parse_args().release)
