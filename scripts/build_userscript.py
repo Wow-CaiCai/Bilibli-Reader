@@ -28,7 +28,6 @@ STYLE_PATHS = (
 )
 ICON_PATH = ROOT / "icons" / "icon48.png"
 OUTPUT_PATH = ROOT / "Bilibli-Reader.user.js"
-RELEASE_DIR = ROOT / "release"
 README_PATH = ROOT / "README.md"
 SCRIPT_CAT_README_PATH = ROOT / "docs" / "README.scriptcat.md"
 GITHUB_CDN_BASE_URL = "https://cdn.jsdelivr.net/gh/Wow-CaiCai/Bilibli-Reader@main/"
@@ -124,8 +123,8 @@ def main(*, release: bool = False) -> None:
 // @updateURL    https://raw.githubusercontent.com/Wow-CaiCai/Bilibli-Reader/main/Bilibli-Reader.user.js
 // @downloadURL  https://raw.githubusercontent.com/Wow-CaiCai/Bilibli-Reader/main/Bilibli-Reader.user.js
 // @match        https://www.bilibili.com/video/*
-// @match        https://www.bilibili.com/list/watchlater
-// @match        https://www.bilibili.com/list/watchlater/*
+// @match        https://www.bilibili.com/watchlater/*
+// @match        https://www.bilibili.com/list/watchlater*
 // @icon         data:image/png;base64,{icon_data}
 // @run-at       document-idle
 // @grant        GM_addStyle
@@ -361,11 +360,6 @@ def main(*, release: bool = False) -> None:
     output = header + content + "\n})();\n"
     SOURCE_PATHS[0].write_text(bootstrap, encoding="utf-8", newline="\n")
     OUTPUT_PATH.write_text(output, encoding="utf-8", newline="\n")
-    if release:
-        release_path = RELEASE_DIR / f"bilibli-reader-v{version}.user.js"
-        RELEASE_DIR.mkdir(exist_ok=True)
-        release_path.write_text(output, encoding="utf-8", newline="\n")
-        print(release_path)
     build_scriptcat_readme()
     print(f"Version: {version}")
     print(OUTPUT_PATH)

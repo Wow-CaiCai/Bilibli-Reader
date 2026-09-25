@@ -1319,6 +1319,20 @@ body[data-blr-reader-mode="1"] [class*="picture-in-picture"] {
     overflow: hidden !important;
   }
 
+  /* Watch Later centers its own player column; align it with the reader's fixed transcript. */
+  body[data-blr-reader-mode="1"] #app.playlist-app #mirror-vdcon {
+    box-sizing: border-box;
+    justify-content: flex-start !important;
+    padding-left: var(--blr-reader-page-padding) !important;
+    padding-right: var(--blr-reader-page-padding) !important;
+  }
+
+  body[data-blr-reader-mode="1"] #app.playlist-app .playlist-container--left {
+    flex: 0 0 var(--blr-reader-main-width) !important;
+    min-width: 0 !important;
+    width: var(--blr-reader-main-width) !important;
+  }
+
   body[data-blr-reader-mode="1"] .blr-reading-rail {
     left: var(--blr-reader-player-left, var(--blr-reader-page-padding)) !important;
     top: calc(var(--blr-reader-player-bottom, 72vh) + 12px) !important;
