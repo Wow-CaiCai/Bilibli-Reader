@@ -1,4 +1,5 @@
 import importlib.util
+from fnmatch import fnmatchcase
 import json
 from pathlib import Path
 import tempfile
@@ -13,6 +14,20 @@ SPEC.loader.exec_module(build_userscript)
 
 
 class BuildUserscriptVersionTests(unittest.TestCase):
+    def test_watchlater_player_urls_match_with_or_without_trailing_slash(self):
+        userscript = build_userscript.OUTPUT_PATH.read_text(encoding="utf-8")
+        patterns = [
+            line.split(None, 2)[2]
+            for line in userscript.splitlines()
+            if line.startswith("// @match ")
+        ]
+        for url in (
+            "https://www.bilibili.com/list/watchlater?bvid=BV1ebwEzAE2a&oid=116222737778230",
+            "https://www.bilibili.com/list/watchlater/?bvid=BV1ebwEzAE2a&oid=116222737778230",
+        ):
+            with self.subTest(url=url):
+                self.assertTrue(any(fnmatchcase(url, pattern) for pattern in patterns))
+
     def test_source_fragments_match_current_userscript(self):
         source = "".join(path.read_text(encoding="utf-8") for path in build_userscript.SOURCE_PATHS)
         styles = "".join(path.read_text(encoding="utf-8") for path in build_userscript.STYLE_PATHS)

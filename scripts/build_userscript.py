@@ -124,8 +124,8 @@ def main(*, release: bool = False) -> None:
 // @updateURL    https://raw.githubusercontent.com/Wow-CaiCai/Bilibli-Reader/main/Bilibli-Reader.user.js
 // @downloadURL  https://raw.githubusercontent.com/Wow-CaiCai/Bilibli-Reader/main/Bilibli-Reader.user.js
 // @match        https://www.bilibili.com/video/*
-// @match        https://www.bilibili.com/list/watchlater
-// @match        https://www.bilibili.com/list/watchlater/*
+// @match        https://www.bilibili.com/watchlater/*
+// @match        https://www.bilibili.com/list/watchlater*
 // @icon         data:image/png;base64,{icon_data}
 // @run-at       document-idle
 // @grant        GM_addStyle
