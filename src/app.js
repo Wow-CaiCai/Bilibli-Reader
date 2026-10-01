@@ -373,10 +373,9 @@ function bindUiEvents() {
   sendBtn.addEventListener("click", sendToObsidian);
   settingsBtn.addEventListener("click", requestOpenOptions);
   readingCloseBtn.addEventListener("click", () => {
-    if (isReaderMode()) {
-      replaceReaderModeUrl(stripReaderModeUrl(location.href));
-    }
-    closeReadingView();
+    exitReaderMode().catch((error) => {
+      logWarn("[Bilibili Reader] reader exit failed", error);
+    });
   });
   bindReaderResizeHandle(byId(ids.readingChapterResizeHandle), "chapter");
   bindReaderResizeHandle(byId(ids.readingTranscriptResizeHandle), "transcript");

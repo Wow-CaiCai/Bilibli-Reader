@@ -10,6 +10,7 @@ function cleanupReaderFloatingArtifacts(playerHost = state.readingPlayerHost) {
 }
 
 async function enterReaderMode({ animate = false } = {}) {
+  state.readingModeTransition?.cancel();
   const open = () => {
     const readerUrl = new URL(location.href);
     readerUrl.searchParams.set("bilibli_reader", "1");
@@ -23,10 +24,33 @@ async function enterReaderMode({ animate = false } = {}) {
   if (!animate || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     return open();
   }
-  return transitionIntoReaderMode(open);
+  return transitionReaderMode(open, "enter");
 }
 
-async function transitionIntoReaderMode(open) {
+async function exitReaderMode() {
+  if (!state.readingViewOpen || state.readingViewClosing) return;
+  state.readingViewClosing = true;
+  state.readingModeTransition?.cancel();
+  document.documentElement.removeAttribute("data-blr-reader-entering");
+  const close = () => {
+    replaceReaderModeUrl(stripReaderModeUrl(location.href));
+    closeReadingView();
+  };
+  try {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      close();
+    } else {
+      await transitionReaderMode(close, "exit");
+    }
+  } catch (error) {
+    close();
+    throw error;
+  } finally {
+    state.readingViewClosing = false;
+  }
+}
+
+async function transitionReaderMode(update, direction) {
   const root = document.documentElement;
   const player = findReaderPlayerHost(getRuntimeVideoElement());
   const rect = player?.getBoundingClientRect();
@@ -36,9 +60,23 @@ async function transitionIntoReaderMode(open) {
     !document.startViewTransition || !rect || rect.width <= 0 || rect.height <= 0 ||
     rect.bottom <= 0 || rect.top >= window.innerHeight || document.hidden
   ) {
+    if (direction === "exit") {
+      const nodes = [
+        document.getElementById("blr-reading-inline-host"),
+        document.querySelector(".blr-reading-topbar")
+      ];
+      await Promise.all(nodes.filter((node) => node?.animate).map((node) => {
+        const animation = node.animate(
+          [{ opacity: 1, transform: "translateY(0)" }, { opacity: 0, transform: "translateY(6px)" }],
+          { duration: 150, easing: "ease-in", fill: "forwards" }
+        );
+        return animation.finished.catch(() => {}).finally(() => animation.cancel());
+      }));
+      return update();
+    }
     root.setAttribute("data-blr-reader-entering", "1");
     try {
-      await open();
+      await update();
     } finally {
       window.setTimeout(() => root.removeAttribute("data-blr-reader-entering"), 320);
     }
@@ -55,7 +93,10 @@ async function transitionIntoReaderMode(open) {
     node.style.setProperty("view-transition-name", name);
   };
   nameNode(player, "blr-reader-player");
-  root.setAttribute("data-blr-reader-transition", "enter");
+  if (direction === "exit") {
+    nameNode(document.getElementById("blr-reading-inline-host"), "blr-reader-transcript");
+  }
+  root.setAttribute("data-blr-reader-transition", direction);
   let cancelled = false;
   let cleanedUp = false;
   let transition;
@@ -69,7 +110,7 @@ async function transitionIntoReaderMode(open) {
       else node.style.removeProperty("view-transition-name");
     });
     root.removeAttribute("data-blr-reader-transition");
-    if (state.readingEntryTransition?.cancel === cancel) state.readingEntryTransition = null;
+    if (state.readingModeTransition?.cancel === cancel) state.readingModeTransition = null;
   };
   const cancel = () => {
     cancelled = true;
@@ -79,20 +120,25 @@ async function transitionIntoReaderMode(open) {
   try {
     transition = document.startViewTransition(async () => {
       if (cancelled) return;
-      await open();
-      if (cancelled || !state.readingViewOpen) return;
+      await update();
+      if (cancelled || (direction === "enter" && !state.readingViewOpen)) return;
       // The mounting code can replace the original player on watch-later pages.
-      if (state.readingPlayerHost !== player) {
+      const nextPlayer = direction === "enter"
+        ? state.readingPlayerHost
+        : findReaderPlayerHost(getRuntimeVideoElement());
+      if (nextPlayer !== player) {
         player.style.removeProperty("view-transition-name");
-        nameNode(state.readingPlayerHost, "blr-reader-player");
+        nameNode(nextPlayer, "blr-reader-player");
       }
-      nameNode(document.getElementById("blr-reading-inline-host"), "blr-reader-transcript");
+      if (direction === "enter") {
+        nameNode(document.getElementById("blr-reading-inline-host"), "blr-reader-transcript");
+      }
     });
   } catch {
     cleanup();
-    return open();
+    return update();
   }
-  state.readingEntryTransition = { cancel };
+  state.readingModeTransition = { cancel, direction };
   // A slow player must not leave the old page frozen behind a snapshot.
   timeout = window.setTimeout(() => transition.skipTransition(), 900);
   transition.ready.then(() => window.clearTimeout(timeout), () => {});
@@ -350,7 +396,6 @@ function findReaderPlayerHost(video) {
 }
 
 function closeReadingView() {
-  state.readingEntryTransition?.cancel();
   document.querySelectorAll("[data-blr-reader-fading]").forEach((node) => {
     node.removeAttribute("data-blr-reader-fading");
   });
