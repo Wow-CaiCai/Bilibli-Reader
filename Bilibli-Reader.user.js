@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bilibili Reader｜哔哩哔哩阅读模式
 // @namespace    https://github.com/bilibli-reader
-// @version      0.0.7
+// @version      0.0.8-alpha.1
 // @description  将 B 站视频切换为视频、章节与字幕联动的阅读视图
 // @author       Wow-CaiCai
 // @license      MIT
@@ -293,7 +293,7 @@ const DEFAULT_SETTINGS = {
 };
 const PLAYER_AI_ICON_VARIANT = "badge";
 
-const READER_VERSION = "0.0.7";
+const READER_VERSION = "0.0.8-alpha.1";
 const CACHE_KEY_PREFIX = "bilibli_reader_subtitle_cache_";
 globalThis.__BILIBLI_READER_CONTENT_SCRIPT_LOADED__ = READER_VERSION;
 const state = {
@@ -746,6 +746,19 @@ const ids = {
 init();
 
 function init() {
+  // document-idle 不代表 B 站已完成异步挂载；提前插入节点会破坏 Vue 的 SSR hydration。
+  // 等待服务端渲染标记移除后再初始化，也兼容没有 SSR 标记的稍后再看页面。
+  if (
+    document.readyState === "loading" ||
+    !document.body ||
+    document.querySelector(
+      '#app[data-server-rendered="true"], #video-page-app[data-server-rendered="true"]'
+    )
+  ) {
+    window.setTimeout(init, 50);
+    return;
+  }
+
   logInfo(`[Bilibili Reader] content script loaded, version=${READER_VERSION}`);
   ensureUiReady({ forceRecreate: true });
   installReaderDebugHelpers();
