@@ -527,6 +527,16 @@ function clearSubtitleContentAfterFetchError() {
   setMessage("");
 }
 
+async function finishNoSubtitleLoad(runId) {
+  ensureRunActive(runId);
+  applyNoSubtitleState();
+  renderMeta();
+  renderSubtitleSelect();
+  await refreshOpenReadingView("当前视频无可用字幕。", runId);
+  ensureRunActive(runId);
+  setStatus("当前视频无可用字幕。");
+}
+
 async function refreshClip() {
   const clipUrl = location.href;
   const clipSignature = computeCurrentClipSignature(clipUrl);
@@ -627,7 +637,7 @@ async function refreshClip() {
     const aid = state.aid;
     const fetchCurrentSubtitleBundle = () => {
       ensureRunActive(runId);
-      return fetchSubtitleBundle(bvid, cid, aid);
+      return fetchSubtitleBundle(bvid, cid, aid, meta.subtitleTracks || []);
     };
     let subtitleBundle = await retryAsync(
       fetchCurrentSubtitleBundle,
@@ -657,12 +667,7 @@ async function refreshClip() {
 
     // 无字幕时也允许进入阅读视图，只是字幕区域保持空态。
     if (state.subtitles.length === 0) {
-      applyNoSubtitleState();
-      renderMeta();
-      renderSubtitleSelect();
-      await refreshOpenReadingView("当前视频无字幕。", runId);
-      ensureRunActive(runId);
-      setStatus("当前视频无字幕。");
+      await finishNoSubtitleLoad(runId);
       return;
     }
 
@@ -676,12 +681,7 @@ async function refreshClip() {
     });
 
     if (!preferred) {
-      applyNoSubtitleState();
-      renderMeta();
-      renderSubtitleSelect();
-      await refreshOpenReadingView("当前视频无字幕。", runId);
-      ensureRunActive(runId);
-      setStatus("当前视频无字幕。");
+      await finishNoSubtitleLoad(runId);
       return;
     }
 
@@ -691,12 +691,10 @@ async function refreshClip() {
     try {
       selected = await tryLoadSubtitleCandidates(candidates, runId, forceRefresh);
     } catch (error) {
-      const message = getErrorMessage(error, "");
-      if (!message.includes("HTTP") && error?.code !== "SUBTITLE_DURATION_MISMATCH") {
-        throw error;
-      }
+      ensureRunActive(runId);
 
-      // Retry because subtitle signed URLs may expire quickly or hit rate limit.
+      // 正文失败时先重新核对列表，空列表应收起面板，不能沿用旧错误。
+      // 非空列表再用新的签名地址重试，网络故障仍保留为加载错误。
       subtitleBundle = await retryAsync(
         fetchCurrentSubtitleBundle,
         2,
@@ -711,7 +709,8 @@ async function refreshClip() {
         previousLang: preferred.lanDoc || preferred.lan || ""
       });
       if (!retryPreferred) {
-        throw error;
+        await finishNoSubtitleLoad(runId);
+        return;
       }
       const retryCandidates = buildSubtitleCandidates(state.subtitles, retryPreferred);
       selected = await tryLoadSubtitleCandidates(retryCandidates, runId, forceRefresh);
@@ -734,16 +733,16 @@ async function refreshClip() {
     if (isStaleRunError(error) || !isRunActive(runId)) {
       return;
     }
+    if (isUnavailableSubtitleError(error)) {
+      await finishNoSubtitleLoad(runId);
+      return;
+    }
     // 字幕正文与章节列表来自不同请求。字幕域名被拦截、网络失败或签名
     // 过期时，保留已经成功取得的章节和当前视频元数据。
     clearSubtitleContentAfterFetchError();
     state.subtitleFetchState = "error";
     await refreshOpenReadingView("字幕加载失败，请刷新重试。", runId);
     if (!isRunActive(runId)) {
-      return;
-    }
-    if (error?.code === "SUBTITLE_DURATION_MISMATCH") {
-      setStatus("抓取失败：未找到与当前视频时长匹配的字幕轨，可能该视频无可用字幕。");
       return;
     }
     setStatus(`抓取失败：${getErrorMessage(error)}`);
@@ -834,9 +833,13 @@ async function loadSubtitle(url, lang, runId = state.fetchRunId, subtitleId = ""
   // 从网络获取
   const subtitle = await fetchSubtitleBody(url);
   ensureRunActive(runId);
-  const body = Array.isArray(subtitle.body) ? subtitle.body : [];
+  const body = Array.isArray(subtitle?.body)
+    ? subtitle.body.filter((item) => String(item?.content || "").trim())
+    : [];
   if (body.length === 0) {
-    throw new Error("字幕文件为空。");
+    const error = new Error("字幕文件为空。");
+    error.code = "SUBTITLE_EMPTY";
+    throw error;
   }
   const durationCheck = validateSubtitleByDuration(body, state.videoDuration);
   if (!durationCheck.ok) {
@@ -1336,6 +1339,7 @@ function setMessage(text) {
 }
 
 function applyNoSubtitleState() {
+  state.subtitles = [];
   state.selectedSubtitleId = "";
   state.selectedSubtitleUrl = "";
   state.selectedSubtitleLang = "";

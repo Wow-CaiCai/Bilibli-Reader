@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bilibili Reader｜哔哩哔哩阅读模式
 // @namespace    https://github.com/bilibli-reader
-// @version      0.0.8-alpha.2
+// @version      0.0.8-alpha.3
 // @description  将 B 站视频切换为视频、章节与字幕联动的阅读视图
 // @author       Wow-CaiCai
 // @license      MIT
@@ -293,7 +293,7 @@ const DEFAULT_SETTINGS = {
 };
 const PLAYER_AI_ICON_VARIANT = "badge";
 
-const READER_VERSION = "0.0.8-alpha.2";
+const READER_VERSION = "0.0.8-alpha.3";
 const CACHE_KEY_PREFIX = "bilibli_reader_subtitle_cache_";
 globalThis.__BILIBLI_READER_CONTENT_SCRIPT_LOADED__ = READER_VERSION;
 const state = {
@@ -2100,6 +2100,16 @@ function clearSubtitleContentAfterFetchError() {
   setMessage("");
 }
 
+async function finishNoSubtitleLoad(runId) {
+  ensureRunActive(runId);
+  applyNoSubtitleState();
+  renderMeta();
+  renderSubtitleSelect();
+  await refreshOpenReadingView("当前视频无可用字幕。", runId);
+  ensureRunActive(runId);
+  setStatus("当前视频无可用字幕。");
+}
+
 async function refreshClip() {
   const clipUrl = location.href;
   const clipSignature = computeCurrentClipSignature(clipUrl);
@@ -2200,7 +2210,7 @@ async function refreshClip() {
     const aid = state.aid;
     const fetchCurrentSubtitleBundle = () => {
       ensureRunActive(runId);
-      return fetchSubtitleBundle(bvid, cid, aid);
+      return fetchSubtitleBundle(bvid, cid, aid, meta.subtitleTracks || []);
     };
     let subtitleBundle = await retryAsync(
       fetchCurrentSubtitleBundle,
@@ -2230,12 +2240,7 @@ async function refreshClip() {
 
     // 无字幕时也允许进入阅读视图，只是字幕区域保持空态。
     if (state.subtitles.length === 0) {
-      applyNoSubtitleState();
-      renderMeta();
-      renderSubtitleSelect();
-      await refreshOpenReadingView("当前视频无字幕。", runId);
-      ensureRunActive(runId);
-      setStatus("当前视频无字幕。");
+      await finishNoSubtitleLoad(runId);
       return;
     }
 
@@ -2249,12 +2254,7 @@ async function refreshClip() {
     });
 
     if (!preferred) {
-      applyNoSubtitleState();
-      renderMeta();
-      renderSubtitleSelect();
-      await refreshOpenReadingView("当前视频无字幕。", runId);
-      ensureRunActive(runId);
-      setStatus("当前视频无字幕。");
+      await finishNoSubtitleLoad(runId);
       return;
     }
 
@@ -2264,12 +2264,10 @@ async function refreshClip() {
     try {
       selected = await tryLoadSubtitleCandidates(candidates, runId, forceRefresh);
     } catch (error) {
-      const message = getErrorMessage(error, "");
-      if (!message.includes("HTTP") && error?.code !== "SUBTITLE_DURATION_MISMATCH") {
-        throw error;
-      }
+      ensureRunActive(runId);
 
-      // Retry because subtitle signed URLs may expire quickly or hit rate limit.
+      // 正文失败时先重新核对列表，空列表应收起面板，不能沿用旧错误。
+      // 非空列表再用新的签名地址重试，网络故障仍保留为加载错误。
       subtitleBundle = await retryAsync(
         fetchCurrentSubtitleBundle,
         2,
@@ -2284,7 +2282,8 @@ async function refreshClip() {
         previousLang: preferred.lanDoc || preferred.lan || ""
       });
       if (!retryPreferred) {
-        throw error;
+        await finishNoSubtitleLoad(runId);
+        return;
       }
       const retryCandidates = buildSubtitleCandidates(state.subtitles, retryPreferred);
       selected = await tryLoadSubtitleCandidates(retryCandidates, runId, forceRefresh);
@@ -2307,16 +2306,16 @@ async function refreshClip() {
     if (isStaleRunError(error) || !isRunActive(runId)) {
       return;
     }
+    if (isUnavailableSubtitleError(error)) {
+      await finishNoSubtitleLoad(runId);
+      return;
+    }
     // 字幕正文与章节列表来自不同请求。字幕域名被拦截、网络失败或签名
     // 过期时，保留已经成功取得的章节和当前视频元数据。
     clearSubtitleContentAfterFetchError();
     state.subtitleFetchState = "error";
     await refreshOpenReadingView("字幕加载失败，请刷新重试。", runId);
     if (!isRunActive(runId)) {
-      return;
-    }
-    if (error?.code === "SUBTITLE_DURATION_MISMATCH") {
-      setStatus("抓取失败：未找到与当前视频时长匹配的字幕轨，可能该视频无可用字幕。");
       return;
     }
     setStatus(`抓取失败：${getErrorMessage(error)}`);
@@ -2407,9 +2406,13 @@ async function loadSubtitle(url, lang, runId = state.fetchRunId, subtitleId = ""
   // 从网络获取
   const subtitle = await fetchSubtitleBody(url);
   ensureRunActive(runId);
-  const body = Array.isArray(subtitle.body) ? subtitle.body : [];
+  const body = Array.isArray(subtitle?.body)
+    ? subtitle.body.filter((item) => String(item?.content || "").trim())
+    : [];
   if (body.length === 0) {
-    throw new Error("字幕文件为空。");
+    const error = new Error("字幕文件为空。");
+    error.code = "SUBTITLE_EMPTY";
+    throw error;
   }
   const durationCheck = validateSubtitleByDuration(body, state.videoDuration);
   if (!durationCheck.ok) {
@@ -2909,6 +2912,7 @@ function setMessage(text) {
 }
 
 function applyNoSubtitleState() {
+  state.subtitles = [];
   state.selectedSubtitleId = "";
   state.selectedSubtitleUrl = "";
   state.selectedSubtitleLang = "";
@@ -5986,6 +5990,10 @@ async function fetchVideoMeta(bvid) {
     uploadDate,
     defaultCid: data.cid ? String(data.cid) : "",
     defaultDuration: Number(data.duration || 0) || 0,
+    subtitleTracks: mapSubtitleTracks(data.subtitle?.list || [], "video-meta").map((track) => ({
+      ...track,
+      cid: track.cid || String(data.cid || "")
+    })),
     collection: mapVideoCollection(data, bvid),
     pages: pages.map((item) => ({
       cid: String(item.cid || ""),
@@ -6166,9 +6174,9 @@ function readUploadDate() {
   return formatLocalDate();
 }
 
-async function fetchSubtitleBundle(bvid, cid, aid = "") {
+async function fetchSubtitleBundle(bvid, cid, aid = "", knownTracks = []) {
   const requests = buildSubtitleInfoRequests({ bvid, cid, aid });
-  const fetchByRequest = async (request) => {
+  const fetchByRequest = async (request, requireVerifiedOwner = false) => {
     logInfo("[BOC] fetch subtitles list", {
       source: request.source,
       url: request.url,
@@ -6182,10 +6190,25 @@ async function fetchSubtitleBundle(bvid, cid, aid = "") {
     if (payload.code !== 0) {
       throw buildBiliApiError(payload, "无法获取字幕列表");
     }
+    validateSubtitleResponseIdentity(payload.data, { bvid, cid, aid });
 
     const chapters = mapChaptersFromPlayerData(payload.data);
     const subtitles = mapSubtitleTracks(payload.data?.subtitle?.subtitles || [], request.source);
-    const withUrl = subtitles.filter((item) => item.subtitleUrl);
+    const withUrl = subtitles.filter((item) => {
+      if (!item.subtitleUrl) {
+        return false;
+      }
+      if (!isSubtitleTrackForVideo(item, { aid, cid, knownTracks, requireVerifiedOwner })) {
+        logWarn("[BOC] rejected subtitle track without matching video ownership", {
+          source: request.source,
+          subtitleId: item.id,
+          bvid,
+          cid
+        });
+        return false;
+      }
+      return true;
+    });
     return { source: request.source, chapters, withUrl };
   };
 
@@ -6196,35 +6219,25 @@ async function fetchSubtitleBundle(bvid, cid, aid = "") {
   const primaryRequest = requests[0];
   try {
     const primaryResult = await fetchByRequest(primaryRequest);
-    if (primaryResult.withUrl.length > 0) {
-      return { tracks: primaryResult.withUrl, chapters: primaryResult.chapters };
-    }
-    // 切集后播放器接口可能短暂返回空字幕；主来源为空时再核对一次次来源，
-    // 避免把“接口尚未就绪”误判为“当前视频无字幕”。
-    if (requests.length > 1) {
-      const secondaryRequest = requests[1];
+    if (primaryResult.withUrl.length === 0 && requests.length > 1) {
+      // 主接口为空时，只接受能从轨道路径或视频元数据验证归属的备用字幕。
+      // 备用接口失败不能把已经成功返回的空结果变成“加载错误”。
       try {
-        const secondaryResult = await fetchByRequest(secondaryRequest);
+        const secondaryResult = await fetchByRequest(requests[1], true);
         if (secondaryResult.withUrl.length > 0) {
-          logWarn("[BOC] primary subtitles source empty, using fallback source", {
-            primary: primaryRequest.source,
-            fallback: secondaryRequest.source
-          });
           return {
             tracks: secondaryResult.withUrl,
-            chapters: primaryResult.chapters.length
-              ? primaryResult.chapters
-              : secondaryResult.chapters
+            chapters: primaryResult.chapters.length ? primaryResult.chapters : secondaryResult.chapters
           };
         }
-      } catch (secondaryError) {
-        logWarn("[BOC] fallback subtitles source failed after empty primary", {
-          source: secondaryRequest.source,
-          message: getErrorMessage(secondaryError)
+      } catch (error) {
+        logWarn("[BOC] fallback subtitle verification failed after empty primary", {
+          source: requests[1].source,
+          message: getErrorMessage(error)
         });
       }
     }
-    return { tracks: [], chapters: primaryResult.chapters };
+    return { tracks: primaryResult.withUrl, chapters: primaryResult.chapters };
   } catch (primaryError) {
     logWarn("[BOC] subtitles API request failed", {
       source: primaryRequest.source,
@@ -6235,7 +6248,7 @@ async function fetchSubtitleBundle(bvid, cid, aid = "") {
     if (requests.length > 1) {
       const secondaryRequest = requests[1];
       try {
-        const secondaryResult = await fetchByRequest(secondaryRequest);
+        const secondaryResult = await fetchByRequest(secondaryRequest, true);
         if (secondaryResult.withUrl.length > 0) {
           logWarn("[BOC] primary subtitles source failed, using fallback source", {
             primary: primaryRequest.source,
@@ -6255,6 +6268,44 @@ async function fetchSubtitleBundle(bvid, cid, aid = "") {
 
     throw primaryError;
   }
+}
+
+function validateSubtitleResponseIdentity(data, { bvid, cid, aid }) {
+  const expected = { bvid, cid, aid };
+  const invalid = !data || !data.cid ||
+    Object.entries(expected).some(([key, value]) => {
+      return value && data[key] !== undefined && String(data[key]) !== String(value);
+    });
+  if (invalid) {
+    const error = new Error("字幕接口返回的视频身份不匹配。");
+    error.code = "SUBTITLE_RESPONSE_IDENTITY_MISMATCH";
+    error.retryable = true;
+    throw error;
+  }
+}
+
+function isSubtitleTrackForVideo(track, { aid, cid, knownTracks = [], requireVerifiedOwner = false }) {
+  try {
+    const path = new URL(track.subtitleUrl).pathname;
+    // 已观察到的 prod AI 字幕路径以 aid+cid 开头；其他路径不作格式假设。
+    const match = path.match(/^\/bfs\/ai_subtitle\/prod\/(\d{16,})/);
+    if (match && aid && cid) {
+      return match[1].startsWith(`${aid}${cid}`);
+    }
+  } catch {
+    return false;
+  }
+  if (knownTracks.some((known) => {
+    if (known.cid !== String(cid)) {
+      return false;
+    }
+    return (track.id && known.id === track.id) ||
+      (known.subtitleUrl &&
+        normalizeSubtitleUrlForCache(known.subtitleUrl) === normalizeSubtitleUrlForCache(track.subtitleUrl));
+  })) {
+    return true;
+  }
+  return !requireVerifiedOwner;
 }
 
 function buildSubtitleInfoRequests({ bvid, cid, aid }) {
@@ -6298,7 +6349,8 @@ function buildBiliApiError(payload, fallbackMessage) {
 
 function mapSubtitleTracks(subtitles, source = "unknown") {
   return (subtitles || []).map((item) => ({
-    id: item?.id === undefined || item?.id === null ? "" : String(item.id),
+    id: String(item?.id_str || item?.id || ""),
+    cid: String(item?.cid || ""),
     lan: item?.lan || "",
     lanDoc: item?.lan_doc || "",
     subtitleUrl: normalizeSubtitleUrl(item?.subtitle_url || ""),
@@ -6462,6 +6514,7 @@ function buildSubtitleCandidates(subtitles, preferred) {
 
 async function tryLoadSubtitleCandidates(candidates, runId, forceRefresh) {
   let lastError = null;
+  let lastLoadError = null;
   for (const item of candidates || []) {
     try {
       logInfo("[BOC] try subtitle track", {
@@ -6480,6 +6533,9 @@ async function tryLoadSubtitleCandidates(candidates, runId, forceRefresh) {
       return item;
     } catch (error) {
       lastError = error;
+      if (!isUnavailableSubtitleError(error)) {
+        lastLoadError = error;
+      }
       const reasonCode = toReadableText(error?.code, "");
       const reasonMessage = getErrorMessage(error, "unknown");
       const meta = {
@@ -6498,10 +6554,17 @@ async function tryLoadSubtitleCandidates(candidates, runId, forceRefresh) {
     }
   }
 
-  if (lastError) {
-    throw lastError;
+  if (lastLoadError) {
+    throw lastLoadError;
   }
-  throw new Error("这个视频暂时没有可用字幕。");
+  const error = new Error("当前视频没有可用字幕。");
+  error.code = "NO_USABLE_SUBTITLE";
+  error.cause = lastError;
+  throw error;
+}
+
+function isUnavailableSubtitleError(error) {
+  return ["SUBTITLE_EMPTY", "SUBTITLE_DURATION_MISMATCH", "NO_USABLE_SUBTITLE"].includes(error?.code);
 }
 
 function isAiSubtitle(item) {
