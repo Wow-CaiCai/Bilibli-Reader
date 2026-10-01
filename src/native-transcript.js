@@ -146,6 +146,11 @@ function bindNativeTranscriptPanelEvents(panel) {
   const returnButton = panel.querySelector(`#${ids.nativeTranscriptReturnButton}`);
   const themeButton = panel.querySelector(`#${ids.nativeTranscriptThemeButton}`);
   const toggle = () => {
+    if (isNativeTranscriptEmpty()) {
+      autoFoldNativeTranscriptIfEmpty();
+      showNativeTranscriptEmptyNotice(panel);
+      return;
+    }
     state.nativeTranscriptOpen = !state.nativeTranscriptOpen;
     setNativeTranscriptExpanded(panel, state.nativeTranscriptOpen);
     if (state.nativeTranscriptOpen) {
@@ -157,6 +162,11 @@ function bindNativeTranscriptPanelEvents(panel) {
     button.addEventListener("click", toggle);
   });
   returnButton?.addEventListener("click", () => {
+    if (isNativeTranscriptEmpty()) {
+      autoFoldNativeTranscriptIfEmpty();
+      showNativeTranscriptEmptyNotice(panel);
+      return;
+    }
     state.nativeTranscriptManualScrollPauseUntil = 0;
     if (!state.nativeTranscriptOpen) {
       state.nativeTranscriptOpen = true;
@@ -188,11 +198,32 @@ function bindNativeTranscriptPanelEvents(panel) {
   body?.addEventListener("pointerdown", noteManualScroll, { passive: true });
 }
 
+function isNativeTranscriptEmpty() {
+  return (
+    state.fetchClipSignature === computeCurrentClipSignature() &&
+    state.subtitleFetchState === "empty"
+  );
+}
+
+function clearNativeTranscriptEmptyNotice(panel) {
+  panel?.querySelector(".blr-native-transcript-empty-notice")?.remove();
+}
+
+function showNativeTranscriptEmptyNotice(panel) {
+  clearNativeTranscriptEmptyNotice(panel);
+  const notice = document.createElement("div");
+  notice.className = "blr-native-transcript-empty-notice";
+  notice.setAttribute("role", "status");
+  notice.textContent = "当前视频无字幕";
+  notice.addEventListener("animationend", () => notice.remove(), { once: true });
+  panel.appendChild(notice);
+}
+
 function setNativeTranscriptExpanded(panel, expanded) {
   if (!panel) {
     return;
   }
-  const isExpanded = Boolean(expanded);
+  const isExpanded = Boolean(expanded) && !isNativeTranscriptEmpty();
   panel.classList.toggle("is-folded", !isExpanded);
   panel.querySelectorAll("[data-native-transcript-toggle]").forEach((button) => {
     button.setAttribute("aria-expanded", String(isExpanded));
@@ -332,6 +363,11 @@ function renderNativeTranscriptPanel({ force = false } = {}) {
   }
 
   renderNativeTranscriptHeaderControls(panel);
+  if (isNativeTranscriptEmpty()) {
+    autoFoldNativeTranscriptIfEmpty();
+  } else {
+    clearNativeTranscriptEmptyNotice(panel);
+  }
 
   const transcriptItems = getReadingTranscriptItems();
   const renderKey = [
@@ -450,8 +486,8 @@ function initializeNativeTranscriptForSignature(signature = computeCurrentClipSi
 
 function autoFoldNativeTranscriptIfEmpty(signature = computeCurrentClipSignature()) {
   if (
-    state.subtitleFetchState !== "empty" ||
-    state.nativeTranscriptAutoFoldedSignature === signature
+    !isNativeTranscriptEmpty() ||
+    signature !== computeCurrentClipSignature()
   ) {
     return;
   }

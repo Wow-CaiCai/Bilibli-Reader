@@ -284,6 +284,31 @@ body[data-blr-reader-mode="1"] #blr-page-reader-entry {
   transform: rotate(0deg);
 }
 
+.blr-native-transcript-empty-notice {
+  position: absolute;
+  top: calc(100% - 4px);
+  left: 50%;
+  z-index: 1;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: var(--bg1, #fff);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  color: #00aeec;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 20px;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: blr-native-transcript-notice-fade 2.2s ease-out forwards;
+}
+
+@keyframes blr-native-transcript-notice-fade {
+  0% { opacity: 0; }
+  8%, 65% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 .blr-native-transcript-body {
   height: var(--blr-native-transcript-body-height);
   min-height: 0;
