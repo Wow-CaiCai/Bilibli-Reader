@@ -21,6 +21,76 @@
   display: block;
 }
 
+/* Keep the video as the visual anchor while the surrounding page dissolves. */
+html[data-blr-reader-transition="enter"]::view-transition {
+  pointer-events: none;
+}
+
+html[data-blr-reader-transition="enter"]::view-transition-group(root),
+html[data-blr-reader-transition="enter"]::view-transition-group(blr-reader-player),
+html[data-blr-reader-transition="enter"]::view-transition-group(blr-reader-transcript) {
+  animation-duration: 320ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html[data-blr-reader-transition="enter"]::view-transition-old(root) {
+  animation: blr-reader-fade-out 140ms ease-out both;
+}
+
+html[data-blr-reader-transition="enter"]::view-transition-new(root) {
+  animation: blr-reader-fade-in 240ms ease-out both;
+}
+
+html[data-blr-reader-transition="enter"]::view-transition-image-pair(blr-reader-player) {
+  isolation: auto;
+}
+
+html[data-blr-reader-transition="enter"]::view-transition-old(blr-reader-player) {
+  animation: blr-reader-fade-out 140ms ease-out both;
+}
+
+html[data-blr-reader-transition="enter"]::view-transition-new(blr-reader-player) {
+  animation: blr-reader-fade-in 180ms ease-out both;
+  mix-blend-mode: normal;
+  height: 100%;
+  object-fit: fill;
+}
+
+html[data-blr-reader-transition="enter"]::view-transition-new(blr-reader-transcript) {
+  animation: blr-reader-panel-in 280ms cubic-bezier(0.22, 1, 0.36, 1) 40ms both;
+}
+
+/* Lightweight entrance on browsers without snapshot transitions. */
+html[data-blr-reader-entering="1"] #blr-reading-inline-host,
+html[data-blr-reader-entering="1"] #blr-reading-view[data-blr-reader-ready="1"] .blr-reading-topbar {
+  animation: blr-reader-panel-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes blr-reader-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes blr-reader-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes blr-reader-panel-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-blr-reader-transition="enter"]::view-transition-group(*),
+  html[data-blr-reader-transition="enter"]::view-transition-old(*),
+  html[data-blr-reader-transition="enter"]::view-transition-new(*),
+  html[data-blr-reader-entering="1"] #blr-reading-inline-host,
+  html[data-blr-reader-entering="1"] #blr-reading-view .blr-reading-topbar {
+    animation: none !important;
+  }
+}
+
 #blr-reading-view[data-blr-reader-ready="0"] {
   opacity: 0;
   visibility: hidden;

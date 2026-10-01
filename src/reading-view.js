@@ -9,7 +9,99 @@ function cleanupReaderFloatingArtifacts(playerHost = state.readingPlayerHost) {
   }
 }
 
-async function enterReaderMode() {
+async function enterReaderMode({ animate = false } = {}) {
+  const open = () => {
+    const readerUrl = new URL(location.href);
+    readerUrl.searchParams.set("bilibli_reader", "1");
+    replaceReaderModeUrl(readerUrl.toString());
+    document.documentElement.setAttribute("data-blr-reader-mode", "1");
+    document.body.setAttribute("data-blr-reader-mode", "1");
+    state.playerAiQuickActionSuppressedUntil = Date.now() + 2500;
+    removePlayerAiQuickActionButton();
+    return prepareReaderMode();
+  };
+  if (!animate || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    return open();
+  }
+  return transitionIntoReaderMode(open);
+}
+
+async function transitionIntoReaderMode(open) {
+  const root = document.documentElement;
+  const player = findReaderPlayerHost(getRuntimeVideoElement());
+  const rect = player?.getBoundingClientRect();
+  // Only capture a player already on screen. Direct reader links and pages
+  // still loading use the normal mounting/retry path.
+  if (
+    !document.startViewTransition || !rect || rect.width <= 0 || rect.height <= 0 ||
+    rect.bottom <= 0 || rect.top >= window.innerHeight || document.hidden
+  ) {
+    root.setAttribute("data-blr-reader-entering", "1");
+    try {
+      await open();
+    } finally {
+      window.setTimeout(() => root.removeAttribute("data-blr-reader-entering"), 320);
+    }
+    return;
+  }
+
+  const namedNodes = new Map();
+  const nameNode = (node, name) => {
+    if (!node || namedNodes.has(node)) return;
+    namedNodes.set(node, {
+      value: node.style.getPropertyValue("view-transition-name"),
+      priority: node.style.getPropertyPriority("view-transition-name")
+    });
+    node.style.setProperty("view-transition-name", name);
+  };
+  nameNode(player, "blr-reader-player");
+  root.setAttribute("data-blr-reader-transition", "enter");
+  let cancelled = false;
+  let cleanedUp = false;
+  let transition;
+  let timeout;
+  const cleanup = () => {
+    if (cleanedUp) return;
+    cleanedUp = true;
+    window.clearTimeout(timeout);
+    namedNodes.forEach(({ value, priority }, node) => {
+      if (value) node.style.setProperty("view-transition-name", value, priority);
+      else node.style.removeProperty("view-transition-name");
+    });
+    root.removeAttribute("data-blr-reader-transition");
+    if (state.readingEntryTransition?.cancel === cancel) state.readingEntryTransition = null;
+  };
+  const cancel = () => {
+    cancelled = true;
+    transition?.skipTransition();
+    cleanup();
+  };
+  try {
+    transition = document.startViewTransition(async () => {
+      if (cancelled) return;
+      await open();
+      if (cancelled || !state.readingViewOpen) return;
+      // The mounting code can replace the original player on watch-later pages.
+      if (state.readingPlayerHost !== player) {
+        player.style.removeProperty("view-transition-name");
+        nameNode(state.readingPlayerHost, "blr-reader-player");
+      }
+      nameNode(document.getElementById("blr-reading-inline-host"), "blr-reader-transcript");
+    });
+  } catch {
+    cleanup();
+    return open();
+  }
+  state.readingEntryTransition = { cancel };
+  // A slow player must not leave the old page frozen behind a snapshot.
+  timeout = window.setTimeout(() => transition.skipTransition(), 900);
+  transition.ready.then(() => window.clearTimeout(timeout), () => {});
+  transition.finished.then(cleanup, cleanup);
+  // Skipped animations still perform the update; never mount a second time.
+  await transition.updateCallbackDone;
+}
+
+async function prepareReaderMode() {
   const readingView = byId(ids.readingView);
   state.readingViewOpen = true;
   state.readingNativePageMode = true;
@@ -18,6 +110,7 @@ async function enterReaderMode() {
   applyReadingViewPresentation();
   alignReaderViewportToPlayer();
   await sleep(0);
+  if (!state.readingViewOpen || !isReaderMode()) return;
   openReaderViewShell(readingView);
   applyReaderPageFocus();
   renderReadingView();
@@ -28,9 +121,11 @@ async function enterReaderMode() {
   }
 
   await sleep(0);
+  if (!state.readingViewOpen || !isReaderMode()) return;
 
   // Try to mount player, with more retries for slower pages (like watch later)
   const mounted = await ensureReaderPlayerMounted({ retries: 50, delayMs: 150, forceLayout: true });
+  if (!state.readingViewOpen || !isReaderMode()) return;
   const mountedPlayerHost = state.readingPlayerHost || earlyPlayerHost;
   if (mountedPlayerHost) {
     mountedPlayerHost.removeAttribute("data-blr-reader-fading");
@@ -147,6 +242,7 @@ function settleReaderModePresentation() {
 
 async function ensureReaderPlayerMounted({ retries = 1, delayMs = 100, forceLayout = false } = {}) {
   for (let attempt = 0; attempt < retries; attempt += 1) {
+    if (!state.readingViewOpen || !isReaderMode()) return false;
     const video = getRuntimeVideoElement();
     const playerHost = findReaderPlayerHost(video);
     if (video && playerHost) {
@@ -254,6 +350,10 @@ function findReaderPlayerHost(video) {
 }
 
 function closeReadingView() {
+  state.readingEntryTransition?.cancel();
+  document.querySelectorAll("[data-blr-reader-fading]").forEach((node) => {
+    node.removeAttribute("data-blr-reader-fading");
+  });
   cleanupReaderFloatingArtifacts();
   state.readingViewOpen = false;
   state.readingNativePageMode = false;

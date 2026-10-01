@@ -48,7 +48,7 @@ const DEFAULT_SETTINGS = {
 };
 const PLAYER_AI_ICON_VARIANT = "badge";
 
-const READER_VERSION = "0.0.8";
+const READER_VERSION = "0.0.9-alpha.2";
 const CACHE_KEY_PREFIX = "bilibli_reader_subtitle_cache_";
 globalThis.__BILIBLI_READER_CONTENT_SCRIPT_LOADED__ = READER_VERSION;
 const state = {
@@ -80,6 +80,7 @@ const state = {
   srt: "",
   txt: "",
   readingViewOpen: false,
+  readingEntryTransition: null,
   readingNativePageMode: false,
   readingAutoScroll: true,
   readingTheme: "light",
@@ -668,16 +669,9 @@ function onPageReaderEntryClick(event) {
   const button = event.currentTarget;
   button.disabled = true;
   button.classList.add("is-loading");
-  const readerUrl = new URL(location.href);
-  readerUrl.searchParams.set("bilibli_reader", "1");
-  replaceReaderModeUrl(readerUrl.toString());
-  document.documentElement.setAttribute("data-blr-reader-mode", "1");
-  document.body.setAttribute("data-blr-reader-mode", "1");
-  state.playerAiQuickActionSuppressedUntil = Date.now() + 2500;
-  removePlayerAiQuickActionButton();
   ensureUiReady();
 
-  enterReaderMode().catch((error) => {
+  enterReaderMode({ animate: true }).catch((error) => {
     button.disabled = false;
     button.classList.remove("is-loading");
     logWarn("[Bilibili Reader] page entry failed", error);
