@@ -136,8 +136,8 @@ function ensureNativeTranscriptPanel() {
   bindNativeTranscriptPanelResize();
   syncNativeTranscriptPanelAlignment();
   syncNativeTranscriptPanelHeight();
-  renderNativeTranscriptPanel({ force: created });
   ensureNativeTranscriptLoaded();
+  renderNativeTranscriptPanel({ force: created });
   return panel;
 }
 
@@ -311,7 +311,11 @@ function renderNativeTranscriptHeaderControls(panel) {
 }
 
 function getNativeTranscriptPlaceholderText() {
-  if (state.subtitleFetchState === "loading" || state.subtitleFetchState === "idle") {
+  if (
+    state.fetchClipSignature !== computeCurrentClipSignature() ||
+    state.subtitleFetchState === "loading" ||
+    state.subtitleFetchState === "idle"
+  ) {
     return "正在加载字幕...";
   }
   if (state.subtitleFetchState === "error") {
@@ -387,6 +391,9 @@ function ensureNativeTranscriptLoaded({ force = false } = {}) {
   }
 
   const signature = computeCurrentClipSignature();
+  if (signature !== state.currentClipSignature) {
+    resetClipState();
+  }
   initializeNativeTranscriptForSignature(signature);
   if (
     !force &&
@@ -412,7 +419,7 @@ function ensureNativeTranscriptLoaded({ force = false } = {}) {
       logWarn("[Bilibili Reader] native transcript load failed", error);
     })
     .finally(() => {
-      if (computeCurrentClipSignature() === loadSignature) {
+      if (isRunActive(loadRunId) && state.nativeTranscriptLoadPromise === loadPromise) {
         state.nativeTranscriptLoadedSignature = loadSignature;
         autoFoldNativeTranscriptIfEmpty(loadSignature);
       }
@@ -420,9 +427,12 @@ function ensureNativeTranscriptLoaded({ force = false } = {}) {
         state.nativeTranscriptLoadPromise = null;
         state.nativeTranscriptLoadSignature = "";
       }
-      renderNativeTranscriptPanel();
-      syncNativeTranscriptPlayback(true);
+      if (isRunActive(loadRunId)) {
+        renderNativeTranscriptPanel();
+        syncNativeTranscriptPlayback(true);
+      }
     });
+  const loadRunId = state.fetchRunId;
   state.nativeTranscriptLoadSignature = loadSignature;
   state.nativeTranscriptLoadPromise = loadPromise;
   return loadPromise;
@@ -597,23 +607,33 @@ function onNativeTranscriptChange(event) {
     return;
   }
   const previousFetchState = state.subtitleFetchState;
+  const runId = state.fetchRunId;
   select.disabled = true;
   loadSubtitle(
     url,
     String(option.dataset.lang || "unknown"),
-    state.fetchRunId,
+    runId,
     String(option.dataset.id || "")
   )
     .then(() => {
+      if (!isRunActive(runId)) {
+        return;
+      }
       renderNativeTranscriptPanel();
       syncNativeTranscriptPlayback(true);
     })
     .catch((error) => {
+      if (isStaleRunError(error) || !isRunActive(runId)) {
+        return;
+      }
       state.subtitleFetchState = previousFetchState === "ready" ? "ready" : "error";
       logWarn("[Bilibili Reader] native subtitle switch failed", error);
       renderNativeTranscriptPanel({ force: true });
     })
     .finally(() => {
+      if (!isRunActive(runId)) {
+        return;
+      }
       const currentSelect = document.getElementById(ids.nativeTranscriptSelect);
       if (currentSelect) {
         currentSelect.disabled = state.subtitles.length === 0;

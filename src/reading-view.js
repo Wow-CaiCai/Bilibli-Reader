@@ -94,7 +94,12 @@ function maybeRefreshReaderSubtitleInBackground() {
   if (state.subtitleBody.length) {
     return;
   }
+  const signature = computeCurrentClipSignature();
+  const runId = state.fetchRunId;
   waitForVideoMetadata().then(() => {
+    if (runId !== state.fetchRunId || signature !== computeCurrentClipSignature()) {
+      return;
+    }
     refreshClip().catch((error) => {
       if (!isStaleRunError(error)) {
         renderReadingStatus(`字幕加载失败：${getErrorMessage(error)}`);
@@ -461,7 +466,10 @@ function renderReadingCollection() {
 }
 
 function getReadingTranscriptPlaceholderText() {
-  if (state.subtitleFetchState === "loading") {
+  if (
+    state.fetchClipSignature !== computeCurrentClipSignature() ||
+    state.subtitleFetchState === "loading"
+  ) {
     return "正在加载字幕...";
   }
   if (state.subtitleFetchState === "error") {
@@ -471,6 +479,9 @@ function getReadingTranscriptPlaceholderText() {
 }
 
 function getReadingTranscriptItems(body = state.subtitleBody) {
+  if (state.fetchClipSignature !== computeCurrentClipSignature()) {
+    return [];
+  }
   return (Array.isArray(body) ? body : [])
     .map((item, index) => ({
       index,

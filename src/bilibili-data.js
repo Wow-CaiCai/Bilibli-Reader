@@ -100,7 +100,7 @@ async function getSettings() {
 }
 
 async function refreshOpenReadingView(statusText, runId = state.fetchRunId) {
-  if (runId !== state.fetchRunId || !state.readingViewOpen || !isReaderMode()) {
+  if (!isRunActive(runId) || !state.readingViewOpen || !isReaderMode()) {
     return;
   }
 
@@ -111,7 +111,7 @@ async function refreshOpenReadingView(statusText, runId = state.fetchRunId) {
   } catch (error) {
     logWarn("[BOC] failed to remount reader after clip change", error);
   }
-  if (runId !== state.fetchRunId || !state.readingViewOpen || !isReaderMode()) {
+  if (!isRunActive(runId) || !state.readingViewOpen || !isReaderMode()) {
     return;
   }
 
@@ -247,8 +247,15 @@ function extractOid(url) {
   }
 }
 
+function isRunActive(runId) {
+  return (
+    runId === state.fetchRunId &&
+    state.fetchClipSignature === computeCurrentClipSignature()
+  );
+}
+
 function ensureRunActive(runId) {
-  if (runId !== state.fetchRunId) {
+  if (!isRunActive(runId)) {
     const error = new Error("Stale refresh run");
     error.code = "STALE_RUN";
     throw error;

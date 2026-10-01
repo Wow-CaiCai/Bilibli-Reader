@@ -67,6 +67,7 @@ function bindRuntimeEvents() {
     }
 
     if (message.type === "popup-select-subtitle") {
+      const runId = state.fetchRunId;
       const url = String(message.url || "").trim();
       const lang = String(message.lang || "unknown");
       const subtitleId = String(message.subtitleId || "");
@@ -74,8 +75,9 @@ function bindRuntimeEvents() {
         sendResponse({ ok: false, error: "Missing subtitle URL", payload: getPopupPayload() });
         return false;
       }
-      loadSubtitle(url, lang, state.fetchRunId, subtitleId)
+      loadSubtitle(url, lang, runId, subtitleId)
         .then(() => {
+          ensureRunActive(runId);
           setStatus("字幕切换完成。");
           renderSubtitleSelect();
           sendResponse({ ok: true, payload: getPopupPayload() });
@@ -406,7 +408,7 @@ function startUrlWatcher() {
   }
   state.urlWatcherStarted = true;
 
-  window.setInterval(() => {
+  const checkCurrentClip = () => {
     const nextUrl = location.href;
     const nextSignature = computeCurrentClipSignature();
     if (nextSignature === state.currentClipSignature) {
@@ -431,7 +433,11 @@ function startUrlWatcher() {
     }
     if (state.readingViewOpen || shouldEnterReaderMode) {
       renderReadingStatus("检测到视频变化，正在自动刷新字幕...");
+      const changeRunId = state.fetchRunId;
       waitForVideoMetadata().then(() => {
+        if (changeRunId !== state.fetchRunId || computeCurrentClipSignature() !== nextSignature) {
+          return;
+        }
         refreshClip().catch((error) => {
           if (!isStaleRunError(error)) {
             renderReadingStatus(`自动刷新失败：${getErrorMessage(error)}`);
@@ -442,10 +448,15 @@ function startUrlWatcher() {
     }
     setStatus("检测到页面变化，正在自动加载当前视频字幕...");
     ensureNativeTranscriptLoaded({ force: true });
-  }, 1200);
+  };
+  window.addEventListener("popstate", checkCurrentClip);
+  window.setInterval(checkCurrentClip, 250);
 }
 
 function resetClipState({ preserveReadingContent = false } = {}) {
+  // 切换时立即使旧请求失效，不能等新请求开始后才递增编号。
+  state.fetchRunId += 1;
+  state.fetchClipSignature = "";
   state.bvid = "";
   state.aid = "";
   state.cid = "";
@@ -460,14 +471,15 @@ function resetClipState({ preserveReadingContent = false } = {}) {
     state.title = "";
     state.author = "";
     state.uploadDate = "";
-    state.subtitles = [];
-    state.selectedSubtitleId = "";
-    state.selectedSubtitleUrl = "";
-    state.selectedSubtitleLang = "";
-    state.subtitleBody = [];
-    state.chapters = [];
   }
-  state.subtitleFetchState = preserveReadingContent ? "loading" : "idle";
+  // 保留阅读视图布局和合集信息时，也必须清空上一集的字幕与章节。
+  state.subtitles = [];
+  state.selectedSubtitleId = "";
+  state.selectedSubtitleUrl = "";
+  state.selectedSubtitleLang = "";
+  state.subtitleBody = [];
+  state.chapters = [];
+  state.subtitleFetchState = "loading";
   state.hotComments = [];
   state.markdown = "";
   state.srt = "";
@@ -477,6 +489,8 @@ function resetClipState({ preserveReadingContent = false } = {}) {
   state.readingActiveSubtitleIndex = -1;
   state.readingActiveChapterIndex = -1;
   state.nativeTranscriptLoadedSignature = "";
+  state.nativeTranscriptLoadPromise = null;
+  state.nativeTranscriptLoadSignature = "";
   state.nativeTranscriptAutoFoldedSignature = "";
   state.nativeTranscriptRenderedKey = "";
   state.nativeTranscriptOpen = true;
@@ -486,16 +500,12 @@ function resetClipState({ preserveReadingContent = false } = {}) {
   stopReaderPlayerObserver();
 
   renderMeta();
-  if (!preserveReadingContent) {
-    renderSubtitleSelect();
-    byId(ids.preview).value = "";
-  }
+  renderSubtitleSelect();
+  byId(ids.preview).value = "";
   setMessage("");
   renderNativeTranscriptPanel();
-  if (state.readingViewOpen && !preserveReadingContent) {
+  if (state.readingViewOpen) {
     renderReadingView();
-    renderReadingStatus("请先点击“刷新抓取”加载当前视频字幕。");
-  } else if (state.readingViewOpen) {
     renderReadingStatus("正在切换选集并加载新字幕...");
   }
 }
@@ -518,7 +528,13 @@ function clearSubtitleContentAfterFetchError() {
 }
 
 async function refreshClip() {
+  const clipUrl = location.href;
+  const clipSignature = computeCurrentClipSignature(clipUrl);
+  if (state.currentClipSignature !== clipSignature) {
+    resetClipState({ preserveReadingContent: state.readingViewOpen && isReaderMode(clipUrl) });
+  }
   const runId = ++state.fetchRunId;
+  state.fetchClipSignature = clipSignature;
   try {
     setBusyState(true);
     setMessage("");
@@ -528,18 +544,23 @@ async function refreshClip() {
     if (state.readingViewOpen) {
       renderReadingView();
     }
-    state.settings = await getSettings();
+    const settings = await getSettings();
     ensureRunActive(runId);
+    state.settings = settings;
 
-    state.bvid = extractBvid(location.href);
+    const bvid = extractBvid(clipUrl);
+    state.bvid = bvid;
     if (!state.bvid) {
       throw new Error("当前页面不是标准 BV 视频地址，无法抓取字幕。");
     }
 
-    const pageIndex = extractPageIndex(location.href);
-    const oid = extractOid(location.href);
-    const hasPageParam = hasExplicitPageParam(location.href);
-    const meta = await retryAsync(() => fetchVideoMeta(state.bvid), 2, 250);
+    const pageIndex = extractPageIndex(clipUrl);
+    const oid = extractOid(clipUrl);
+    const hasPageParam = hasExplicitPageParam(clipUrl);
+    const meta = await retryAsync(() => {
+      ensureRunActive(runId);
+      return fetchVideoMeta(bvid);
+    }, 2, 250);
     ensureRunActive(runId);
 
     // 调试：打印 API 返回的原始数据
@@ -555,7 +576,6 @@ async function refreshClip() {
     state.uploadDate = meta.uploadDate || readUploadDate();
     state.description = meta.description || readVideoDescription();
     state.pageCount = Array.isArray(meta.pages) ? meta.pages.length : 0;
-    state.currentClipSignature = computeCurrentClipSignature();
     let resolvedPageIndex = pageIndex;
     if ((meta.pages || []).length > 1 && !hasPageParam) {
       const pageIndexFromOid = pickPageIndexFromOid(meta.pages, oid);
@@ -603,8 +623,14 @@ async function refreshClip() {
     });
 
     setStatus("正在获取可用字幕...");
+    const cid = state.cid;
+    const aid = state.aid;
+    const fetchCurrentSubtitleBundle = () => {
+      ensureRunActive(runId);
+      return fetchSubtitleBundle(bvid, cid, aid);
+    };
     let subtitleBundle = await retryAsync(
-      () => fetchSubtitleBundle(state.bvid, state.cid, state.aid),
+      fetchCurrentSubtitleBundle,
       3,
       500
     );
@@ -635,6 +661,7 @@ async function refreshClip() {
       renderMeta();
       renderSubtitleSelect();
       await refreshOpenReadingView("当前视频无字幕。", runId);
+      ensureRunActive(runId);
       setStatus("当前视频无字幕。");
       return;
     }
@@ -653,6 +680,7 @@ async function refreshClip() {
       renderMeta();
       renderSubtitleSelect();
       await refreshOpenReadingView("当前视频无字幕。", runId);
+      ensureRunActive(runId);
       setStatus("当前视频无字幕。");
       return;
     }
@@ -670,7 +698,7 @@ async function refreshClip() {
 
       // Retry because subtitle signed URLs may expire quickly or hit rate limit.
       subtitleBundle = await retryAsync(
-        () => fetchSubtitleBundle(state.bvid, state.cid, state.aid),
+        fetchCurrentSubtitleBundle,
         2,
         500
       );
@@ -700,28 +728,27 @@ async function refreshClip() {
     renderMeta();
     renderSubtitleSelect();
     await refreshOpenReadingView("抓取完成，阅读视图已同步最新字幕。", runId);
+    ensureRunActive(runId);
     setStatus("抓取完成，可以复制、下载或发送到 Obsidian。");
   } catch (error) {
-    if (isStaleRunError(error)) {
+    if (isStaleRunError(error) || !isRunActive(runId)) {
       return;
     }
     // 字幕正文与章节列表来自不同请求。字幕域名被拦截、网络失败或签名
     // 过期时，保留已经成功取得的章节和当前视频元数据。
-    if (state.bvid && state.cid) {
-      clearSubtitleContentAfterFetchError();
-      state.subtitleFetchState = "error";
-    } else {
-      resetClipState();
-      state.subtitleFetchState = "error";
-    }
+    clearSubtitleContentAfterFetchError();
+    state.subtitleFetchState = "error";
     await refreshOpenReadingView("字幕加载失败，请刷新重试。", runId);
+    if (!isRunActive(runId)) {
+      return;
+    }
     if (error?.code === "SUBTITLE_DURATION_MISMATCH") {
       setStatus("抓取失败：未找到与当前视频时长匹配的字幕轨，可能该视频无可用字幕。");
       return;
     }
     setStatus(`抓取失败：${getErrorMessage(error)}`);
   } finally {
-    if (runId === state.fetchRunId) {
+    if (isRunActive(runId)) {
       setBusyState(false);
       renderNativeTranscriptPanel();
     }
@@ -729,6 +756,7 @@ async function refreshClip() {
 }
 
 async function onSubtitleChange(event) {
+  const runId = state.fetchRunId;
   const value = event.target.value;
   const option = event.target.options[event.target.selectedIndex];
   const lang = option?.dataset.lang || "unknown";
@@ -741,19 +769,23 @@ async function onSubtitleChange(event) {
     setBusyState(true);
     setStatus(`正在切换字幕：${lang}`);
     setMessage("");
-    await loadSubtitle(value, lang, state.fetchRunId, subtitleId);
+    await loadSubtitle(value, lang, runId, subtitleId);
+    ensureRunActive(runId);
     setStatus("字幕切换完成。");
   } catch (error) {
-    if (isStaleRunError(error)) {
+    if (isStaleRunError(error) || !isRunActive(runId)) {
       return;
     }
     setStatus(`切换字幕失败：${getErrorMessage(error)}`);
   } finally {
-    setBusyState(false);
+    if (isRunActive(runId)) {
+      setBusyState(false);
+    }
   }
 }
 
 async function loadSubtitle(url, lang, runId = state.fetchRunId, subtitleId = "", forceRefresh = false) {
+  ensureRunActive(runId);
   if (!url) {
     throw new Error("字幕 URL 为空。");
   }
@@ -769,6 +801,7 @@ async function loadSubtitle(url, lang, runId = state.fetchRunId, subtitleId = ""
   // 尝试从缓存读取
   if (!forceRefresh) {
     const cachedBody = await loadSubtitleFromCache(cacheKey);
+    ensureRunActive(runId);
     if (cachedBody && Array.isArray(cachedBody) && cachedBody.length > 0) {
       const cachedCheck = validateSubtitleByDuration(cachedBody, state.videoDuration);
       if (!cachedCheck.ok) {
@@ -777,6 +810,7 @@ async function loadSubtitle(url, lang, runId = state.fetchRunId, subtitleId = ""
           reason: cachedCheck.reason
         });
         await clearSubtitleCacheByKey(cacheKey);
+        ensureRunActive(runId);
       } else {
         logInfo("[BOC] using cached subtitle", { cacheKey, itemCount: cachedBody.length });
         ensureRunActive(runId);
@@ -785,7 +819,8 @@ async function loadSubtitle(url, lang, runId = state.fetchRunId, subtitleId = ""
         state.selectedSubtitleLang = lang;
         state.subtitleBody = cachedBody;
         state.subtitleFetchState = "ready";
-        await refreshDerivedContent();
+        await refreshDerivedContent({ runId });
+        ensureRunActive(runId);
         if (state.readingViewOpen) {
           renderReadingView();
           syncReadingViewPlayback(true);
@@ -813,13 +848,15 @@ async function loadSubtitle(url, lang, runId = state.fetchRunId, subtitleId = ""
 
   // 存入缓存
   await saveSubtitleToCache(cacheKey, body);
+  ensureRunActive(runId);
 
   state.selectedSubtitleId = subtitleId ? String(subtitleId) : state.selectedSubtitleId;
   state.selectedSubtitleUrl = url;
   state.selectedSubtitleLang = lang;
   state.subtitleBody = body;
   state.subtitleFetchState = "ready";
-  await refreshDerivedContent();
+  await refreshDerivedContent({ runId });
+  ensureRunActive(runId);
   if (state.readingViewOpen) {
     renderReadingView();
     syncReadingViewPlayback(true);
@@ -1065,17 +1102,24 @@ function bindReadingTranscriptHeaderControls(heading) {
         return;
       }
       select.disabled = true;
+      const runId = state.fetchRunId;
       loadSubtitle(
         url,
         String(option.dataset.lang || "unknown"),
-        state.fetchRunId,
+        runId,
         String(option.dataset.id || "")
       )
         .then(() => {
+          if (!isRunActive(runId)) {
+            return;
+          }
           renderReadingView();
           syncReadingViewPlayback(true);
         })
         .catch((error) => {
+          if (isStaleRunError(error) || !isRunActive(runId)) {
+            return;
+          }
           logWarn("[BOC] failed to switch subtitle in reading transcript header", error);
           syncReadingTranscriptHeaderControls();
         });

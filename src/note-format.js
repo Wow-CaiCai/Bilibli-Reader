@@ -7,20 +7,30 @@ function rebuildDerivedContent() {
   byId(ids.preview).value = body.length ? buildSubtitlePreview(body, state.settings) : "";
 }
 
-async function refreshDerivedContent({ refreshComments = false } = {}) {
+async function refreshDerivedContent({ refreshComments = false, runId = null } = {}) {
   if (state.settings?.includeHotCommentsInNote) {
     const shouldFetchComments =
       refreshComments || !Array.isArray(state.hotComments) || state.hotComments.length === 0;
     if (shouldFetchComments) {
       try {
-        state.hotComments = await fetchHotComments(20);
+        const comments = await fetchHotComments(20);
+        if (runId !== null) {
+          ensureRunActive(runId);
+        }
+        state.hotComments = comments;
       } catch (error) {
+        if (runId !== null) {
+          ensureRunActive(runId);
+        }
         state.hotComments = [];
         logWarn("[BOC] failed to fetch hot comments for note export", error);
       }
     }
   }
 
+  if (runId !== null) {
+    ensureRunActive(runId);
+  }
   rebuildDerivedContent();
 }
 
