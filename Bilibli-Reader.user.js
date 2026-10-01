@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bilibili Reader｜哔哩哔哩阅读模式
 // @namespace    https://github.com/bilibli-reader
-// @version      0.0.7
+// @version      0.0.8
 // @description  将 B 站视频切换为视频、章节与字幕联动的阅读视图
 // @author       Wow-CaiCai
 // @license      MIT
@@ -38,7 +38,7 @@
   const runtimeListeners = [];
   const storageListeners = [];
 
-  GM_addStyle("#viewbox_report.blr-page-reader-entry-host,\n.video-info-container.blr-page-reader-entry-host,\n.video-info-title.blr-page-reader-entry-host {\n  position: relative !important;\n}\n\n#viewbox_report.blr-page-reader-entry-host h1.video-title,\n.video-info-container.blr-page-reader-entry-host h1.video-title {\n  padding-right: 108px !important;\n  box-sizing: border-box;\n}\n\n#blr-page-reader-entry {\n  -webkit-appearance: none;\n  appearance: none;\n  position: absolute;\n  top: auto;\n  right: 2px;\n  bottom: 4px;\n  z-index: 20;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: 6px;\n  min-width: 82px;\n  height: 34px;\n  margin: 0;\n  padding: 0 14px;\n  box-sizing: border-box;\n  border: 1px solid rgba(0, 174, 236, 0.42);\n  border-radius: 9px;\n  background: rgba(255, 255, 255, 0.96);\n  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.08);\n  color: #18191c;\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", sans-serif;\n  font-size: 14px;\n  font-weight: 600;\n  line-height: 1;\n  cursor: pointer;\n  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease,\n    transform 0.16s ease, box-shadow 0.16s ease;\n}\n\n#blr-page-reader-entry svg {\n  width: 17px;\n  height: 17px;\n  flex: 0 0 auto;\n  fill: none;\n  stroke: currentColor;\n  stroke-width: 1.8;\n  stroke-linecap: round;\n  stroke-linejoin: round;\n}\n\n#blr-page-reader-entry:hover {\n  border-color: #00aeec;\n  background: #00aeec;\n  color: #fff;\n  box-shadow: 0 7px 20px rgba(0, 174, 236, 0.22);\n  transform: translateY(-1px);\n}\n\n#blr-page-reader-entry:active {\n  transform: translateY(0);\n}\n\n#blr-page-reader-entry:focus-visible {\n  outline: 2px solid rgba(0, 174, 236, 0.42);\n  outline-offset: 2px;\n}\n\n#blr-page-reader-entry:disabled,\n#blr-page-reader-entry.is-loading {\n  cursor: wait;\n  opacity: 0.68;\n  transform: none;\n}\n\nhtml[data-blr-reader-mode=\"1\"] #blr-page-reader-entry,\nbody[data-blr-reader-mode=\"1\"] #blr-page-reader-entry {\n  display: none !important;\n}\n\n@media (max-width: 760px) {\n  #viewbox_report.blr-page-reader-entry-host h1.video-title,\n  .video-info-container.blr-page-reader-entry-host h1.video-title {\n    padding-right: 0 !important;\n  }\n\n  #blr-page-reader-entry {\n    position: relative;\n    top: auto;\n    right: auto;\n    bottom: auto;\n    margin-top: 8px;\n  }\n}\n\n#blr-native-transcript-panel {\n  --blr-native-transcript-body-height: 439px;\n  --blr-native-transcript-font-size: 14px;\n  --blr-native-transcript-font-weight: 500;\n  --blr-native-transcript-surface: var(--bg1, #fff);\n  --blr-native-transcript-text: var(--text1, #18191c);\n  --blr-native-transcript-border: var(--line_regular, #e3e5e7);\n  --blr-native-transcript-active: rgba(0, 174, 236, 0.12);\n  width: 100%;\n  min-width: 0;\n  position: relative;\n  z-index: 20;\n  margin: 0 0 12px;\n  box-sizing: border-box;\n  isolation: isolate;\n  pointer-events: auto;\n  color: var(--text1, #18191c);\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", sans-serif;\n}\n\n#blr-native-transcript-panel button,\n#blr-native-transcript-panel select,\n#blr-native-transcript-panel .blr-native-transcript-body,\n#blr-native-transcript-panel .blr-native-transcript-list {\n  pointer-events: auto;\n}\n\n.blr-native-transcript-header {\n  width: 100%;\n  height: 44px;\n  display: flex;\n  align-items: center;\n  gap: 4px;\n  margin: 0;\n  padding: 0 6px 0 10px;\n  box-sizing: border-box;\n  border-radius: 6px;\n  background: var(--bg2, #f1f2f3);\n  color: var(--text1, #18191c);\n  font: inherit;\n}\n\n.blr-native-transcript-title-button {\n  -webkit-appearance: none;\n  appearance: none;\n  min-width: 32px;\n  flex: 1 1 auto;\n  align-self: stretch;\n  margin: 0;\n  padding: 0;\n  overflow: hidden;\n  border: 0;\n  background: transparent;\n  color: inherit;\n  font: inherit;\n  font-size: 15px;\n  font-weight: 500;\n  line-height: 1;\n  text-align: left;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  cursor: pointer;\n}\n\n.blr-native-transcript-controls {\n  min-width: 0;\n  display: flex;\n  flex: 0 0 auto;\n  align-items: center;\n  gap: 4px;\n}\n\n.blr-native-transcript-return-button,\n.blr-native-transcript-theme-button {\n  -webkit-appearance: none;\n  appearance: none;\n  width: 26px;\n  height: 26px;\n  display: inline-flex;\n  flex: 0 0 26px;\n  align-items: center;\n  justify-content: center;\n  margin: 0;\n  padding: 0;\n  border: 1px solid var(--line_regular, #e3e5e7);\n  border-radius: 50%;\n  background: var(--bg1, #fff);\n  color: var(--text1, #18191c);\n  cursor: pointer;\n}\n\n.blr-native-transcript-return-button svg,\n.blr-native-transcript-theme-button svg {\n  width: 17px;\n  height: 17px;\n}\n\n.blr-native-transcript-return-button:hover,\n.blr-native-transcript-return-button.is-active,\n.blr-native-transcript-theme-button:hover,\n.blr-native-transcript-theme-button.is-active {\n  border-color: var(--brand_blue, #00aeec);\n  color: var(--brand_blue, #00aeec);\n}\n\n.blr-native-transcript-controls select {\n  -webkit-appearance: none;\n  appearance: none;\n  flex: 0 0 auto;\n  height: 28px;\n  min-width: 0;\n  padding: 0 25px 0 8px;\n  box-sizing: border-box;\n  border: 1px solid var(--line_regular, #e3e5e7);\n  border-radius: 5px;\n  background-color: var(--bg1, #fff);\n  background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m3 4.5 3 3 3-3' fill='none' stroke='%2318191c' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\");\n  background-position: right 7px center;\n  background-repeat: no-repeat;\n  background-size: 12px 12px;\n  color: var(--text1, #18191c);\n  font-size: 12px;\n  outline: none;\n}\n\n.blr-native-transcript-controls select:focus {\n  border-color: var(--brand_blue, #00aeec);\n}\n\n#blr-native-transcript-select {\n  width: 72px;\n}\n\n#blr-native-transcript-font-size {\n  width: 56px;\n}\n\n#blr-native-transcript-font-weight {\n  width: 64px;\n}\n\n.blr-native-transcript-arrow-button {\n  -webkit-appearance: none;\n  appearance: none;\n  width: 28px;\n  height: 28px;\n  display: inline-flex;\n  flex: 0 0 28px;\n  align-items: center;\n  justify-content: center;\n  margin: 0;\n  padding: 0;\n  border: 0;\n  border-radius: 4px;\n  background: transparent;\n  color: inherit;\n  cursor: pointer;\n}\n\n.blr-native-transcript-title-button:focus-visible,\n.blr-native-transcript-return-button:focus-visible,\n.blr-native-transcript-theme-button:focus-visible,\n.blr-native-transcript-arrow-button:focus-visible {\n  outline: 2px solid var(--brand_blue, #00aeec);\n  outline-offset: 1px;\n}\n\n.blr-native-transcript-arrow-button:hover {\n  background: rgba(0, 0, 0, 0.06);\n}\n\n.blr-native-transcript-arrow {\n  width: 16px;\n  height: 16px;\n  flex: 0 0 auto;\n  fill: none;\n  stroke: currentColor;\n  stroke-width: 1.6;\n  stroke-linecap: round;\n  stroke-linejoin: round;\n  transform: rotate(90deg);\n  transition: transform 0.18s ease;\n}\n\n#blr-native-transcript-panel.is-folded .blr-native-transcript-arrow {\n  transform: rotate(0deg);\n}\n\n.blr-native-transcript-body {\n  height: var(--blr-native-transcript-body-height);\n  min-height: 0;\n  display: flex;\n  flex-direction: column;\n  margin-top: 12px;\n  overflow: hidden;\n  box-sizing: border-box;\n  border: 1px solid var(--blr-native-transcript-border);\n  border-radius: 6px;\n  background: var(--blr-native-transcript-surface);\n  color: var(--blr-native-transcript-text);\n}\n\n#blr-native-transcript-panel[data-theme=\"dark\"] {\n  --blr-native-transcript-surface: #0f172a;\n  --blr-native-transcript-text: #e5eefb;\n  --blr-native-transcript-border: rgba(148, 163, 184, 0.28);\n  --blr-native-transcript-active: rgba(74, 222, 128, 0.16);\n}\n\n#blr-native-transcript-panel[data-theme=\"paper\"] {\n  --blr-native-transcript-surface: #f4eddc;\n  --blr-native-transcript-text: #3b3124;\n  --blr-native-transcript-border: rgba(180, 155, 112, 0.34);\n  --blr-native-transcript-active: rgba(47, 158, 68, 0.14);\n}\n\n.blr-native-transcript-body[hidden] {\n  display: none !important;\n}\n\n.blr-native-transcript-list {\n  min-height: 0;\n  flex: 1 1 auto;\n  overflow-x: hidden;\n  overflow-y: auto;\n  overscroll-behavior: contain;\n  scrollbar-width: thin;\n  scrollbar-color: rgba(148, 153, 160, 0.72) transparent;\n}\n\n.blr-native-transcript-list::-webkit-scrollbar {\n  width: 6px;\n}\n\n.blr-native-transcript-list::-webkit-scrollbar-track {\n  background: transparent;\n}\n\n.blr-native-transcript-list::-webkit-scrollbar-thumb {\n  border-radius: 999px;\n  background: rgba(148, 153, 160, 0.72);\n}\n\n.blr-native-transcript-complete {\n  padding: 12px 14px 36px;\n  color: var(--blr-native-transcript-text);\n  font-size: var(--blr-native-transcript-font-size);\n  font-weight: var(--blr-native-transcript-font-weight);\n  line-height: 1.8;\n  letter-spacing: 0;\n  text-align: left;\n  word-break: break-word;\n}\n\n.blr-native-transcript-segment {\n  -webkit-appearance: none;\n  appearance: none;\n  display: inline;\n  margin: 0;\n  padding: 1px 0;\n  border: 0;\n  border-radius: 2px;\n  background: transparent;\n  color: inherit;\n  font: inherit;\n  letter-spacing: inherit;\n  text-align: inherit;\n  cursor: pointer;\n  user-select: text;\n  -webkit-user-select: text;\n}\n\n.blr-native-transcript-segment:hover {\n  background: rgba(0, 174, 236, 0.1);\n}\n\n.blr-native-transcript-segment.is-active {\n  background: var(--blr-native-transcript-active);\n  text-decoration-line: underline;\n  text-decoration-color: var(--brand_blue, #00aeec);\n  text-decoration-thickness: 2px;\n  text-underline-offset: 4px;\n}\n\n.blr-native-transcript-segment:focus-visible {\n  outline: 2px solid rgba(0, 174, 236, 0.42);\n  outline-offset: 1px;\n}\n\n.blr-native-transcript-state {\n  min-height: 100%;\n  display: flex;\n  flex: 1 1 auto;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  gap: 12px;\n  padding: 24px;\n  box-sizing: border-box;\n  color: var(--text3, #9499a0);\n  font-size: 13px;\n  text-align: center;\n}\n\n.blr-native-transcript-state button {\n  height: 30px;\n  padding: 0 14px;\n  border: 1px solid var(--brand_blue, #00aeec);\n  border-radius: 5px;\n  background: transparent;\n  color: var(--brand_blue, #00aeec);\n  cursor: pointer;\n}\n\n.blr-native-transcript-state button:hover {\n  background: rgba(0, 174, 236, 0.08);\n}\n\n#blr-panel {\n  position: fixed;\n  right: 16px;\n  top: 72px;\n  width: min(420px, calc(100vw - 24px));\n  height: min(820px, calc(100vh - 88px));\n  z-index: 2147483647;\n  background: #f1f1f1;\n  border: 1px solid #d8d8d8;\n  border-radius: 14px;\n  box-shadow: 0 24px 46px rgba(0, 0, 0, 0.24);\n  padding: 12px;\n  box-sizing: border-box;\n  display: none;\n  flex-direction: column;\n  gap: 8px;\n  font-family: -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"PingFang SC\", \"Helvetica Neue\",\n    Arial, sans-serif;\n}\n\n#blr-panel.open {\n  display: flex;\n}\n\n.blr-header {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 0 0 4px;\n}\n\n.blr-header strong {\n  font-size: 17px;\n  font-weight: 600;\n  letter-spacing: 0.01em;\n  color: #3d3d3d;\n}\n\n.blr-header-actions {\n  display: flex;\n  gap: 6px;\n}\n\n.blr-header button {\n  border: 1px solid #cfcfcf;\n  background: #f8f8f8;\n  border-radius: 10px;\n  padding: 7px 10px;\n  cursor: pointer;\n  color: #4a4a4a;\n}\n\n.blr-status {\n  margin: 0;\n  font-size: 12px;\n  color: #555;\n  background: #e8e8e8;\n  border-radius: 8px;\n  padding: 7px 8px;\n}\n\n.blr-props-head {\n  font-size: 15px;\n  font-weight: 600;\n  color: #4a4a4a;\n  margin-top: 0;\n}\n\n.blr-meta {\n  border: 1px solid #d5d5d5;\n  border-radius: 10px;\n  padding: 8px 10px;\n  background: #f7f7f7;\n  display: grid;\n  gap: 6px;\n  font-size: 13px;\n  color: #3f3f3f;\n}\n\n.blr-meta-item {\n  word-break: break-word;\n}\n\n.blr-label {\n  font-size: 12px;\n  font-weight: 600;\n  color: #4d4d4d;\n  margin-top: 2px;\n}\n\n#blr-subtitle-select {\n  height: 36px;\n  border: 1px solid #cfcfcf;\n  border-radius: 8px;\n  padding: 0 10px;\n  background: #fff;\n  color: #2d2d2d;\n}\n\n.blr-player-ai-wrap {\n  align-items: center;\n  background: rgba(20, 24, 32, 0.68);\n  border: 1px solid rgba(255, 255, 255, 0.18);\n  border-radius: 999px;\n  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);\n  display: inline-flex;\n  flex: 0 0 var(--blr-player-ai-action-hit-size, 28px);\n  height: var(--blr-player-ai-action-hit-size, 28px);\n  justify-content: center;\n  margin: 0;\n  min-width: var(--blr-player-ai-action-hit-size, 28px);\n  opacity: 0;\n  overflow: hidden;\n  pointer-events: none;\n  position: absolute;\n  right: 14px;\n  top: 50%;\n  transform: translate(8px, -50%);\n  transition: opacity 0.18s ease, background-color 0.18s ease, transform 0.18s ease;\n  width: var(--blr-player-ai-action-hit-size, 28px);\n  z-index: 30;\n}\n\n.blr-player-ai-wrap.is-active,\n.blr-player-ai-wrap:hover,\n.blr-player-ai-wrap:focus-within {\n  background: rgba(20, 24, 32, 0.78);\n  opacity: 1;\n  pointer-events: auto;\n  transform: translate(0, -50%);\n}\n\n#blr-player-ai-quick-action {\n  -webkit-appearance: none;\n  appearance: none;\n  align-items: center;\n  align-self: center;\n  background: transparent;\n  border: 0;\n  border-radius: 0;\n  box-sizing: border-box;\n  color: var(--blr-player-ai-action-color, currentColor);\n  display: inline-flex;\n  flex: 0 0 auto;\n  justify-content: center;\n  width: 100%;\n  height: 100%;\n  cursor: pointer;\n  line-height: 0;\n  margin-bottom: 0;\n  margin-top: 0;\n  min-width: 0;\n  overflow: hidden;\n  padding: 0;\n  position: relative;\n  top: 0;\n  vertical-align: top;\n  transition: transform 0.16s ease, color 0.16s ease, opacity 0.16s ease;\n}\n\n#blr-player-ai-quick-action svg {\n  width: var(--blr-player-ai-action-icon-size, 24px);\n  height: var(--blr-player-ai-action-icon-size, 24px);\n  display: block;\n  flex: 0 0 auto;\n  stroke: currentColor;\n  fill: none;\n  stroke-linecap: round;\n  stroke-linejoin: round;\n}\n\n#blr-player-ai-quick-action:hover {\n  color: var(--blr-player-ai-action-hover-color, var(--blr-player-ai-action-color, currentColor));\n}\n\n#blr-player-ai-quick-action:disabled {\n  opacity: 0.62;\n  cursor: wait;\n  transform: none;\n}\n\n.blr-confirm-overlay {\n  align-items: center;\n  background: rgba(17, 24, 39, 0.28);\n  display: flex;\n  inset: 0;\n  justify-content: center;\n  padding: 18px;\n  position: fixed;\n  z-index: 2147483647;\n}\n\n.blr-confirm-dialog {\n  background: #ffffff;\n  border: 1px solid #e5e7eb;\n  border-radius: 16px;\n  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.22);\n  color: #111827;\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;\n  max-width: 360px;\n  padding: 18px;\n  width: calc(100vw - 36px);\n}\n\n.blr-confirm-title {\n  font-size: 15px;\n  font-weight: 700;\n  margin-bottom: 8px;\n}\n\n.blr-confirm-body {\n  color: #4b5563;\n  font-size: 13px;\n  margin-bottom: 8px;\n}\n\n.blr-confirm-path {\n  background: #f7f8fb;\n  border: 1px solid #edf0f4;\n  border-radius: 10px;\n  color: #374151;\n  font-size: 12px;\n  line-height: 1.45;\n  max-height: 96px;\n  overflow: auto;\n  padding: 9px 10px;\n  word-break: break-all;\n}\n\n.blr-confirm-actions {\n  display: flex;\n  gap: 8px;\n  justify-content: flex-end;\n  margin-top: 14px;\n}\n\n.blr-confirm-actions button {\n  border: 1px solid #d9dee7;\n  border-radius: 10px;\n  cursor: pointer;\n  font-size: 13px;\n  height: 34px;\n  padding: 0 14px;\n}\n\n.blr-confirm-cancel {\n  background: #ffffff;\n  color: #374151;\n}\n\n.blr-confirm-primary {\n  background: #111827;\n  border-color: #111827 !important;\n  color: #ffffff;\n}\n\n#blr-preview {\n  width: 100%;\n  flex: 1;\n  min-height: 180px;\n  box-sizing: border-box;\n  border: 1px solid #d0d0d0;\n  border-radius: 10px;\n  padding: 10px;\n  resize: vertical;\n  font-size: 13px;\n  line-height: 1.55;\n  background: #fff;\n  color: #2f2f2f;\n  font-family: \"SF Mono\", \"JetBrains Mono\", \"PingFang SC\", Menlo, Monaco, Consolas, monospace;\n}\n\n.blr-actions {\n  display: grid;\n  grid-template-columns: repeat(2, minmax(0, 1fr));\n  gap: 8px;\n  margin-top: 0;\n}\n\n.blr-actions button {\n  border: 1px solid #cfcfcf;\n  background: #f8f8f8;\n  border-radius: 9px;\n  padding: 8px 8px;\n  cursor: pointer;\n  color: #3d3d3d;\n  font-size: 13px;\n}\n\n#blr-send-btn {\n  grid-column: span 2;\n  border: 1px solid #a88fff;\n  background: linear-gradient(180deg, #9c82ff 0%, #8f75ef 100%);\n  color: #fff;\n  font-weight: 600;\n}\n\n.blr-actions button:disabled {\n  cursor: not-allowed;\n  opacity: 0.55;\n}\n\n.blr-message {\n  margin: 0;\n  font-size: 12px;\n  color: #0f766e;\n  min-height: 18px;\n  padding: 0 2px;\n}\n\n#blr-reading-view {\n  position: fixed;\n  left: 16px;\n  right: 16px;\n  bottom: 16px;\n  height: min(76vh, 860px);\n  z-index: 2147483646;\n  display: none;\n  padding: 20px 22px;\n  box-sizing: border-box;\n  background: #fff;\n  border: 1px solid #e5e7eb;\n  border-radius: 18px;\n  box-shadow: 0 28px 60px rgba(15, 23, 42, 0.16);\n  font-family: -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"PingFang SC\", \"Helvetica Neue\",\n    Arial, sans-serif;\n}\n\n#blr-reading-view.open {\n  display: block;\n}\n\n#blr-reading-view[data-blr-reader-ready=\"0\"] {\n  opacity: 0;\n  visibility: hidden;\n  pointer-events: none;\n}\n\n.blr-reading-layout {\n  min-height: 0;\n  height: 100%;\n  display: grid;\n  grid-template-columns: 240px minmax(0, 1fr);\n  gap: 28px;\n}\n\n.blr-reading-rail {\n  min-height: 0;\n  display: grid;\n  grid-template-rows: auto auto minmax(0, 1fr);\n  gap: 10px;\n  align-content: start;\n}\n\n.blr-reading-stage {\n  min-height: 0;\n  display: grid;\n  grid-template-rows: auto auto minmax(320px, 1fr) minmax(0, 1fr);\n  gap: 14px;\n}\n\n.blr-reading-header {\n  display: flex;\n  align-items: flex-start;\n  justify-content: space-between;\n  gap: 18px;\n}\n\n.blr-reading-header-copy {\n  min-width: 0;\n}\n\n.blr-reading-eyebrow {\n  font-size: 11px;\n  font-weight: 700;\n  letter-spacing: 0.08em;\n  color: #9ca3af;\n  text-transform: uppercase;\n}\n\n.blr-reading-title {\n  display: block;\n  margin: 0;\n  font-size: 16px;\n  line-height: 1.15;\n  color: #0f172a;\n  word-break: break-word;\n}\n\n.blr-reading-topbar,\n.blr-reading-heading-group {\n  min-width: 0;\n}\n\n.blr-reading-page-title {\n  color: var(--blr-reader-text, #0f172a);\n  display: -webkit-box;\n  font-size: 18px;\n  font-weight: 500;\n  line-height: 1.2;\n  overflow: hidden;\n  overflow-wrap: anywhere;\n  -webkit-box-orient: vertical;\n  -webkit-line-clamp: 2;\n}\n\n.blr-reading-episode-title {\n  color: var(--blr-reader-muted, #64748b);\n  display: -webkit-box;\n  font-size: 14px;\n  font-weight: 600;\n  line-height: 1.3;\n  overflow: hidden;\n  overflow-wrap: anywhere;\n  -webkit-box-orient: vertical;\n  -webkit-line-clamp: 2;\n}\n\n.blr-reading-collection-nav {\n  align-items: flex-start;\n  display: flex;\n  gap: 10px;\n  min-width: 0;\n}\n\n.blr-reading-episode-title[hidden],\n.blr-reading-collection-nav[hidden] {\n  display: none !important;\n}\n\n.blr-reading-collection-list {\n  align-content: flex-start;\n  align-items: center;\n  display: flex;\n  flex: 1 1 auto;\n  flex-wrap: wrap;\n  gap: 6px;\n  height: 70px;\n  min-width: 0;\n  overflow-x: hidden;\n  overflow-y: auto;\n  overscroll-behavior-y: contain;\n  scrollbar-width: none;\n}\n\n.blr-reading-collection-list::-webkit-scrollbar {\n  display: none;\n}\n\n.blr-reading-collection-item {\n  align-items: center;\n  background: transparent;\n  border: 1px solid var(--blr-reader-border, #e2e8f0);\n  border-radius: 999px;\n  color: var(--blr-reader-muted, #64748b);\n  cursor: pointer;\n  display: inline-flex;\n  flex: 0 0 auto;\n  gap: 6px;\n  height: 32px;\n  max-width: 260px;\n  padding: 0 10px 0 7px;\n  font-weight: 600;\n}\n\n.blr-reading-collection-item:hover {\n  border-color: var(--blr-reader-accent, #22c55e);\n  color: var(--blr-reader-text, #0f172a);\n}\n\n.blr-reading-collection-item.is-active {\n  background: var(--blr-reader-accent-soft, #ecfdf5);\n  border-color: var(--blr-reader-accent, #22c55e);\n  color: var(--blr-reader-accent, #16a34a);\n}\n\n.blr-reading-collection-index {\n  align-items: center;\n  background: color-mix(in srgb, currentColor 10%, transparent);\n  border-radius: 999px;\n  display: inline-flex;\n  flex: 0 0 auto;\n  font-size: 10px;\n  font-weight: 700;\n  height: 18px;\n  justify-content: center;\n  min-width: 18px;\n  padding: 0 4px;\n}\n\n.blr-reading-collection-item-title {\n  font-size: 12px;\n  font-weight: 600;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.blr-reading-meta,\n.blr-reading-status {\n  font-size: 14px;\n  line-height: 1.5;\n  color: #6b7280;\n}\n\n.blr-reading-meta {\n  margin-top: 8px;\n}\n\n.blr-reading-actions {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex-wrap: wrap;\n  justify-content: flex-end;\n  transition: opacity 0.2s ease;\n}\n\n.blr-reading-actions[data-blr-icon-hidden=\"1\"] {\n  opacity: 0;\n  pointer-events: none;\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .blr-reading-actions {\n    transition: none;\n  }\n}\n\n.blr-reading-actions button {\n  border: 1px solid #e5e7eb;\n  background: #fff;\n  border-radius: 999px;\n  min-height: 36px;\n  padding: 0 14px;\n  font-size: 13px;\n  color: #1f2937;\n  box-sizing: border-box;\n}\n\n.blr-reading-actions button {\n  cursor: pointer;\n}\n\n\n\n\n\n.blr-reading-icon-btn {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 34px;\n  height: 34px;\n  border: 1px solid #e5e7eb;\n  background: #fff;\n  border-radius: 8px;\n  cursor: pointer;\n  padding: 0;\n  color: #1f2937;\n}\n\n.blr-reading-icon-btn svg {\n  width: 18px;\n  height: 18px;\n  flex: 0 0 auto;\n}\n\n.blr-reading-icon-btn:hover {\n  background: #f3f4f6;\n  border-color: #d1d5db;\n}\n\n.blr-reading-icon-btn.is-active {\n  background: #eff6ff;\n  border-color: #2563eb;\n  color: #2563eb;\n}\n\n\n\n\n\n\n\n\n\n\n\n.blr-reading-list,\n.blr-reading-transcript {\n  min-height: 0;\n  overflow: auto;\n}\n\n.blr-reading-list {\n  padding-right: 6px;\n}\n\n.blr-reading-player-shell {\n  min-height: 0;\n  display: flex;\n  justify-content: center;\n  align-items: flex-start;\n  pointer-events: none;\n}\n\n.blr-reading-player-slot {\n  width: min(100%, 960px);\n  aspect-ratio: 16 / 9;\n  max-height: 100%;\n  min-height: 0;\n  overflow: hidden;\n  background: #fff;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  pointer-events: none;\n}\n\n.blr-reading-player-slot > * {\n  width: 100% !important;\n  max-width: 100% !important;\n  height: 100% !important;\n}\n\n.blr-reading-player-slot > video {\n  width: 100% !important;\n  height: 100% !important;\n  display: block;\n  background: #000;\n  object-fit: contain;\n}\n\n.blr-reading-player-slot #bilibili-player,\n.blr-reading-player-slot .bpx-player-container,\n.blr-reading-player-slot .bpx-player-video-area,\n.blr-reading-player-slot .bpx-player-primary-area,\n.blr-reading-player-slot .bpx-player-inner {\n  width: 100% !important;\n  height: 100% !important;\n}\n\n.blr-reading-main {\n  min-height: 0;\n  overflow: hidden;\n  display: flex;\n  justify-content: center;\n  pointer-events: auto;\n}\n\n.blr-reading-transcript {\n  width: min(100%, 960px);\n  height: 100%;\n  max-height: 100%;\n  margin: 0 auto;\n  padding: 6px 8px 12px;\n  overflow-x: hidden;\n  overflow-y: auto;\n  pointer-events: auto;\n}\n\n.blr-reading-chapter {\n  width: 100%;\n  border: 0;\n  background: transparent;\n  border-radius: 14px;\n  text-align: left;\n  cursor: pointer;\n  user-select: text;\n  -webkit-user-select: text;\n}\n\n.blr-reading-chapter {\n  display: grid;\n  gap: 4px;\n  padding: 8px 10px;\n  color: #4b5563;\n}\n\n\n\n.blr-reading-chapter:hover {\n  background: #f9fafb;\n}\n\n.blr-reading-chapter.is-active {\n  background: transparent;\n  box-shadow: none;\n}\n\n.blr-reading-chapter-time {\n  font-size: var(--blr-reader-transcript-font-size);\n  font-weight: 600;\n  color: #16a34a;\n  padding-top: 2px;\n  line-height: 1.4;\n}\n\n.blr-reading-chapter-title {\n  font-size: 13px;\n  line-height: 1.45;\n  color: inherit;\n}\n\n.blr-reading-chapter.is-active .blr-reading-chapter-title {\n  text-decoration-line: underline;\n  text-decoration-color: #22c55e;\n  text-decoration-thickness: 2px;\n  text-underline-offset: 3px;\n}\n\n\n\n.blr-reading-empty {\n  padding: 12px 4px;\n  font-size: 14px;\n  color: #94a3b8;\n}\n\n@media (max-width: 1100px) {\n  #blr-reading-view {\n    left: 12px;\n    right: 12px;\n    bottom: 12px;\n    padding: 18px;\n  }\n\n  .blr-reading-layout {\n    grid-template-columns: 210px minmax(0, 1fr);\n    gap: 20px;\n  }\n\n  .blr-reading-title {\n    font-size: 16px;\n  }\n}\n\n@media (max-width: 760px) {\n  #blr-reading-view {\n    top: 72px;\n    height: auto;\n  }\n\n  .blr-reading-layout {\n    grid-template-columns: 1fr;\n    gap: 18px;\n  }\n\n  .blr-reading-stage {\n    grid-template-rows: auto auto minmax(220px, auto) minmax(0, 1fr);\n  }\n\n  .blr-reading-header {\n    flex-direction: column;\n    align-items: stretch;\n  }\n\n  .blr-reading-actions {\n    justify-content: flex-start;\n  }\n\n  .blr-reading-title {\n    font-size: 16px;\n  }\n\n\n\n\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] {\n  margin: 0 !important;\n  padding: 0 !important;\n  width: 100% !important;\n  min-height: 100% !important;\n  background: #fff !important;\n  overflow-x: hidden !important;\n  overflow-y: auto !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-root {\n  position: absolute;\n  inset: 0;\n  z-index: 2147483646;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-panel {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view {\n  position: absolute;\n  inset: 0;\n  width: auto;\n  max-width: none;\n  height: 100vh;\n  display: none;\n  margin: 0;\n  padding: 0;\n  box-sizing: border-box;\n  border: 0;\n  border-radius: 0;\n  box-shadow: none;\n  background: transparent;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view.open {\n  display: block;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-ready=\"0\"] {\n  opacity: 0;\n  visibility: hidden;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-header-copy,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-status {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #viewbox_report,\nbody[data-blr-reader-mode=\"1\"] .video-info-container,\nbody[data-blr-reader-mode=\"1\"] .video-info-title,\nbody[data-blr-reader-mode=\"1\"] .video-info-title-inner {\n  margin: 0 !important;\n  padding: 0 !important;\n  row-gap: 0 !important;\n  column-gap: 0 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #viewbox_report,\nbody[data-blr-reader-mode=\"1\"] .video-info-container {\n  margin-bottom: 4px !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .left-container,\nbody[data-blr-reader-mode=\"1\"] .scroll-sticky {\n  row-gap: 8px !important;\n  padding-top: 0 !important;\n  overflow: visible !important;\n  transition: none !important;\n  animation: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap,\nbody[data-blr-reader-mode=\"1\"] .player-wrap,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n  transition: none !important;\n  animation: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .video-info-detail,\nbody[data-blr-reader-mode=\"1\"] .video-info-meta,\nbody[data-blr-reader-mode=\"1\"] .video-data {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-follow=\"manual\"] .blr-reading-main,\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-follow=\"manual\"] .blr-reading-rail {\n  border-color: rgba(148, 163, 184, 0.8);\n  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-follow=\"manual\"] .blr-reading-eyebrow::after {\n  content: \"手动浏览中\";\n  display: inline-block;\n  margin-left: 8px;\n  font-size: 11px;\n  font-weight: 500;\n  color: #94a3b8;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reader-player-host {\n  background: #000 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap {\n  position: static !important;\n  top: auto !important;\n  z-index: auto !important;\n  background: transparent !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .player-wrap,\nbody[data-blr-reader-mode=\"1\"] .scroll-sticky {\n  position: static !important;\n  top: auto !important;\n  z-index: auto !important;\n  background: transparent !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] [data-blr-reader-player-reset=\"1\"] {\n  position: static !important;\n  inset: auto !important;\n  width: auto !important;\n  height: auto !important;\n  transform: none !important;\n  margin: 0 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .strip-ad-inner,\nbody[data-blr-reader-mode=\"1\"] .inside-wrp,\nbody[data-blr-reader-mode=\"1\"] .inside-bg,\nbody[data-blr-reader-mode=\"1\"] .hinter-msg,\nbody[data-blr-reader-mode=\"1\"] .slide,\nbody[data-blr-reader-mode=\"1\"] .cover.b-img,\nbody[data-blr-reader-mode=\"1\"] .cover.b-img.sleepy,\nbody[data-blr-reader-mode=\"1\"] .b-img.clickable {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] [data-blr-reader-hidden=\"1\"] {\n  display: none !important;\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"],\n#blr-reading-view {\n  --blr-reader-page-bg: #f4f6f8;\n  --blr-reader-surface: #ffffff;\n  --blr-reader-surface-2: #f7f9fc;\n  --blr-reader-surface-3: #edf2f7;\n  --blr-reader-border: rgba(15, 23, 42, 0.1);\n  --blr-reader-text: #0f172a;\n  --blr-reader-muted: #64748b;\n  --blr-reader-accent: #16a34a;\n  --blr-reader-accent-soft: rgba(34, 197, 94, 0.12);\n  --blr-reader-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);\n  --blr-reader-transcript-font-size: 14px;\n  --blr-reader-transcript-font-weight: 500;\n  --blr-reader-transcript-line-height: 1.5;\n  --blr-reader-letter-spacing: 0em;\n  --blr-reader-content-max: 980px;\n  color: var(--blr-reader-text);\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"dark\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"dark\"],\n#blr-reading-view[data-theme=\"dark\"] {\n  --blr-reader-page-bg: #09111f;\n  --blr-reader-surface: #0f172a;\n  --blr-reader-surface-2: #132038;\n  --blr-reader-surface-3: #1a2a46;\n  --blr-reader-border: rgba(148, 163, 184, 0.22);\n  --blr-reader-text: #e5eefb;\n  --blr-reader-muted: #9fb0c8;\n  --blr-reader-accent: #4ade80;\n  --blr-reader-accent-soft: rgba(74, 222, 128, 0.14);\n  --blr-reader-shadow: 0 18px 42px rgba(2, 6, 23, 0.42);\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"paper\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"paper\"],\n#blr-reading-view[data-theme=\"paper\"] {\n  --blr-reader-page-bg: #f4eddc;\n  --blr-reader-surface: #f4eddc;\n  --blr-reader-surface-2: #f4eddc;\n  --blr-reader-surface-3: #f4eddc;\n  --blr-reader-border: rgba(180, 155, 112, 0.22);\n  --blr-reader-text: #3b3124;\n  --blr-reader-muted: #756653;\n  --blr-reader-accent: #2f9e44;\n  --blr-reader-accent-soft: rgba(47, 158, 68, 0.12);\n  --blr-reader-shadow: 0 18px 40px rgba(112, 93, 64, 0.12);\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"s\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"s\"],\n#blr-reading-view[data-font-scale=\"s\"] {\n  --blr-reader-transcript-font-size: 12.8px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xs\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xs\"],\n#blr-reading-view[data-font-scale=\"xs\"] {\n  --blr-reader-transcript-font-size: 11.6px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"l\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"l\"],\n#blr-reading-view[data-font-scale=\"l\"] {\n  --blr-reader-transcript-font-size: 16.4px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xl\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xl\"],\n#blr-reading-view[data-font-scale=\"xl\"] {\n  --blr-reader-transcript-font-size: 18.8px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"light\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"light\"],\n#blr-reading-view[data-font-weight=\"light\"] {\n  --blr-reader-transcript-font-weight: 300;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"regular\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"regular\"],\n#blr-reading-view[data-font-weight=\"regular\"] {\n  --blr-reader-transcript-font-weight: 400;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"semibold\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"semibold\"],\n#blr-reading-view[data-font-weight=\"semibold\"] {\n  --blr-reader-transcript-font-weight: 600;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"bold\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"bold\"],\n#blr-reading-view[data-font-weight=\"bold\"] {\n  --blr-reader-transcript-font-weight: 700;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tighter\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tighter\"],\n#blr-reading-view[data-letter-spacing=\"tighter\"] {\n  --blr-reader-letter-spacing: -0.072em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tight\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tight\"],\n#blr-reading-view[data-letter-spacing=\"tight\"] {\n  --blr-reader-letter-spacing: -0.036em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"relaxed\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"relaxed\"],\n#blr-reading-view[data-letter-spacing=\"relaxed\"] {\n  --blr-reader-letter-spacing: 0.036em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"loose\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"loose\"],\n#blr-reading-view[data-letter-spacing=\"loose\"] {\n  --blr-reader-letter-spacing: 0.072em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"compact\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"compact\"],\n#blr-reading-view[data-content-width=\"compact\"] {\n  --blr-reader-content-max: 720px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"narrow\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"narrow\"],\n#blr-reading-view[data-content-width=\"narrow\"] {\n  --blr-reader-content-max: 820px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"],\n#blr-reading-view[data-content-width=\"wide\"] {\n  --blr-reader-content-max: 1120px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"full\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"full\"],\n#blr-reading-view[data-content-width=\"full\"] {\n  --blr-reader-content-max: 1280px;\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] #app,\nbody[data-blr-reader-mode=\"1\"] .left-container,\nbody[data-blr-reader-mode=\"1\"] .right-container,\nbody[data-blr-reader-mode=\"1\"] .right-container-inner,\nbody[data-blr-reader-mode=\"1\"] .video-info-container,\nbody[data-blr-reader-mode=\"1\"] .video-info-detail,\nbody[data-blr-reader-mode=\"1\"] .video-sections-content-list,\nbody[data-blr-reader-mode=\"1\"] .video-container-v1,\nbody[data-blr-reader-mode=\"1\"] .video-container-v3 {\n  background: var(--blr-reader-page-bg) !important;\n  color: var(--blr-reader-text);\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] #app {\n  min-height: 100vh !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #app {\n  min-width: 0 !important;\n  width: 100% !important;\n  max-width: none !important;\n}\n\n#blr-reading-view,\n#blr-reading-view .blr-reading-meta,\n#blr-reading-view .blr-reading-status,\n#blr-reading-view .blr-reading-chapter {\n  color: var(--blr-reader-text);\n}\n\n#blr-reading-view .blr-reading-layout {\n  gap: 22px;\n}\n\n#blr-reading-view .blr-reading-stage {\n  display: grid;\n  gap: 16px;\n}\n\n#blr-reading-view .blr-reading-header {\n  align-items: flex-start;\n}\n\n#blr-reading-view .blr-reading-title {\n  font-size: 20px;\n  color: var(--blr-reader-text);\n  margin-top: 10px;\n}\n\n#blr-reading-view .blr-reading-meta,\n#blr-reading-view .blr-reading-status {\n  font-size: 14px;\n  color: var(--blr-reader-muted);\n}\n\n#blr-reading-view .blr-reading-actions {\n  gap: 10px;\n}\n\n#blr-reading-view .blr-reading-actions button {\n  border: 1px solid var(--blr-reader-border);\n  background: var(--blr-reader-surface);\n  color: var(--blr-reader-text);\n  box-shadow: none;\n}\n\n#blr-reading-view .blr-reading-actions button.is-active {\n  background: var(--blr-reader-accent-soft);\n  color: var(--blr-reader-accent);\n}\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n#blr-reading-view .blr-reading-main {\n  justify-content: center;\n  background: transparent;\n}\n\n#blr-reading-view .blr-reading-transcript {\n  width: min(100%, var(--blr-reader-content-max));\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-transcript-visible=\"0\"] #blr-reading-view .blr-reading-main,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-transcript-visible=\"0\"] #blr-reading-view .blr-reading-main,\n#blr-reading-view[data-transcript-visible=\"0\"] .blr-reading-main {\n  display: none !important;\n}\n\n#blr-reading-view[data-transcript-visible=\"0\"] #blr-reading-inline-host {\n  border: none;\n  background: transparent;\n}\n\n\n\n#blr-reading-view .blr-reading-chapter:hover {\n  background: var(--blr-reader-surface-2);\n}\n\n#blr-reading-view .blr-reading-chapter.is-active {\n  background: var(--blr-reader-accent-soft);\n}\n\n#blr-reading-view .blr-reading-chapter-time {\n  color: var(--blr-reader-accent);\n}\n\n\n\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-subtitle-wrap,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-subtitle-panel,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-subtitle-container,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bilibili-player-video-subtitle,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .subtitle-wrap,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host [class*=\"subtitle\"],\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-sending-bar,\nbody[data-blr-reading-active=\"1\"] .bpx-player-sending-bar {\n  display: none !important;\n}\n\nbody[data-blr-reading-active=\"1\"] [data-blr-reader-fading] {\n  visibility: hidden !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view {\n  background: transparent;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-header {\n  left: auto;\n  right: 24px;\n  max-width: min(1100px, calc(100vw - 48px));\n  gap: 14px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-actions {\n  pointer-events: auto;\n  justify-content: flex-end;\n}\n\n\n\n/* Simplified reader layout: player in normal flow, transcript box below with its own scroll. */\nbody[data-blr-reader-mode=\"1\"] .blr-reading-player-shell {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-layout,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-stage {\n  display: block;\n  height: auto;\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] {\n  --blr-reader-page-padding: clamp(16px, 2.8vw, 32px);\n  --blr-reader-layout-gap: clamp(16px, 2vw, 24px);\n  --blr-reader-rail-target-width: clamp(168px, 15vw, 220px);\n  --blr-reader-main-width: min(\n    var(--blr-reader-content-max),\n    calc(100vw - (var(--blr-reader-page-padding) * 2))\n  );\n  --blr-reader-rail-width: min(\n    var(--blr-reader-rail-target-width),\n    max(\n      0px,\n      calc(\n        ((100vw - var(--blr-reader-main-width)) / 2) - var(--blr-reader-page-padding) - var(--blr-reader-layout-gap)\n      )\n    )\n  );\n  --blr-reader-transcript-line-height: 1.404;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"compact\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"compact\"],\n#blr-reading-view[data-line-height=\"compact\"] {\n  --blr-reader-transcript-line-height: 1.32;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"tight\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"tight\"],\n#blr-reading-view[data-line-height=\"tight\"] {\n  --blr-reader-transcript-line-height: 1.404;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"normal\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"normal\"],\n#blr-reading-view[data-line-height=\"normal\"] {\n  --blr-reader-transcript-line-height: 1.5;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"relaxed\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"relaxed\"],\n#blr-reading-view[data-line-height=\"relaxed\"] {\n  --blr-reader-transcript-line-height: 1.596;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"loose\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"loose\"],\n#blr-reading-view[data-line-height=\"loose\"] {\n  --blr-reader-transcript-line-height: 1.692;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-actions {\n  gap: 12px;\n  margin-right: -20px;\n  margin-top: -8px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-header {\n  position: fixed;\n  top: 18px;\n  right: var(--blr-reader-page-padding);\n  left: auto;\n  max-width: calc(100vw - (var(--blr-reader-page-padding) * 2));\n  margin-bottom: 0;\n  z-index: 2147483646;\n  pointer-events: auto;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-topbar {\n  display: grid;\n  gap: clamp(12px, 1.2vw, 20px);\n  grid-template-columns: clamp(300px, 28vw, 520px) minmax(0, 1fr);\n  height: 84px;\n  left: var(--blr-reader-page-padding);\n  min-width: 0;\n  overflow: hidden;\n  pointer-events: auto;\n  position: fixed;\n  right: 174px;\n  top: 6px;\n  z-index: 2147483646;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-heading-group {\n  align-content: center;\n  display: grid;\n  gap: 2px;\n  max-height: 84px;\n  overflow: hidden;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-page-title {\n  font-size: clamp(16px, 1.05vw, 19px);\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-collection-nav {\n  align-self: center;\n  height: 70px;\n  min-width: 0;\n  pointer-events: auto;\n  position: static;\n}\n\n@media (max-width: 1000px) {\n  body[data-blr-reader-mode=\"1\"] .blr-reading-topbar {\n    grid-template-columns: clamp(240px, 34vw, 330px) minmax(0, 1fr);\n  }\n}\n\n@media (max-width: 760px) {\n  body[data-blr-reader-mode=\"1\"] .blr-reading-topbar {\n    grid-template-columns: minmax(190px, 42vw) minmax(0, 1fr);\n    right: 150px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-page-title {\n    font-size: 15px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-episode-title {\n    font-size: 12px;\n  }\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n  position: fixed;\n  display: grid !important;\n  left: var(--blr-reader-page-padding) !important;\n  top: 112px !important;\n  width: var(--blr-reader-rail-width) !important;\n  max-height: calc(100vh - 136px) !important;\n  padding: 12px;\n  box-sizing: border-box;\n  background: var(--blr-reader-surface);\n  border: 1px solid var(--blr-reader-border);\n  border-radius: 14px;\n  box-shadow: var(--blr-reader-shadow);\n  pointer-events: auto;\n  z-index: 2147483646;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-chapter-visibility=\"hide\"] .blr-reading-rail,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-chapter-visibility=\"hide\"] .blr-reading-rail,\n#blr-reading-view[data-chapter-visibility=\"hide\"] .blr-reading-rail,\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-chapter-visibility=\"auto\"][data-blr-reader-has-chapters=\"0\"] .blr-reading-rail,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-chapter-visibility=\"auto\"][data-blr-reader-has-chapters=\"0\"] .blr-reading-rail,\n#blr-reading-view[data-chapter-visibility=\"auto\"][data-has-chapters=\"0\"] .blr-reading-rail {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .left-container,\nbody[data-blr-reader-mode=\"1\"] .scroll-sticky,\nbody[data-blr-reader-mode=\"1\"] #playerWrap,\nbody[data-blr-reader-mode=\"1\"] .player-wrap,\nbody[data-blr-reader-mode=\"1\"] h1.video-title,\nbody[data-blr-reader-mode=\"1\"] .video-info-container,\nbody[data-blr-reader-mode=\"1\"] #viewbox_report,\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n  width: min(\n    var(--blr-reader-main-width),\n    var(--blr-reader-player-rendered-width, var(--blr-reader-main-width))\n  ) !important;\n  max-width: min(\n    var(--blr-reader-main-width),\n    var(--blr-reader-player-rendered-width, var(--blr-reader-main-width))\n  ) !important;\n  margin-left: auto !important;\n  margin-right: auto !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n  min-height: 100vh;\n  margin-top: -1px;\n  padding: 0;\n  border: 1px solid var(--blr-reader-border);\n  border-top: 0;\n  border-radius: 0 0 20px 20px;\n  background: var(--blr-reader-surface-2);\n  box-shadow: var(--blr-reader-shadow);\n  box-sizing: border-box;\n  overflow: auto;\n  height: 100vh;\n  scrollbar-width: thin;\n  scrollbar-color: rgba(100, 116, 139, 0.1) transparent;\n  position: relative;\n  isolation: isolate;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap,\nbody[data-blr-reader-mode=\"1\"] .player-wrap {\n  border: 1px solid var(--blr-reader-border);\n  border-bottom: 0;\n  border-radius: 0;\n  background: var(--blr-reader-surface);\n  box-shadow: var(--blr-reader-shadow);\n  box-sizing: border-box;\n  overflow: visible !important;\n  margin-top: -35px !important;\n  height: var(--blr-reader-player-rendered-height, auto) !important;\n  max-height: var(--blr-reader-player-rendered-height, none) !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap > *,\nbody[data-blr-reader-mode=\"1\"] .player-wrap > *,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-container,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-video-area,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-primary-area,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-inner,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-container,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-video-area,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-primary-area,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-inner {\n  width: 100% !important;\n  max-width: 100% !important;\n  height: 100% !important;\n  max-height: 100% !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-main {\n  overflow: visible;\n  display: block;\n  width: 100%;\n  background: transparent;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-transcript,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-chapter-title,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-empty {\n  color: var(--blr-reader-text) !important;\n}\n\n\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-tail-spacer {\n  width: 100%;\n  min-height: 320px;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-status {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] h1.video-title {\n  display: -webkit-box !important;\n  margin-top: 8px !important;\n  color: transparent !important;\n  font-size: clamp(16px, 1.05vw, 20px) !important;\n  line-height: 1.2 !important;\n  padding: 0 !important;\n  height: auto !important;\n  max-height: 48px !important;\n  overflow: hidden !important;\n  overflow-wrap: anywhere !important;\n  pointer-events: none !important;\n  user-select: none !important;\n  visibility: hidden !important;\n  -webkit-box-orient: vertical !important;\n  -webkit-line-clamp: 2 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar {\n  width: 6px;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar-track {\n  background: transparent;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar-thumb {\n  background: rgba(100, 116, 139, 0.1);\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar-thumb:hover {\n  background: rgba(100, 116, 139, 0.16);\n}\n\n@media (max-width: 1320px) {\n  html[data-blr-reader-mode=\"1\"],\n  body[data-blr-reader-mode=\"1\"] {\n    --blr-reader-layout-gap: clamp(12px, 1.4vw, 16px);\n    --blr-reader-rail-target-width: clamp(144px, 12vw, 168px);\n  }\n}\n\n@media (max-width: 1320px) {\n  html[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"] .blr-reading-rail,\n  body[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"] .blr-reading-rail,\n  #blr-reading-view[data-content-width=\"wide\"] .blr-reading-rail {\n    display: none !important;\n  }\n}\n\n@media (max-width: 1180px) {\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n    display: none !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .left-container,\n  body[data-blr-reader-mode=\"1\"] .scroll-sticky,\n  body[data-blr-reader-mode=\"1\"] #playerWrap,\n  body[data-blr-reader-mode=\"1\"] .player-wrap,\n  body[data-blr-reader-mode=\"1\"] h1.video-title,\n  body[data-blr-reader-mode=\"1\"] .video-info-container,\n  body[data-blr-reader-mode=\"1\"] #viewbox_report,\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n    margin-left: auto !important;\n    margin-right: auto !important;\n  }\n}\n\nbody[data-blr-reader-mode=\"1\"] .bpx-player-mini-warp,\nbody[data-blr-reader-mode=\"1\"] .bpx-player-mini-close,\nbody[data-blr-reader-mode=\"1\"] .bpx-player-ending-panel,\nbody[data-blr-reader-mode=\"1\"] .bpx-player-ending-related,\nbody[data-blr-reader-mode=\"1\"] .ad-report,\nbody[data-blr-reader-mode=\"1\"] [class*=\"ad-report\"],\nbody[data-blr-reader-mode=\"1\"] [class*=\"mini-player\"],\nbody[data-blr-reader-mode=\"1\"] [class*=\"picture-in-picture\"] {\n  display: none !important;\n}\n\n\n\n\n\n.blr-reading-complete {\n  padding: 12px 10px 20px;\n  font-size: var(--blr-reader-transcript-font-size);\n  font-weight: var(--blr-reader-transcript-font-weight);\n  line-height: var(--blr-reader-transcript-line-height);\n  letter-spacing: var(--blr-reader-letter-spacing);\n  color: var(--blr-reader-text);\n  text-align: left;\n}\n\n.blr-reading-complete-segment {\n  display: inline;\n  margin: 0;\n  padding: 1px 0;\n  border: 0;\n  border-radius: 2px;\n  background: transparent;\n  color: inherit;\n  font: inherit;\n  letter-spacing: inherit;\n  text-align: inherit;\n  cursor: pointer;\n  user-select: text;\n  -webkit-user-select: text;\n}\n\n.blr-reading-complete-segment:hover {\n  background: var(--blr-reader-accent-soft);\n}\n\n.blr-reading-complete-segment.is-active {\n  background: var(--blr-reader-accent-soft);\n  box-shadow: 0 0 0 2px var(--blr-reader-accent-soft);\n  -webkit-box-decoration-break: clone;\n  box-decoration-break: clone;\n  text-decoration-line: underline;\n  text-decoration-color: var(--blr-reader-accent);\n  text-decoration-thickness: 2px;\n  text-underline-offset: 4px;\n}\n\n/* Desktop reader: title/player with chapters below | transcript. */\n@media (min-width: 1181px) {\n  html[data-blr-reader-mode=\"1\"],\n  body[data-blr-reader-mode=\"1\"] {\n    --blr-reader-three-column-gap: clamp(16px, 1.4vw, 24px);\n    --blr-reader-three-column-half-gap: clamp(8px, 0.7vw, 12px);\n    --blr-reader-rail-width: clamp(176px, 13vw, 220px);\n    --blr-reader-transcript-width: clamp(320px, 24vw, 440px);\n    --blr-reader-center-offset: clamp(-110px, -5.5vw, -72px);\n    --blr-reader-main-width: max(\n      420px,\n      calc(\n        100vw - (var(--blr-reader-page-padding) * 2) - var(--blr-reader-transcript-width) -\n          var(--blr-reader-three-column-gap)\n      )\n    );\n    overflow: hidden !important;\n  }\n\n  /* Watch Later centers its own player column; align it with the reader's fixed transcript. */\n  body[data-blr-reader-mode=\"1\"] #app.playlist-app #mirror-vdcon {\n    box-sizing: border-box;\n    justify-content: flex-start !important;\n    padding-left: var(--blr-reader-page-padding) !important;\n    padding-right: var(--blr-reader-page-padding) !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #app.playlist-app .playlist-container--left {\n    flex: 0 0 var(--blr-reader-main-width) !important;\n    min-width: 0 !important;\n    width: var(--blr-reader-main-width) !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n    left: var(--blr-reader-player-left, var(--blr-reader-page-padding)) !important;\n    top: calc(var(--blr-reader-player-bottom, 72vh) + 12px) !important;\n    bottom: auto !important;\n    width: var(--blr-reader-player-width, var(--blr-reader-main-width)) !important;\n    height: min(112px, calc(100vh - var(--blr-reader-player-bottom, 72vh) - 36px)) !important;\n    min-height: 72px;\n    max-height: none !important;\n    grid-template-rows: auto minmax(0, 1fr);\n    gap: 6px;\n    padding: 10px 12px;\n    border-radius: 10px;\n    overflow: hidden;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail .blr-reading-list {\n    display: flex;\n    align-items: stretch;\n    gap: 8px;\n    min-width: 0;\n    padding: 0 0 4px;\n    overflow-x: auto;\n    overflow-y: hidden;\n    scrollbar-width: thin;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail .blr-reading-chapter {\n    flex: 0 0 auto;\n    width: auto;\n    min-width: 120px;\n    max-width: 190px;\n    padding: 6px 10px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .left-container,\n  body[data-blr-reader-mode=\"1\"] .scroll-sticky,\n  body[data-blr-reader-mode=\"1\"] #playerWrap,\n  body[data-blr-reader-mode=\"1\"] .player-wrap,\n  body[data-blr-reader-mode=\"1\"] h1.video-title,\n  body[data-blr-reader-mode=\"1\"] .video-info-container,\n  body[data-blr-reader-mode=\"1\"] #viewbox_report {\n    width: var(--blr-reader-main-width) !important;\n    max-width: var(--blr-reader-main-width) !important;\n    margin-left: auto !important;\n    margin-right: auto !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .left-container {\n    transform: translateX(var(--blr-reader-center-offset)) !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] h1.video-title {\n    margin-top: 28px !important;\n    margin-bottom: 14px !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #playerWrap,\n  body[data-blr-reader-mode=\"1\"] .player-wrap {\n    margin-top: 0 !important;\n    border: 1px solid var(--blr-reader-border);\n    border-radius: 4px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n    position: fixed !important;\n    top: var(--blr-reader-player-top, 98px) !important;\n    right: var(--blr-reader-page-padding) !important;\n    bottom: 24px !important;\n    left: auto !important;\n    width: var(--blr-reader-transcript-width) !important;\n    max-width: var(--blr-reader-transcript-width) !important;\n    min-height: 0 !important;\n    height: auto !important;\n    margin: 0 !important;\n    padding: 0 !important;\n    border: 1px solid var(--blr-reader-border) !important;\n    border-radius: 0 !important;\n    background: var(--blr-reader-surface-2) !important;\n    box-shadow: var(--blr-reader-shadow) !important;\n    overflow-y: auto !important;\n    scroll-padding-top: 46px;\n    z-index: 2147483645;\n  }\n\n  html[data-blr-reader-mode=\"1\"][data-blr-reader-transcript-visible=\"0\"]\n    #blr-reading-inline-host,\n  body[data-blr-reader-mode=\"1\"][data-blr-reader-transcript-visible=\"0\"]\n    #blr-reading-inline-host {\n    display: none !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-transcript-heading {\n    position: sticky;\n    top: 0;\n    display: flex;\n    align-items: center;\n    height: 38px;\n    margin: 0;\n    justify-content: space-between;\n    gap: 6px;\n    padding: 0 6px 0 10px;\n    box-sizing: border-box;\n    color: var(--blr-reader-muted);\n    background: var(--blr-reader-surface-2);\n    border-bottom: 1px solid var(--blr-reader-border);\n    font-size: 12px;\n    font-weight: 700;\n    letter-spacing: 0.08em;\n    z-index: 3;\n    pointer-events: auto;\n    user-select: none;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-heading-title {\n    min-width: 24px;\n    flex: 1 1 auto;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-heading-controls {\n    display: flex;\n    flex: 0 0 auto;\n    align-items: center;\n    gap: 4px;\n    letter-spacing: 0;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-tool-button {\n    -webkit-appearance: none;\n    appearance: none;\n    width: 26px;\n    height: 26px;\n    display: inline-flex;\n    flex: 0 0 26px;\n    align-items: center;\n    justify-content: center;\n    margin: 0;\n    padding: 0;\n    border: 1px solid var(--blr-reader-border);\n    border-radius: 50%;\n    background: var(--blr-reader-surface);\n    color: var(--blr-reader-text);\n    cursor: pointer;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-tool-button svg {\n    width: 17px;\n    height: 17px;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-tool-button:hover,\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-tool-button.is-active {\n    border-color: var(--blr-reader-accent);\n    color: var(--blr-reader-accent);\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-heading-controls\n    select {\n    -webkit-appearance: none;\n    appearance: none;\n    height: 26px;\n    flex: 0 0 auto;\n    padding: 0 23px 0 7px;\n    box-sizing: border-box;\n    border: 1px solid var(--blr-reader-border);\n    border-radius: 5px;\n    background-color: var(--blr-reader-surface);\n    background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m3 4.5 3 3 3-3' fill='none' stroke='%2364748b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\");\n    background-position: right 6px center;\n    background-repeat: no-repeat;\n    background-size: 12px 12px;\n    color: var(--blr-reader-text);\n    font-size: 12px;\n    font-weight: 500;\n    line-height: 1;\n    outline: none;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-heading-controls\n    select:focus {\n    border-color: var(--blr-reader-accent);\n  }\n\n  #blr-reading-transcript-language {\n    width: 72px;\n  }\n\n  #blr-reading-transcript-font-size {\n    width: 56px;\n  }\n\n  #blr-reading-transcript-font-weight {\n    width: 64px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-main,\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-transcript {\n    width: 100% !important;\n    max-width: none !important;\n    height: auto !important;\n    margin: 0 !important;\n    box-sizing: border-box;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-transcript {\n    padding: 8px 10px 24px;\n    overflow: visible;\n  }\n\n\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-tail-spacer {\n    min-height: 45vh;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle {\n    position: fixed;\n    top: var(--blr-reader-player-top, 88px);\n    bottom: 24px;\n    width: 14px;\n    z-index: 2147483646;\n    cursor: col-resize;\n    pointer-events: auto;\n    touch-action: none;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle::before {\n    content: \"\";\n    position: absolute;\n    top: 0;\n    bottom: 0;\n    left: 6px;\n    width: 2px;\n    border-radius: 999px;\n    background: transparent;\n    transition: background 0.16s ease, box-shadow 0.16s ease;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle:hover::before,\n  body[data-blr-reader-resizing] .blr-reading-resize-handle::before {\n    background: var(--blr-reader-accent);\n    box-shadow: 0 0 0 3px var(--blr-reader-accent-soft);\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle-left {\n    display: block !important;\n    left: var(--blr-reader-player-left, var(--blr-reader-page-padding)) !important;\n    right: auto !important;\n    top: calc(var(--blr-reader-player-bottom, 72vh) + 1px) !important;\n    bottom: auto !important;\n    width: var(--blr-reader-player-width, var(--blr-reader-main-width)) !important;\n    height: 10px;\n    cursor: row-resize;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle-left::before {\n    top: 4px;\n    right: 0;\n    bottom: auto;\n    left: 0;\n    width: auto;\n    height: 2px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle-right {\n    right: calc(\n      var(--blr-reader-page-padding) + var(--blr-reader-transcript-width) +\n        var(--blr-reader-three-column-half-gap) - 7px\n    );\n  }\n\n  body[data-blr-reader-resizing=\"transcript\"],\n  body[data-blr-reader-resizing=\"transcript\"] * {\n    cursor: col-resize !important;\n    user-select: none !important;\n  }\n\n  body[data-blr-reader-resizing=\"chapter\"],\n  body[data-blr-reader-resizing=\"chapter\"] * {\n    cursor: row-resize !important;\n    user-select: none !important;\n  }\n\n  body[data-blr-reader-transcript-visible=\"0\"] .blr-reading-resize-handle-right {\n    display: none !important;\n  }\n}\n\n@media (max-width: 1180px) {\n  .blr-reading-resize-handle {\n    display: none !important;\n  }\n}\n\n/* Timestamp-free transcript rows must not retain the desktop time column. */\n");
+  GM_addStyle("#viewbox_report.blr-page-reader-entry-host,\n.video-info-container.blr-page-reader-entry-host,\n.video-info-title.blr-page-reader-entry-host {\n  position: relative !important;\n}\n\n#viewbox_report.blr-page-reader-entry-host h1.video-title,\n.video-info-container.blr-page-reader-entry-host h1.video-title {\n  padding-right: 108px !important;\n  box-sizing: border-box;\n}\n\n#blr-page-reader-entry {\n  -webkit-appearance: none;\n  appearance: none;\n  position: absolute;\n  top: auto;\n  right: 2px;\n  bottom: 4px;\n  z-index: 20;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: 6px;\n  min-width: 82px;\n  height: 34px;\n  margin: 0;\n  padding: 0 14px;\n  box-sizing: border-box;\n  border: 1px solid rgba(0, 174, 236, 0.42);\n  border-radius: 9px;\n  background: rgba(255, 255, 255, 0.96);\n  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.08);\n  color: #18191c;\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", sans-serif;\n  font-size: 14px;\n  font-weight: 600;\n  line-height: 1;\n  cursor: pointer;\n  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease,\n    transform 0.16s ease, box-shadow 0.16s ease;\n}\n\n#blr-page-reader-entry svg {\n  width: 17px;\n  height: 17px;\n  flex: 0 0 auto;\n  fill: none;\n  stroke: currentColor;\n  stroke-width: 1.8;\n  stroke-linecap: round;\n  stroke-linejoin: round;\n}\n\n#blr-page-reader-entry:hover {\n  border-color: #00aeec;\n  background: #00aeec;\n  color: #fff;\n  box-shadow: 0 7px 20px rgba(0, 174, 236, 0.22);\n  transform: translateY(-1px);\n}\n\n#blr-page-reader-entry:active {\n  transform: translateY(0);\n}\n\n#blr-page-reader-entry:focus-visible {\n  outline: 2px solid rgba(0, 174, 236, 0.42);\n  outline-offset: 2px;\n}\n\n#blr-page-reader-entry:disabled,\n#blr-page-reader-entry.is-loading {\n  cursor: wait;\n  opacity: 0.68;\n  transform: none;\n}\n\nhtml[data-blr-reader-mode=\"1\"] #blr-page-reader-entry,\nbody[data-blr-reader-mode=\"1\"] #blr-page-reader-entry {\n  display: none !important;\n}\n\n@media (max-width: 760px) {\n  #viewbox_report.blr-page-reader-entry-host h1.video-title,\n  .video-info-container.blr-page-reader-entry-host h1.video-title {\n    padding-right: 0 !important;\n  }\n\n  #blr-page-reader-entry {\n    position: relative;\n    top: auto;\n    right: auto;\n    bottom: auto;\n    margin-top: 8px;\n  }\n}\n\n#blr-native-transcript-panel {\n  --blr-native-transcript-body-height: 439px;\n  --blr-native-transcript-font-size: 14px;\n  --blr-native-transcript-font-weight: 500;\n  --blr-native-transcript-surface: var(--bg1, #fff);\n  --blr-native-transcript-text: var(--text1, #18191c);\n  --blr-native-transcript-border: var(--line_regular, #e3e5e7);\n  --blr-native-transcript-active: rgba(0, 174, 236, 0.12);\n  width: 100%;\n  min-width: 0;\n  position: relative;\n  z-index: 20;\n  margin: 0 0 12px;\n  box-sizing: border-box;\n  isolation: isolate;\n  pointer-events: auto;\n  color: var(--text1, #18191c);\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", sans-serif;\n}\n\n#blr-native-transcript-panel button,\n#blr-native-transcript-panel select,\n#blr-native-transcript-panel .blr-native-transcript-body,\n#blr-native-transcript-panel .blr-native-transcript-list {\n  pointer-events: auto;\n}\n\n.blr-native-transcript-header {\n  width: 100%;\n  height: 44px;\n  display: flex;\n  align-items: center;\n  gap: 4px;\n  margin: 0;\n  padding: 0 6px 0 10px;\n  box-sizing: border-box;\n  border-radius: 6px;\n  background: var(--bg2, #f1f2f3);\n  color: var(--text1, #18191c);\n  font: inherit;\n}\n\n.blr-native-transcript-title-button {\n  -webkit-appearance: none;\n  appearance: none;\n  min-width: 32px;\n  flex: 1 1 auto;\n  align-self: stretch;\n  margin: 0;\n  padding: 0;\n  overflow: hidden;\n  border: 0;\n  background: transparent;\n  color: inherit;\n  font: inherit;\n  font-size: 15px;\n  font-weight: 500;\n  line-height: 1;\n  text-align: left;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  cursor: pointer;\n}\n\n.blr-native-transcript-controls {\n  min-width: 0;\n  display: flex;\n  flex: 0 0 auto;\n  align-items: center;\n  gap: 4px;\n}\n\n.blr-native-transcript-return-button,\n.blr-native-transcript-theme-button {\n  -webkit-appearance: none;\n  appearance: none;\n  width: 26px;\n  height: 26px;\n  display: inline-flex;\n  flex: 0 0 26px;\n  align-items: center;\n  justify-content: center;\n  margin: 0;\n  padding: 0;\n  border: 1px solid var(--line_regular, #e3e5e7);\n  border-radius: 50%;\n  background: var(--bg1, #fff);\n  color: var(--text1, #18191c);\n  cursor: pointer;\n}\n\n.blr-native-transcript-return-button svg,\n.blr-native-transcript-theme-button svg {\n  width: 17px;\n  height: 17px;\n}\n\n.blr-native-transcript-return-button:hover,\n.blr-native-transcript-return-button.is-active,\n.blr-native-transcript-theme-button:hover,\n.blr-native-transcript-theme-button.is-active {\n  border-color: var(--brand_blue, #00aeec);\n  color: var(--brand_blue, #00aeec);\n}\n\n.blr-native-transcript-controls select {\n  -webkit-appearance: none;\n  appearance: none;\n  flex: 0 0 auto;\n  height: 28px;\n  min-width: 0;\n  padding: 0 25px 0 8px;\n  box-sizing: border-box;\n  border: 1px solid var(--line_regular, #e3e5e7);\n  border-radius: 5px;\n  background-color: var(--bg1, #fff);\n  background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m3 4.5 3 3 3-3' fill='none' stroke='%2318191c' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\");\n  background-position: right 7px center;\n  background-repeat: no-repeat;\n  background-size: 12px 12px;\n  color: var(--text1, #18191c);\n  font-size: 12px;\n  outline: none;\n}\n\n.blr-native-transcript-controls select:focus {\n  border-color: var(--brand_blue, #00aeec);\n}\n\n#blr-native-transcript-select {\n  width: 72px;\n}\n\n#blr-native-transcript-font-size {\n  width: 56px;\n}\n\n#blr-native-transcript-font-weight {\n  width: 64px;\n}\n\n.blr-native-transcript-arrow-button {\n  -webkit-appearance: none;\n  appearance: none;\n  width: 28px;\n  height: 28px;\n  display: inline-flex;\n  flex: 0 0 28px;\n  align-items: center;\n  justify-content: center;\n  margin: 0;\n  padding: 0;\n  border: 0;\n  border-radius: 4px;\n  background: transparent;\n  color: inherit;\n  cursor: pointer;\n}\n\n.blr-native-transcript-title-button:focus-visible,\n.blr-native-transcript-return-button:focus-visible,\n.blr-native-transcript-theme-button:focus-visible,\n.blr-native-transcript-arrow-button:focus-visible {\n  outline: 2px solid var(--brand_blue, #00aeec);\n  outline-offset: 1px;\n}\n\n.blr-native-transcript-arrow-button:hover {\n  background: rgba(0, 0, 0, 0.06);\n}\n\n.blr-native-transcript-arrow {\n  width: 16px;\n  height: 16px;\n  flex: 0 0 auto;\n  fill: none;\n  stroke: currentColor;\n  stroke-width: 1.6;\n  stroke-linecap: round;\n  stroke-linejoin: round;\n  transform: rotate(90deg);\n  transition: transform 0.18s ease;\n}\n\n#blr-native-transcript-panel.is-folded .blr-native-transcript-arrow {\n  transform: rotate(0deg);\n}\n\n.blr-native-transcript-empty-notice {\n  position: absolute;\n  top: calc(100% - 4px);\n  left: 50%;\n  z-index: 1;\n  transform: translateX(-50%);\n  padding: 4px 8px;\n  border-radius: 8px;\n  background: var(--bg1, #fff);\n  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);\n  color: #00aeec;\n  font-size: 13px;\n  font-weight: 600;\n  line-height: 20px;\n  white-space: nowrap;\n  pointer-events: none;\n  animation: blr-native-transcript-notice-fade 2.2s ease-out forwards;\n}\n\n@keyframes blr-native-transcript-notice-fade {\n  0% { opacity: 0; }\n  8%, 65% { opacity: 1; }\n  100% { opacity: 0; }\n}\n\n.blr-native-transcript-body {\n  height: var(--blr-native-transcript-body-height);\n  min-height: 0;\n  display: flex;\n  flex-direction: column;\n  margin-top: 12px;\n  overflow: hidden;\n  box-sizing: border-box;\n  border: 1px solid var(--blr-native-transcript-border);\n  border-radius: 6px;\n  background: var(--blr-native-transcript-surface);\n  color: var(--blr-native-transcript-text);\n}\n\n#blr-native-transcript-panel[data-theme=\"dark\"] {\n  --blr-native-transcript-surface: #0f172a;\n  --blr-native-transcript-text: #e5eefb;\n  --blr-native-transcript-border: rgba(148, 163, 184, 0.28);\n  --blr-native-transcript-active: rgba(74, 222, 128, 0.16);\n}\n\n#blr-native-transcript-panel[data-theme=\"paper\"] {\n  --blr-native-transcript-surface: #f4eddc;\n  --blr-native-transcript-text: #3b3124;\n  --blr-native-transcript-border: rgba(180, 155, 112, 0.34);\n  --blr-native-transcript-active: rgba(47, 158, 68, 0.14);\n}\n\n.blr-native-transcript-body[hidden] {\n  display: none !important;\n}\n\n.blr-native-transcript-list {\n  min-height: 0;\n  flex: 1 1 auto;\n  overflow-x: hidden;\n  overflow-y: auto;\n  overscroll-behavior: contain;\n  scrollbar-width: thin;\n  scrollbar-color: rgba(148, 153, 160, 0.72) transparent;\n}\n\n.blr-native-transcript-list::-webkit-scrollbar {\n  width: 6px;\n}\n\n.blr-native-transcript-list::-webkit-scrollbar-track {\n  background: transparent;\n}\n\n.blr-native-transcript-list::-webkit-scrollbar-thumb {\n  border-radius: 999px;\n  background: rgba(148, 153, 160, 0.72);\n}\n\n.blr-native-transcript-complete {\n  padding: 12px 14px 36px;\n  color: var(--blr-native-transcript-text);\n  font-size: var(--blr-native-transcript-font-size);\n  font-weight: var(--blr-native-transcript-font-weight);\n  line-height: 1.8;\n  letter-spacing: 0;\n  text-align: left;\n  word-break: break-word;\n}\n\n.blr-native-transcript-segment {\n  -webkit-appearance: none;\n  appearance: none;\n  display: inline;\n  margin: 0;\n  padding: 1px 0;\n  border: 0;\n  border-radius: 2px;\n  background: transparent;\n  color: inherit;\n  font: inherit;\n  letter-spacing: inherit;\n  text-align: inherit;\n  cursor: pointer;\n  user-select: text;\n  -webkit-user-select: text;\n}\n\n.blr-native-transcript-segment:hover {\n  background: rgba(0, 174, 236, 0.1);\n}\n\n.blr-native-transcript-segment.is-active {\n  background: var(--blr-native-transcript-active);\n  text-decoration-line: underline;\n  text-decoration-color: var(--brand_blue, #00aeec);\n  text-decoration-thickness: 2px;\n  text-underline-offset: 4px;\n}\n\n.blr-native-transcript-segment:focus-visible {\n  outline: 2px solid rgba(0, 174, 236, 0.42);\n  outline-offset: 1px;\n}\n\n.blr-native-transcript-state {\n  min-height: 100%;\n  display: flex;\n  flex: 1 1 auto;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  gap: 12px;\n  padding: 24px;\n  box-sizing: border-box;\n  color: var(--text3, #9499a0);\n  font-size: 13px;\n  text-align: center;\n}\n\n.blr-native-transcript-state button {\n  height: 30px;\n  padding: 0 14px;\n  border: 1px solid var(--brand_blue, #00aeec);\n  border-radius: 5px;\n  background: transparent;\n  color: var(--brand_blue, #00aeec);\n  cursor: pointer;\n}\n\n.blr-native-transcript-state button:hover {\n  background: rgba(0, 174, 236, 0.08);\n}\n\n#blr-panel {\n  position: fixed;\n  right: 16px;\n  top: 72px;\n  width: min(420px, calc(100vw - 24px));\n  height: min(820px, calc(100vh - 88px));\n  z-index: 2147483647;\n  background: #f1f1f1;\n  border: 1px solid #d8d8d8;\n  border-radius: 14px;\n  box-shadow: 0 24px 46px rgba(0, 0, 0, 0.24);\n  padding: 12px;\n  box-sizing: border-box;\n  display: none;\n  flex-direction: column;\n  gap: 8px;\n  font-family: -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"PingFang SC\", \"Helvetica Neue\",\n    Arial, sans-serif;\n}\n\n#blr-panel.open {\n  display: flex;\n}\n\n.blr-header {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 0 0 4px;\n}\n\n.blr-header strong {\n  font-size: 17px;\n  font-weight: 600;\n  letter-spacing: 0.01em;\n  color: #3d3d3d;\n}\n\n.blr-header-actions {\n  display: flex;\n  gap: 6px;\n}\n\n.blr-header button {\n  border: 1px solid #cfcfcf;\n  background: #f8f8f8;\n  border-radius: 10px;\n  padding: 7px 10px;\n  cursor: pointer;\n  color: #4a4a4a;\n}\n\n.blr-status {\n  margin: 0;\n  font-size: 12px;\n  color: #555;\n  background: #e8e8e8;\n  border-radius: 8px;\n  padding: 7px 8px;\n}\n\n.blr-props-head {\n  font-size: 15px;\n  font-weight: 600;\n  color: #4a4a4a;\n  margin-top: 0;\n}\n\n.blr-meta {\n  border: 1px solid #d5d5d5;\n  border-radius: 10px;\n  padding: 8px 10px;\n  background: #f7f7f7;\n  display: grid;\n  gap: 6px;\n  font-size: 13px;\n  color: #3f3f3f;\n}\n\n.blr-meta-item {\n  word-break: break-word;\n}\n\n.blr-label {\n  font-size: 12px;\n  font-weight: 600;\n  color: #4d4d4d;\n  margin-top: 2px;\n}\n\n#blr-subtitle-select {\n  height: 36px;\n  border: 1px solid #cfcfcf;\n  border-radius: 8px;\n  padding: 0 10px;\n  background: #fff;\n  color: #2d2d2d;\n}\n\n.blr-player-ai-wrap {\n  align-items: center;\n  background: rgba(20, 24, 32, 0.68);\n  border: 1px solid rgba(255, 255, 255, 0.18);\n  border-radius: 999px;\n  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);\n  display: inline-flex;\n  flex: 0 0 var(--blr-player-ai-action-hit-size, 28px);\n  height: var(--blr-player-ai-action-hit-size, 28px);\n  justify-content: center;\n  margin: 0;\n  min-width: var(--blr-player-ai-action-hit-size, 28px);\n  opacity: 0;\n  overflow: hidden;\n  pointer-events: none;\n  position: absolute;\n  right: 14px;\n  top: 50%;\n  transform: translate(8px, -50%);\n  transition: opacity 0.18s ease, background-color 0.18s ease, transform 0.18s ease;\n  width: var(--blr-player-ai-action-hit-size, 28px);\n  z-index: 30;\n}\n\n.blr-player-ai-wrap.is-active,\n.blr-player-ai-wrap:hover,\n.blr-player-ai-wrap:focus-within {\n  background: rgba(20, 24, 32, 0.78);\n  opacity: 1;\n  pointer-events: auto;\n  transform: translate(0, -50%);\n}\n\n#blr-player-ai-quick-action {\n  -webkit-appearance: none;\n  appearance: none;\n  align-items: center;\n  align-self: center;\n  background: transparent;\n  border: 0;\n  border-radius: 0;\n  box-sizing: border-box;\n  color: var(--blr-player-ai-action-color, currentColor);\n  display: inline-flex;\n  flex: 0 0 auto;\n  justify-content: center;\n  width: 100%;\n  height: 100%;\n  cursor: pointer;\n  line-height: 0;\n  margin-bottom: 0;\n  margin-top: 0;\n  min-width: 0;\n  overflow: hidden;\n  padding: 0;\n  position: relative;\n  top: 0;\n  vertical-align: top;\n  transition: transform 0.16s ease, color 0.16s ease, opacity 0.16s ease;\n}\n\n#blr-player-ai-quick-action svg {\n  width: var(--blr-player-ai-action-icon-size, 24px);\n  height: var(--blr-player-ai-action-icon-size, 24px);\n  display: block;\n  flex: 0 0 auto;\n  stroke: currentColor;\n  fill: none;\n  stroke-linecap: round;\n  stroke-linejoin: round;\n}\n\n#blr-player-ai-quick-action:hover {\n  color: var(--blr-player-ai-action-hover-color, var(--blr-player-ai-action-color, currentColor));\n}\n\n#blr-player-ai-quick-action:disabled {\n  opacity: 0.62;\n  cursor: wait;\n  transform: none;\n}\n\n.blr-confirm-overlay {\n  align-items: center;\n  background: rgba(17, 24, 39, 0.28);\n  display: flex;\n  inset: 0;\n  justify-content: center;\n  padding: 18px;\n  position: fixed;\n  z-index: 2147483647;\n}\n\n.blr-confirm-dialog {\n  background: #ffffff;\n  border: 1px solid #e5e7eb;\n  border-radius: 16px;\n  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.22);\n  color: #111827;\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;\n  max-width: 360px;\n  padding: 18px;\n  width: calc(100vw - 36px);\n}\n\n.blr-confirm-title {\n  font-size: 15px;\n  font-weight: 700;\n  margin-bottom: 8px;\n}\n\n.blr-confirm-body {\n  color: #4b5563;\n  font-size: 13px;\n  margin-bottom: 8px;\n}\n\n.blr-confirm-path {\n  background: #f7f8fb;\n  border: 1px solid #edf0f4;\n  border-radius: 10px;\n  color: #374151;\n  font-size: 12px;\n  line-height: 1.45;\n  max-height: 96px;\n  overflow: auto;\n  padding: 9px 10px;\n  word-break: break-all;\n}\n\n.blr-confirm-actions {\n  display: flex;\n  gap: 8px;\n  justify-content: flex-end;\n  margin-top: 14px;\n}\n\n.blr-confirm-actions button {\n  border: 1px solid #d9dee7;\n  border-radius: 10px;\n  cursor: pointer;\n  font-size: 13px;\n  height: 34px;\n  padding: 0 14px;\n}\n\n.blr-confirm-cancel {\n  background: #ffffff;\n  color: #374151;\n}\n\n.blr-confirm-primary {\n  background: #111827;\n  border-color: #111827 !important;\n  color: #ffffff;\n}\n\n#blr-preview {\n  width: 100%;\n  flex: 1;\n  min-height: 180px;\n  box-sizing: border-box;\n  border: 1px solid #d0d0d0;\n  border-radius: 10px;\n  padding: 10px;\n  resize: vertical;\n  font-size: 13px;\n  line-height: 1.55;\n  background: #fff;\n  color: #2f2f2f;\n  font-family: \"SF Mono\", \"JetBrains Mono\", \"PingFang SC\", Menlo, Monaco, Consolas, monospace;\n}\n\n.blr-actions {\n  display: grid;\n  grid-template-columns: repeat(2, minmax(0, 1fr));\n  gap: 8px;\n  margin-top: 0;\n}\n\n.blr-actions button {\n  border: 1px solid #cfcfcf;\n  background: #f8f8f8;\n  border-radius: 9px;\n  padding: 8px 8px;\n  cursor: pointer;\n  color: #3d3d3d;\n  font-size: 13px;\n}\n\n#blr-send-btn {\n  grid-column: span 2;\n  border: 1px solid #a88fff;\n  background: linear-gradient(180deg, #9c82ff 0%, #8f75ef 100%);\n  color: #fff;\n  font-weight: 600;\n}\n\n.blr-actions button:disabled {\n  cursor: not-allowed;\n  opacity: 0.55;\n}\n\n.blr-message {\n  margin: 0;\n  font-size: 12px;\n  color: #0f766e;\n  min-height: 18px;\n  padding: 0 2px;\n}\n\n#blr-reading-view {\n  position: fixed;\n  left: 16px;\n  right: 16px;\n  bottom: 16px;\n  height: min(76vh, 860px);\n  z-index: 2147483646;\n  display: none;\n  padding: 20px 22px;\n  box-sizing: border-box;\n  background: #fff;\n  border: 1px solid #e5e7eb;\n  border-radius: 18px;\n  box-shadow: 0 28px 60px rgba(15, 23, 42, 0.16);\n  font-family: -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"PingFang SC\", \"Helvetica Neue\",\n    Arial, sans-serif;\n}\n\n#blr-reading-view.open {\n  display: block;\n}\n\n#blr-reading-view[data-blr-reader-ready=\"0\"] {\n  opacity: 0;\n  visibility: hidden;\n  pointer-events: none;\n}\n\n.blr-reading-layout {\n  min-height: 0;\n  height: 100%;\n  display: grid;\n  grid-template-columns: 240px minmax(0, 1fr);\n  gap: 28px;\n}\n\n.blr-reading-rail {\n  min-height: 0;\n  display: grid;\n  grid-template-rows: auto auto minmax(0, 1fr);\n  gap: 10px;\n  align-content: start;\n}\n\n.blr-reading-stage {\n  min-height: 0;\n  display: grid;\n  grid-template-rows: auto auto minmax(320px, 1fr) minmax(0, 1fr);\n  gap: 14px;\n}\n\n.blr-reading-header {\n  display: flex;\n  align-items: flex-start;\n  justify-content: space-between;\n  gap: 18px;\n}\n\n.blr-reading-header-copy {\n  min-width: 0;\n}\n\n.blr-reading-eyebrow {\n  font-size: 11px;\n  font-weight: 700;\n  letter-spacing: 0.08em;\n  color: #9ca3af;\n  text-transform: uppercase;\n}\n\n.blr-reading-title {\n  display: block;\n  margin: 0;\n  font-size: 16px;\n  line-height: 1.15;\n  color: #0f172a;\n  word-break: break-word;\n}\n\n.blr-reading-topbar,\n.blr-reading-heading-group {\n  min-width: 0;\n}\n\n.blr-reading-page-title {\n  color: var(--blr-reader-text, #0f172a);\n  display: -webkit-box;\n  font-size: 18px;\n  font-weight: 500;\n  line-height: 1.2;\n  overflow: hidden;\n  overflow-wrap: anywhere;\n  -webkit-box-orient: vertical;\n  -webkit-line-clamp: 2;\n}\n\n.blr-reading-episode-title {\n  color: var(--blr-reader-muted, #64748b);\n  display: -webkit-box;\n  font-size: 14px;\n  font-weight: 600;\n  line-height: 1.3;\n  overflow: hidden;\n  overflow-wrap: anywhere;\n  -webkit-box-orient: vertical;\n  -webkit-line-clamp: 2;\n}\n\n.blr-reading-collection-nav {\n  align-items: flex-start;\n  display: flex;\n  gap: 10px;\n  min-width: 0;\n}\n\n.blr-reading-episode-title[hidden],\n.blr-reading-collection-nav[hidden] {\n  display: none !important;\n}\n\n.blr-reading-collection-list {\n  align-content: flex-start;\n  align-items: center;\n  display: flex;\n  flex: 1 1 auto;\n  flex-wrap: wrap;\n  gap: 6px;\n  height: 70px;\n  min-width: 0;\n  overflow-x: hidden;\n  overflow-y: auto;\n  overscroll-behavior-y: contain;\n  scrollbar-width: none;\n}\n\n.blr-reading-collection-list::-webkit-scrollbar {\n  display: none;\n}\n\n.blr-reading-collection-item {\n  align-items: center;\n  background: transparent;\n  border: 1px solid var(--blr-reader-border, #e2e8f0);\n  border-radius: 999px;\n  color: var(--blr-reader-muted, #64748b);\n  cursor: pointer;\n  display: inline-flex;\n  flex: 0 0 auto;\n  gap: 6px;\n  height: 32px;\n  max-width: 260px;\n  padding: 0 10px 0 7px;\n  font-weight: 600;\n}\n\n.blr-reading-collection-item:hover {\n  border-color: var(--blr-reader-accent, #22c55e);\n  color: var(--blr-reader-text, #0f172a);\n}\n\n.blr-reading-collection-item.is-active {\n  background: var(--blr-reader-accent-soft, #ecfdf5);\n  border-color: var(--blr-reader-accent, #22c55e);\n  color: var(--blr-reader-accent, #16a34a);\n}\n\n.blr-reading-collection-index {\n  align-items: center;\n  background: color-mix(in srgb, currentColor 10%, transparent);\n  border-radius: 999px;\n  display: inline-flex;\n  flex: 0 0 auto;\n  font-size: 10px;\n  font-weight: 700;\n  height: 18px;\n  justify-content: center;\n  min-width: 18px;\n  padding: 0 4px;\n}\n\n.blr-reading-collection-item-title {\n  font-size: 12px;\n  font-weight: 600;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.blr-reading-meta,\n.blr-reading-status {\n  font-size: 14px;\n  line-height: 1.5;\n  color: #6b7280;\n}\n\n.blr-reading-meta {\n  margin-top: 8px;\n}\n\n.blr-reading-actions {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex-wrap: wrap;\n  justify-content: flex-end;\n  transition: opacity 0.2s ease;\n}\n\n.blr-reading-actions[data-blr-icon-hidden=\"1\"] {\n  opacity: 0;\n  pointer-events: none;\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .blr-reading-actions {\n    transition: none;\n  }\n}\n\n.blr-reading-actions button {\n  border: 1px solid #e5e7eb;\n  background: #fff;\n  border-radius: 999px;\n  min-height: 36px;\n  padding: 0 14px;\n  font-size: 13px;\n  color: #1f2937;\n  box-sizing: border-box;\n}\n\n.blr-reading-actions button {\n  cursor: pointer;\n}\n\n\n\n\n\n.blr-reading-icon-btn {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 34px;\n  height: 34px;\n  border: 1px solid #e5e7eb;\n  background: #fff;\n  border-radius: 8px;\n  cursor: pointer;\n  padding: 0;\n  color: #1f2937;\n}\n\n.blr-reading-icon-btn svg {\n  width: 18px;\n  height: 18px;\n  flex: 0 0 auto;\n}\n\n.blr-reading-icon-btn:hover {\n  background: #f3f4f6;\n  border-color: #d1d5db;\n}\n\n.blr-reading-icon-btn.is-active {\n  background: #eff6ff;\n  border-color: #2563eb;\n  color: #2563eb;\n}\n\n\n\n\n\n\n\n\n\n\n\n.blr-reading-list,\n.blr-reading-transcript {\n  min-height: 0;\n  overflow: auto;\n}\n\n.blr-reading-list {\n  padding-right: 6px;\n}\n\n.blr-reading-player-shell {\n  min-height: 0;\n  display: flex;\n  justify-content: center;\n  align-items: flex-start;\n  pointer-events: none;\n}\n\n.blr-reading-player-slot {\n  width: min(100%, 960px);\n  aspect-ratio: 16 / 9;\n  max-height: 100%;\n  min-height: 0;\n  overflow: hidden;\n  background: #fff;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  pointer-events: none;\n}\n\n.blr-reading-player-slot > * {\n  width: 100% !important;\n  max-width: 100% !important;\n  height: 100% !important;\n}\n\n.blr-reading-player-slot > video {\n  width: 100% !important;\n  height: 100% !important;\n  display: block;\n  background: #000;\n  object-fit: contain;\n}\n\n.blr-reading-player-slot #bilibili-player,\n.blr-reading-player-slot .bpx-player-container,\n.blr-reading-player-slot .bpx-player-video-area,\n.blr-reading-player-slot .bpx-player-primary-area,\n.blr-reading-player-slot .bpx-player-inner {\n  width: 100% !important;\n  height: 100% !important;\n}\n\n.blr-reading-main {\n  min-height: 0;\n  overflow: hidden;\n  display: flex;\n  justify-content: center;\n  pointer-events: auto;\n}\n\n.blr-reading-transcript {\n  width: min(100%, 960px);\n  height: 100%;\n  max-height: 100%;\n  margin: 0 auto;\n  padding: 6px 8px 12px;\n  overflow-x: hidden;\n  overflow-y: auto;\n  pointer-events: auto;\n}\n\n.blr-reading-chapter {\n  width: 100%;\n  border: 0;\n  background: transparent;\n  border-radius: 14px;\n  text-align: left;\n  cursor: pointer;\n  user-select: text;\n  -webkit-user-select: text;\n}\n\n.blr-reading-chapter {\n  display: grid;\n  gap: 4px;\n  padding: 8px 10px;\n  color: #4b5563;\n}\n\n\n\n.blr-reading-chapter:hover {\n  background: #f9fafb;\n}\n\n.blr-reading-chapter.is-active {\n  background: transparent;\n  box-shadow: none;\n}\n\n.blr-reading-chapter-time {\n  font-size: var(--blr-reader-transcript-font-size);\n  font-weight: 600;\n  color: #16a34a;\n  padding-top: 2px;\n  line-height: 1.4;\n}\n\n.blr-reading-chapter-title {\n  font-size: 13px;\n  line-height: 1.45;\n  color: inherit;\n}\n\n.blr-reading-chapter.is-active .blr-reading-chapter-title {\n  text-decoration-line: underline;\n  text-decoration-color: #22c55e;\n  text-decoration-thickness: 2px;\n  text-underline-offset: 3px;\n}\n\n\n\n.blr-reading-empty {\n  padding: 12px 4px;\n  font-size: 14px;\n  color: #94a3b8;\n}\n\n@media (max-width: 1100px) {\n  #blr-reading-view {\n    left: 12px;\n    right: 12px;\n    bottom: 12px;\n    padding: 18px;\n  }\n\n  .blr-reading-layout {\n    grid-template-columns: 210px minmax(0, 1fr);\n    gap: 20px;\n  }\n\n  .blr-reading-title {\n    font-size: 16px;\n  }\n}\n\n@media (max-width: 760px) {\n  #blr-reading-view {\n    top: 72px;\n    height: auto;\n  }\n\n  .blr-reading-layout {\n    grid-template-columns: 1fr;\n    gap: 18px;\n  }\n\n  .blr-reading-stage {\n    grid-template-rows: auto auto minmax(220px, auto) minmax(0, 1fr);\n  }\n\n  .blr-reading-header {\n    flex-direction: column;\n    align-items: stretch;\n  }\n\n  .blr-reading-actions {\n    justify-content: flex-start;\n  }\n\n  .blr-reading-title {\n    font-size: 16px;\n  }\n\n\n\n\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] {\n  margin: 0 !important;\n  padding: 0 !important;\n  width: 100% !important;\n  min-height: 100% !important;\n  background: #fff !important;\n  overflow-x: hidden !important;\n  overflow-y: auto !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-root {\n  position: absolute;\n  inset: 0;\n  z-index: 2147483646;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-panel {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view {\n  position: absolute;\n  inset: 0;\n  width: auto;\n  max-width: none;\n  height: 100vh;\n  display: none;\n  margin: 0;\n  padding: 0;\n  box-sizing: border-box;\n  border: 0;\n  border-radius: 0;\n  box-shadow: none;\n  background: transparent;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view.open {\n  display: block;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-ready=\"0\"] {\n  opacity: 0;\n  visibility: hidden;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-header-copy,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-status {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #viewbox_report,\nbody[data-blr-reader-mode=\"1\"] .video-info-container,\nbody[data-blr-reader-mode=\"1\"] .video-info-title,\nbody[data-blr-reader-mode=\"1\"] .video-info-title-inner {\n  margin: 0 !important;\n  padding: 0 !important;\n  row-gap: 0 !important;\n  column-gap: 0 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #viewbox_report,\nbody[data-blr-reader-mode=\"1\"] .video-info-container {\n  margin-bottom: 4px !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .left-container,\nbody[data-blr-reader-mode=\"1\"] .scroll-sticky {\n  row-gap: 8px !important;\n  padding-top: 0 !important;\n  overflow: visible !important;\n  transition: none !important;\n  animation: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap,\nbody[data-blr-reader-mode=\"1\"] .player-wrap,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n  transition: none !important;\n  animation: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .video-info-detail,\nbody[data-blr-reader-mode=\"1\"] .video-info-meta,\nbody[data-blr-reader-mode=\"1\"] .video-data {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-follow=\"manual\"] .blr-reading-main,\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-follow=\"manual\"] .blr-reading-rail {\n  border-color: rgba(148, 163, 184, 0.8);\n  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-follow=\"manual\"] .blr-reading-eyebrow::after {\n  content: \"手动浏览中\";\n  display: inline-block;\n  margin-left: 8px;\n  font-size: 11px;\n  font-weight: 500;\n  color: #94a3b8;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reader-player-host {\n  background: #000 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap {\n  position: static !important;\n  top: auto !important;\n  z-index: auto !important;\n  background: transparent !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .player-wrap,\nbody[data-blr-reader-mode=\"1\"] .scroll-sticky {\n  position: static !important;\n  top: auto !important;\n  z-index: auto !important;\n  background: transparent !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] [data-blr-reader-player-reset=\"1\"] {\n  position: static !important;\n  inset: auto !important;\n  width: auto !important;\n  height: auto !important;\n  transform: none !important;\n  margin: 0 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .strip-ad-inner,\nbody[data-blr-reader-mode=\"1\"] .inside-wrp,\nbody[data-blr-reader-mode=\"1\"] .inside-bg,\nbody[data-blr-reader-mode=\"1\"] .hinter-msg,\nbody[data-blr-reader-mode=\"1\"] .slide,\nbody[data-blr-reader-mode=\"1\"] .cover.b-img,\nbody[data-blr-reader-mode=\"1\"] .cover.b-img.sleepy,\nbody[data-blr-reader-mode=\"1\"] .b-img.clickable {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] [data-blr-reader-hidden=\"1\"] {\n  display: none !important;\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"],\n#blr-reading-view {\n  --blr-reader-page-bg: #f4f6f8;\n  --blr-reader-surface: #ffffff;\n  --blr-reader-surface-2: #f7f9fc;\n  --blr-reader-surface-3: #edf2f7;\n  --blr-reader-border: rgba(15, 23, 42, 0.1);\n  --blr-reader-text: #0f172a;\n  --blr-reader-muted: #64748b;\n  --blr-reader-accent: #16a34a;\n  --blr-reader-accent-soft: rgba(34, 197, 94, 0.12);\n  --blr-reader-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);\n  --blr-reader-transcript-font-size: 14px;\n  --blr-reader-transcript-font-weight: 500;\n  --blr-reader-transcript-line-height: 1.5;\n  --blr-reader-letter-spacing: 0em;\n  --blr-reader-content-max: 980px;\n  color: var(--blr-reader-text);\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"dark\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"dark\"],\n#blr-reading-view[data-theme=\"dark\"] {\n  --blr-reader-page-bg: #09111f;\n  --blr-reader-surface: #0f172a;\n  --blr-reader-surface-2: #132038;\n  --blr-reader-surface-3: #1a2a46;\n  --blr-reader-border: rgba(148, 163, 184, 0.22);\n  --blr-reader-text: #e5eefb;\n  --blr-reader-muted: #9fb0c8;\n  --blr-reader-accent: #4ade80;\n  --blr-reader-accent-soft: rgba(74, 222, 128, 0.14);\n  --blr-reader-shadow: 0 18px 42px rgba(2, 6, 23, 0.42);\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"paper\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"paper\"],\n#blr-reading-view[data-theme=\"paper\"] {\n  --blr-reader-page-bg: #f4eddc;\n  --blr-reader-surface: #f4eddc;\n  --blr-reader-surface-2: #f4eddc;\n  --blr-reader-surface-3: #f4eddc;\n  --blr-reader-border: rgba(180, 155, 112, 0.22);\n  --blr-reader-text: #3b3124;\n  --blr-reader-muted: #756653;\n  --blr-reader-accent: #2f9e44;\n  --blr-reader-accent-soft: rgba(47, 158, 68, 0.12);\n  --blr-reader-shadow: 0 18px 40px rgba(112, 93, 64, 0.12);\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"s\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"s\"],\n#blr-reading-view[data-font-scale=\"s\"] {\n  --blr-reader-transcript-font-size: 12.8px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xs\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xs\"],\n#blr-reading-view[data-font-scale=\"xs\"] {\n  --blr-reader-transcript-font-size: 11.6px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"l\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"l\"],\n#blr-reading-view[data-font-scale=\"l\"] {\n  --blr-reader-transcript-font-size: 16.4px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xl\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xl\"],\n#blr-reading-view[data-font-scale=\"xl\"] {\n  --blr-reader-transcript-font-size: 18.8px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"light\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"light\"],\n#blr-reading-view[data-font-weight=\"light\"] {\n  --blr-reader-transcript-font-weight: 300;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"regular\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"regular\"],\n#blr-reading-view[data-font-weight=\"regular\"] {\n  --blr-reader-transcript-font-weight: 400;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"semibold\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"semibold\"],\n#blr-reading-view[data-font-weight=\"semibold\"] {\n  --blr-reader-transcript-font-weight: 600;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"bold\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"bold\"],\n#blr-reading-view[data-font-weight=\"bold\"] {\n  --blr-reader-transcript-font-weight: 700;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tighter\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tighter\"],\n#blr-reading-view[data-letter-spacing=\"tighter\"] {\n  --blr-reader-letter-spacing: -0.072em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tight\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tight\"],\n#blr-reading-view[data-letter-spacing=\"tight\"] {\n  --blr-reader-letter-spacing: -0.036em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"relaxed\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"relaxed\"],\n#blr-reading-view[data-letter-spacing=\"relaxed\"] {\n  --blr-reader-letter-spacing: 0.036em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"loose\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"loose\"],\n#blr-reading-view[data-letter-spacing=\"loose\"] {\n  --blr-reader-letter-spacing: 0.072em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"compact\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"compact\"],\n#blr-reading-view[data-content-width=\"compact\"] {\n  --blr-reader-content-max: 720px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"narrow\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"narrow\"],\n#blr-reading-view[data-content-width=\"narrow\"] {\n  --blr-reader-content-max: 820px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"],\n#blr-reading-view[data-content-width=\"wide\"] {\n  --blr-reader-content-max: 1120px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"full\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"full\"],\n#blr-reading-view[data-content-width=\"full\"] {\n  --blr-reader-content-max: 1280px;\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] #app,\nbody[data-blr-reader-mode=\"1\"] .left-container,\nbody[data-blr-reader-mode=\"1\"] .right-container,\nbody[data-blr-reader-mode=\"1\"] .right-container-inner,\nbody[data-blr-reader-mode=\"1\"] .video-info-container,\nbody[data-blr-reader-mode=\"1\"] .video-info-detail,\nbody[data-blr-reader-mode=\"1\"] .video-sections-content-list,\nbody[data-blr-reader-mode=\"1\"] .video-container-v1,\nbody[data-blr-reader-mode=\"1\"] .video-container-v3 {\n  background: var(--blr-reader-page-bg) !important;\n  color: var(--blr-reader-text);\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] #app {\n  min-height: 100vh !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #app {\n  min-width: 0 !important;\n  width: 100% !important;\n  max-width: none !important;\n}\n\n#blr-reading-view,\n#blr-reading-view .blr-reading-meta,\n#blr-reading-view .blr-reading-status,\n#blr-reading-view .blr-reading-chapter {\n  color: var(--blr-reader-text);\n}\n\n#blr-reading-view .blr-reading-layout {\n  gap: 22px;\n}\n\n#blr-reading-view .blr-reading-stage {\n  display: grid;\n  gap: 16px;\n}\n\n#blr-reading-view .blr-reading-header {\n  align-items: flex-start;\n}\n\n#blr-reading-view .blr-reading-title {\n  font-size: 20px;\n  color: var(--blr-reader-text);\n  margin-top: 10px;\n}\n\n#blr-reading-view .blr-reading-meta,\n#blr-reading-view .blr-reading-status {\n  font-size: 14px;\n  color: var(--blr-reader-muted);\n}\n\n#blr-reading-view .blr-reading-actions {\n  gap: 10px;\n}\n\n#blr-reading-view .blr-reading-actions button {\n  border: 1px solid var(--blr-reader-border);\n  background: var(--blr-reader-surface);\n  color: var(--blr-reader-text);\n  box-shadow: none;\n}\n\n#blr-reading-view .blr-reading-actions button.is-active {\n  background: var(--blr-reader-accent-soft);\n  color: var(--blr-reader-accent);\n}\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n#blr-reading-view .blr-reading-main {\n  justify-content: center;\n  background: transparent;\n}\n\n#blr-reading-view .blr-reading-transcript {\n  width: min(100%, var(--blr-reader-content-max));\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-transcript-visible=\"0\"] #blr-reading-view .blr-reading-main,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-transcript-visible=\"0\"] #blr-reading-view .blr-reading-main,\n#blr-reading-view[data-transcript-visible=\"0\"] .blr-reading-main {\n  display: none !important;\n}\n\n#blr-reading-view[data-transcript-visible=\"0\"] #blr-reading-inline-host {\n  border: none;\n  background: transparent;\n}\n\n\n\n#blr-reading-view .blr-reading-chapter:hover {\n  background: var(--blr-reader-surface-2);\n}\n\n#blr-reading-view .blr-reading-chapter.is-active {\n  background: var(--blr-reader-accent-soft);\n}\n\n#blr-reading-view .blr-reading-chapter-time {\n  color: var(--blr-reader-accent);\n}\n\n\n\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-subtitle-wrap,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-subtitle-panel,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-subtitle-container,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bilibili-player-video-subtitle,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .subtitle-wrap,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host [class*=\"subtitle\"],\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-sending-bar,\nbody[data-blr-reading-active=\"1\"] .bpx-player-sending-bar {\n  display: none !important;\n}\n\nbody[data-blr-reading-active=\"1\"] [data-blr-reader-fading] {\n  visibility: hidden !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view {\n  background: transparent;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-header {\n  left: auto;\n  right: 24px;\n  max-width: min(1100px, calc(100vw - 48px));\n  gap: 14px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-actions {\n  pointer-events: auto;\n  justify-content: flex-end;\n}\n\n\n\n/* Simplified reader layout: player in normal flow, transcript box below with its own scroll. */\nbody[data-blr-reader-mode=\"1\"] .blr-reading-player-shell {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-layout,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-stage {\n  display: block;\n  height: auto;\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] {\n  --blr-reader-page-padding: clamp(16px, 2.8vw, 32px);\n  --blr-reader-layout-gap: clamp(16px, 2vw, 24px);\n  --blr-reader-rail-target-width: clamp(168px, 15vw, 220px);\n  --blr-reader-main-width: min(\n    var(--blr-reader-content-max),\n    calc(100vw - (var(--blr-reader-page-padding) * 2))\n  );\n  --blr-reader-rail-width: min(\n    var(--blr-reader-rail-target-width),\n    max(\n      0px,\n      calc(\n        ((100vw - var(--blr-reader-main-width)) / 2) - var(--blr-reader-page-padding) - var(--blr-reader-layout-gap)\n      )\n    )\n  );\n  --blr-reader-transcript-line-height: 1.404;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"compact\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"compact\"],\n#blr-reading-view[data-line-height=\"compact\"] {\n  --blr-reader-transcript-line-height: 1.32;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"tight\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"tight\"],\n#blr-reading-view[data-line-height=\"tight\"] {\n  --blr-reader-transcript-line-height: 1.404;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"normal\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"normal\"],\n#blr-reading-view[data-line-height=\"normal\"] {\n  --blr-reader-transcript-line-height: 1.5;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"relaxed\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"relaxed\"],\n#blr-reading-view[data-line-height=\"relaxed\"] {\n  --blr-reader-transcript-line-height: 1.596;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"loose\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"loose\"],\n#blr-reading-view[data-line-height=\"loose\"] {\n  --blr-reader-transcript-line-height: 1.692;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-actions {\n  gap: 12px;\n  margin-right: -20px;\n  margin-top: -8px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-header {\n  position: fixed;\n  top: 18px;\n  right: var(--blr-reader-page-padding);\n  left: auto;\n  max-width: calc(100vw - (var(--blr-reader-page-padding) * 2));\n  margin-bottom: 0;\n  z-index: 2147483646;\n  pointer-events: auto;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-topbar {\n  display: grid;\n  gap: clamp(12px, 1.2vw, 20px);\n  grid-template-columns: clamp(300px, 28vw, 520px) minmax(0, 1fr);\n  height: 84px;\n  left: var(--blr-reader-page-padding);\n  min-width: 0;\n  overflow: hidden;\n  pointer-events: auto;\n  position: fixed;\n  right: 174px;\n  top: 6px;\n  z-index: 2147483646;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-heading-group {\n  align-content: center;\n  display: grid;\n  gap: 2px;\n  max-height: 84px;\n  overflow: hidden;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-page-title {\n  font-size: clamp(16px, 1.05vw, 19px);\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-collection-nav {\n  align-self: center;\n  height: 70px;\n  min-width: 0;\n  pointer-events: auto;\n  position: static;\n}\n\n@media (max-width: 1000px) {\n  body[data-blr-reader-mode=\"1\"] .blr-reading-topbar {\n    grid-template-columns: clamp(240px, 34vw, 330px) minmax(0, 1fr);\n  }\n}\n\n@media (max-width: 760px) {\n  body[data-blr-reader-mode=\"1\"] .blr-reading-topbar {\n    grid-template-columns: minmax(190px, 42vw) minmax(0, 1fr);\n    right: 150px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-page-title {\n    font-size: 15px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-episode-title {\n    font-size: 12px;\n  }\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n  position: fixed;\n  display: grid !important;\n  left: var(--blr-reader-page-padding) !important;\n  top: 112px !important;\n  width: var(--blr-reader-rail-width) !important;\n  max-height: calc(100vh - 136px) !important;\n  padding: 12px;\n  box-sizing: border-box;\n  background: var(--blr-reader-surface);\n  border: 1px solid var(--blr-reader-border);\n  border-radius: 14px;\n  box-shadow: var(--blr-reader-shadow);\n  pointer-events: auto;\n  z-index: 2147483646;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-chapter-visibility=\"hide\"] .blr-reading-rail,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-chapter-visibility=\"hide\"] .blr-reading-rail,\n#blr-reading-view[data-chapter-visibility=\"hide\"] .blr-reading-rail,\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-chapter-visibility=\"auto\"][data-blr-reader-has-chapters=\"0\"] .blr-reading-rail,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-chapter-visibility=\"auto\"][data-blr-reader-has-chapters=\"0\"] .blr-reading-rail,\n#blr-reading-view[data-chapter-visibility=\"auto\"][data-has-chapters=\"0\"] .blr-reading-rail {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .left-container,\nbody[data-blr-reader-mode=\"1\"] .scroll-sticky,\nbody[data-blr-reader-mode=\"1\"] #playerWrap,\nbody[data-blr-reader-mode=\"1\"] .player-wrap,\nbody[data-blr-reader-mode=\"1\"] h1.video-title,\nbody[data-blr-reader-mode=\"1\"] .video-info-container,\nbody[data-blr-reader-mode=\"1\"] #viewbox_report,\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n  width: min(\n    var(--blr-reader-main-width),\n    var(--blr-reader-player-rendered-width, var(--blr-reader-main-width))\n  ) !important;\n  max-width: min(\n    var(--blr-reader-main-width),\n    var(--blr-reader-player-rendered-width, var(--blr-reader-main-width))\n  ) !important;\n  margin-left: auto !important;\n  margin-right: auto !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n  min-height: 100vh;\n  margin-top: -1px;\n  padding: 0;\n  border: 1px solid var(--blr-reader-border);\n  border-top: 0;\n  border-radius: 0 0 20px 20px;\n  background: var(--blr-reader-surface-2);\n  box-shadow: var(--blr-reader-shadow);\n  box-sizing: border-box;\n  overflow: auto;\n  height: 100vh;\n  scrollbar-width: thin;\n  scrollbar-color: rgba(100, 116, 139, 0.1) transparent;\n  position: relative;\n  isolation: isolate;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap,\nbody[data-blr-reader-mode=\"1\"] .player-wrap {\n  border: 1px solid var(--blr-reader-border);\n  border-bottom: 0;\n  border-radius: 0;\n  background: var(--blr-reader-surface);\n  box-shadow: var(--blr-reader-shadow);\n  box-sizing: border-box;\n  overflow: visible !important;\n  margin-top: -35px !important;\n  height: var(--blr-reader-player-rendered-height, auto) !important;\n  max-height: var(--blr-reader-player-rendered-height, none) !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap > *,\nbody[data-blr-reader-mode=\"1\"] .player-wrap > *,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-container,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-video-area,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-primary-area,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-inner,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-container,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-video-area,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-primary-area,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-inner {\n  width: 100% !important;\n  max-width: 100% !important;\n  height: 100% !important;\n  max-height: 100% !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-main {\n  overflow: visible;\n  display: block;\n  width: 100%;\n  background: transparent;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-transcript,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-chapter-title,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-empty {\n  color: var(--blr-reader-text) !important;\n}\n\n\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-tail-spacer {\n  width: 100%;\n  min-height: 320px;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-status {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] h1.video-title {\n  display: -webkit-box !important;\n  margin-top: 8px !important;\n  color: transparent !important;\n  font-size: clamp(16px, 1.05vw, 20px) !important;\n  line-height: 1.2 !important;\n  padding: 0 !important;\n  height: auto !important;\n  max-height: 48px !important;\n  overflow: hidden !important;\n  overflow-wrap: anywhere !important;\n  pointer-events: none !important;\n  user-select: none !important;\n  visibility: hidden !important;\n  -webkit-box-orient: vertical !important;\n  -webkit-line-clamp: 2 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar {\n  width: 6px;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar-track {\n  background: transparent;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar-thumb {\n  background: rgba(100, 116, 139, 0.1);\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar-thumb:hover {\n  background: rgba(100, 116, 139, 0.16);\n}\n\n@media (max-width: 1320px) {\n  html[data-blr-reader-mode=\"1\"],\n  body[data-blr-reader-mode=\"1\"] {\n    --blr-reader-layout-gap: clamp(12px, 1.4vw, 16px);\n    --blr-reader-rail-target-width: clamp(144px, 12vw, 168px);\n  }\n}\n\n@media (max-width: 1320px) {\n  html[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"] .blr-reading-rail,\n  body[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"] .blr-reading-rail,\n  #blr-reading-view[data-content-width=\"wide\"] .blr-reading-rail {\n    display: none !important;\n  }\n}\n\n@media (max-width: 1180px) {\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n    display: none !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .left-container,\n  body[data-blr-reader-mode=\"1\"] .scroll-sticky,\n  body[data-blr-reader-mode=\"1\"] #playerWrap,\n  body[data-blr-reader-mode=\"1\"] .player-wrap,\n  body[data-blr-reader-mode=\"1\"] h1.video-title,\n  body[data-blr-reader-mode=\"1\"] .video-info-container,\n  body[data-blr-reader-mode=\"1\"] #viewbox_report,\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n    margin-left: auto !important;\n    margin-right: auto !important;\n  }\n}\n\nbody[data-blr-reader-mode=\"1\"] .bpx-player-mini-warp,\nbody[data-blr-reader-mode=\"1\"] .bpx-player-mini-close,\nbody[data-blr-reader-mode=\"1\"] .bpx-player-ending-panel,\nbody[data-blr-reader-mode=\"1\"] .bpx-player-ending-related,\nbody[data-blr-reader-mode=\"1\"] .ad-report,\nbody[data-blr-reader-mode=\"1\"] [class*=\"ad-report\"],\nbody[data-blr-reader-mode=\"1\"] [class*=\"mini-player\"],\nbody[data-blr-reader-mode=\"1\"] [class*=\"picture-in-picture\"] {\n  display: none !important;\n}\n\n\n\n\n\n.blr-reading-complete {\n  padding: 12px 10px 20px;\n  font-size: var(--blr-reader-transcript-font-size);\n  font-weight: var(--blr-reader-transcript-font-weight);\n  line-height: var(--blr-reader-transcript-line-height);\n  letter-spacing: var(--blr-reader-letter-spacing);\n  color: var(--blr-reader-text);\n  text-align: left;\n}\n\n.blr-reading-complete-segment {\n  display: inline;\n  margin: 0;\n  padding: 1px 0;\n  border: 0;\n  border-radius: 2px;\n  background: transparent;\n  color: inherit;\n  font: inherit;\n  letter-spacing: inherit;\n  text-align: inherit;\n  cursor: pointer;\n  user-select: text;\n  -webkit-user-select: text;\n}\n\n.blr-reading-complete-segment:hover {\n  background: var(--blr-reader-accent-soft);\n}\n\n.blr-reading-complete-segment.is-active {\n  background: var(--blr-reader-accent-soft);\n  box-shadow: 0 0 0 2px var(--blr-reader-accent-soft);\n  -webkit-box-decoration-break: clone;\n  box-decoration-break: clone;\n  text-decoration-line: underline;\n  text-decoration-color: var(--blr-reader-accent);\n  text-decoration-thickness: 2px;\n  text-underline-offset: 4px;\n}\n\n/* Desktop reader: title/player with chapters below | transcript. */\n@media (min-width: 1181px) {\n  html[data-blr-reader-mode=\"1\"],\n  body[data-blr-reader-mode=\"1\"] {\n    --blr-reader-three-column-gap: clamp(16px, 1.4vw, 24px);\n    --blr-reader-three-column-half-gap: clamp(8px, 0.7vw, 12px);\n    --blr-reader-rail-width: clamp(176px, 13vw, 220px);\n    --blr-reader-transcript-width: clamp(320px, 24vw, 440px);\n    --blr-reader-center-offset: clamp(-110px, -5.5vw, -72px);\n    --blr-reader-main-width: max(\n      420px,\n      calc(\n        100vw - (var(--blr-reader-page-padding) * 2) - var(--blr-reader-transcript-width) -\n          var(--blr-reader-three-column-gap)\n      )\n    );\n    overflow: hidden !important;\n  }\n\n  /* Watch Later centers its own player column; align it with the reader's fixed transcript. */\n  body[data-blr-reader-mode=\"1\"] #app.playlist-app #mirror-vdcon {\n    box-sizing: border-box;\n    justify-content: flex-start !important;\n    padding-left: var(--blr-reader-page-padding) !important;\n    padding-right: var(--blr-reader-page-padding) !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #app.playlist-app .playlist-container--left {\n    flex: 0 0 var(--blr-reader-main-width) !important;\n    min-width: 0 !important;\n    width: var(--blr-reader-main-width) !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n    left: var(--blr-reader-player-left, var(--blr-reader-page-padding)) !important;\n    top: calc(var(--blr-reader-player-bottom, 72vh) + 12px) !important;\n    bottom: auto !important;\n    width: var(--blr-reader-player-width, var(--blr-reader-main-width)) !important;\n    height: min(112px, calc(100vh - var(--blr-reader-player-bottom, 72vh) - 36px)) !important;\n    min-height: 72px;\n    max-height: none !important;\n    grid-template-rows: auto minmax(0, 1fr);\n    gap: 6px;\n    padding: 10px 12px;\n    border-radius: 10px;\n    overflow: hidden;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail .blr-reading-list {\n    display: flex;\n    align-items: stretch;\n    gap: 8px;\n    min-width: 0;\n    padding: 0 0 4px;\n    overflow-x: auto;\n    overflow-y: hidden;\n    scrollbar-width: thin;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail .blr-reading-chapter {\n    flex: 0 0 auto;\n    width: auto;\n    min-width: 120px;\n    max-width: 190px;\n    padding: 6px 10px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .left-container,\n  body[data-blr-reader-mode=\"1\"] .scroll-sticky,\n  body[data-blr-reader-mode=\"1\"] #playerWrap,\n  body[data-blr-reader-mode=\"1\"] .player-wrap,\n  body[data-blr-reader-mode=\"1\"] h1.video-title,\n  body[data-blr-reader-mode=\"1\"] .video-info-container,\n  body[data-blr-reader-mode=\"1\"] #viewbox_report {\n    width: var(--blr-reader-main-width) !important;\n    max-width: var(--blr-reader-main-width) !important;\n    margin-left: auto !important;\n    margin-right: auto !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .left-container {\n    transform: translateX(var(--blr-reader-center-offset)) !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] h1.video-title {\n    margin-top: 28px !important;\n    margin-bottom: 14px !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #playerWrap,\n  body[data-blr-reader-mode=\"1\"] .player-wrap {\n    margin-top: 0 !important;\n    border: 1px solid var(--blr-reader-border);\n    border-radius: 4px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n    position: fixed !important;\n    top: var(--blr-reader-player-top, 98px) !important;\n    right: var(--blr-reader-page-padding) !important;\n    bottom: 24px !important;\n    left: auto !important;\n    width: var(--blr-reader-transcript-width) !important;\n    max-width: var(--blr-reader-transcript-width) !important;\n    min-height: 0 !important;\n    height: auto !important;\n    margin: 0 !important;\n    padding: 0 !important;\n    border: 1px solid var(--blr-reader-border) !important;\n    border-radius: 0 !important;\n    background: var(--blr-reader-surface-2) !important;\n    box-shadow: var(--blr-reader-shadow) !important;\n    overflow-y: auto !important;\n    scroll-padding-top: 46px;\n    z-index: 2147483645;\n  }\n\n  html[data-blr-reader-mode=\"1\"][data-blr-reader-transcript-visible=\"0\"]\n    #blr-reading-inline-host,\n  body[data-blr-reader-mode=\"1\"][data-blr-reader-transcript-visible=\"0\"]\n    #blr-reading-inline-host {\n    display: none !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-transcript-heading {\n    position: sticky;\n    top: 0;\n    display: flex;\n    align-items: center;\n    height: 38px;\n    margin: 0;\n    justify-content: space-between;\n    gap: 6px;\n    padding: 0 6px 0 10px;\n    box-sizing: border-box;\n    color: var(--blr-reader-muted);\n    background: var(--blr-reader-surface-2);\n    border-bottom: 1px solid var(--blr-reader-border);\n    font-size: 12px;\n    font-weight: 700;\n    letter-spacing: 0.08em;\n    z-index: 3;\n    pointer-events: auto;\n    user-select: none;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-heading-title {\n    min-width: 24px;\n    flex: 1 1 auto;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-heading-controls {\n    display: flex;\n    flex: 0 0 auto;\n    align-items: center;\n    gap: 4px;\n    letter-spacing: 0;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-tool-button {\n    -webkit-appearance: none;\n    appearance: none;\n    width: 26px;\n    height: 26px;\n    display: inline-flex;\n    flex: 0 0 26px;\n    align-items: center;\n    justify-content: center;\n    margin: 0;\n    padding: 0;\n    border: 1px solid var(--blr-reader-border);\n    border-radius: 50%;\n    background: var(--blr-reader-surface);\n    color: var(--blr-reader-text);\n    cursor: pointer;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-tool-button svg {\n    width: 17px;\n    height: 17px;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-tool-button:hover,\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-tool-button.is-active {\n    border-color: var(--blr-reader-accent);\n    color: var(--blr-reader-accent);\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-heading-controls\n    select {\n    -webkit-appearance: none;\n    appearance: none;\n    height: 26px;\n    flex: 0 0 auto;\n    padding: 0 23px 0 7px;\n    box-sizing: border-box;\n    border: 1px solid var(--blr-reader-border);\n    border-radius: 5px;\n    background-color: var(--blr-reader-surface);\n    background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m3 4.5 3 3 3-3' fill='none' stroke='%2364748b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\");\n    background-position: right 6px center;\n    background-repeat: no-repeat;\n    background-size: 12px 12px;\n    color: var(--blr-reader-text);\n    font-size: 12px;\n    font-weight: 500;\n    line-height: 1;\n    outline: none;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-heading-controls\n    select:focus {\n    border-color: var(--blr-reader-accent);\n  }\n\n  #blr-reading-transcript-language {\n    width: 72px;\n  }\n\n  #blr-reading-transcript-font-size {\n    width: 56px;\n  }\n\n  #blr-reading-transcript-font-weight {\n    width: 64px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-main,\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-transcript {\n    width: 100% !important;\n    max-width: none !important;\n    height: auto !important;\n    margin: 0 !important;\n    box-sizing: border-box;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-transcript {\n    padding: 8px 10px 24px;\n    overflow: visible;\n  }\n\n\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-tail-spacer {\n    min-height: 45vh;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle {\n    position: fixed;\n    top: var(--blr-reader-player-top, 88px);\n    bottom: 24px;\n    width: 14px;\n    z-index: 2147483646;\n    cursor: col-resize;\n    pointer-events: auto;\n    touch-action: none;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle::before {\n    content: \"\";\n    position: absolute;\n    top: 0;\n    bottom: 0;\n    left: 6px;\n    width: 2px;\n    border-radius: 999px;\n    background: transparent;\n    transition: background 0.16s ease, box-shadow 0.16s ease;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle:hover::before,\n  body[data-blr-reader-resizing] .blr-reading-resize-handle::before {\n    background: var(--blr-reader-accent);\n    box-shadow: 0 0 0 3px var(--blr-reader-accent-soft);\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle-left {\n    display: block !important;\n    left: var(--blr-reader-player-left, var(--blr-reader-page-padding)) !important;\n    right: auto !important;\n    top: calc(var(--blr-reader-player-bottom, 72vh) + 1px) !important;\n    bottom: auto !important;\n    width: var(--blr-reader-player-width, var(--blr-reader-main-width)) !important;\n    height: 10px;\n    cursor: row-resize;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle-left::before {\n    top: 4px;\n    right: 0;\n    bottom: auto;\n    left: 0;\n    width: auto;\n    height: 2px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle-right {\n    right: calc(\n      var(--blr-reader-page-padding) + var(--blr-reader-transcript-width) +\n        var(--blr-reader-three-column-half-gap) - 7px\n    );\n  }\n\n  body[data-blr-reader-resizing=\"transcript\"],\n  body[data-blr-reader-resizing=\"transcript\"] * {\n    cursor: col-resize !important;\n    user-select: none !important;\n  }\n\n  body[data-blr-reader-resizing=\"chapter\"],\n  body[data-blr-reader-resizing=\"chapter\"] * {\n    cursor: row-resize !important;\n    user-select: none !important;\n  }\n\n  body[data-blr-reader-transcript-visible=\"0\"] .blr-reading-resize-handle-right {\n    display: none !important;\n  }\n}\n\n@media (max-width: 1180px) {\n  .blr-reading-resize-handle {\n    display: none !important;\n  }\n}\n\n/* Timestamp-free transcript rows must not retain the desktop time column. */\n");
 
   const chrome = {
     runtime: {
@@ -293,12 +293,13 @@ const DEFAULT_SETTINGS = {
 };
 const PLAYER_AI_ICON_VARIANT = "badge";
 
-const READER_VERSION = "0.0.7";
+const READER_VERSION = "0.0.8";
 const CACHE_KEY_PREFIX = "bilibli_reader_subtitle_cache_";
 globalThis.__BILIBLI_READER_CONTENT_SCRIPT_LOADED__ = READER_VERSION;
 const state = {
   currentUrl: location.href,
   fetchRunId: 0,
+  fetchClipSignature: "",
   bvid: "",
   aid: "",
   cid: "",
@@ -746,6 +747,19 @@ const ids = {
 init();
 
 function init() {
+  // document-idle 不代表 B 站已完成异步挂载；提前插入节点会破坏 Vue 的 SSR hydration。
+  // 等待服务端渲染标记移除后再初始化，也兼容没有 SSR 标记的稍后再看页面。
+  if (
+    document.readyState === "loading" ||
+    !document.body ||
+    document.querySelector(
+      '#app[data-server-rendered="true"], #video-page-app[data-server-rendered="true"]'
+    )
+  ) {
+    window.setTimeout(init, 50);
+    return;
+  }
+
   logInfo(`[Bilibili Reader] content script loaded, version=${READER_VERSION}`);
   ensureUiReady({ forceRecreate: true });
   installReaderDebugHelpers();
@@ -1053,8 +1067,8 @@ function ensureNativeTranscriptPanel() {
   bindNativeTranscriptPanelResize();
   syncNativeTranscriptPanelAlignment();
   syncNativeTranscriptPanelHeight();
-  renderNativeTranscriptPanel({ force: created });
   ensureNativeTranscriptLoaded();
+  renderNativeTranscriptPanel({ force: created });
   return panel;
 }
 
@@ -1063,6 +1077,11 @@ function bindNativeTranscriptPanelEvents(panel) {
   const returnButton = panel.querySelector(`#${ids.nativeTranscriptReturnButton}`);
   const themeButton = panel.querySelector(`#${ids.nativeTranscriptThemeButton}`);
   const toggle = () => {
+    if (isNativeTranscriptEmpty()) {
+      autoFoldNativeTranscriptIfEmpty();
+      showNativeTranscriptEmptyNotice(panel);
+      return;
+    }
     state.nativeTranscriptOpen = !state.nativeTranscriptOpen;
     setNativeTranscriptExpanded(panel, state.nativeTranscriptOpen);
     if (state.nativeTranscriptOpen) {
@@ -1074,6 +1093,11 @@ function bindNativeTranscriptPanelEvents(panel) {
     button.addEventListener("click", toggle);
   });
   returnButton?.addEventListener("click", () => {
+    if (isNativeTranscriptEmpty()) {
+      autoFoldNativeTranscriptIfEmpty();
+      showNativeTranscriptEmptyNotice(panel);
+      return;
+    }
     state.nativeTranscriptManualScrollPauseUntil = 0;
     if (!state.nativeTranscriptOpen) {
       state.nativeTranscriptOpen = true;
@@ -1105,11 +1129,32 @@ function bindNativeTranscriptPanelEvents(panel) {
   body?.addEventListener("pointerdown", noteManualScroll, { passive: true });
 }
 
+function isNativeTranscriptEmpty() {
+  return (
+    state.fetchClipSignature === computeCurrentClipSignature() &&
+    state.subtitleFetchState === "empty"
+  );
+}
+
+function clearNativeTranscriptEmptyNotice(panel) {
+  panel?.querySelector(".blr-native-transcript-empty-notice")?.remove();
+}
+
+function showNativeTranscriptEmptyNotice(panel) {
+  clearNativeTranscriptEmptyNotice(panel);
+  const notice = document.createElement("div");
+  notice.className = "blr-native-transcript-empty-notice";
+  notice.setAttribute("role", "status");
+  notice.textContent = "当前视频无字幕";
+  notice.addEventListener("animationend", () => notice.remove(), { once: true });
+  panel.appendChild(notice);
+}
+
 function setNativeTranscriptExpanded(panel, expanded) {
   if (!panel) {
     return;
   }
-  const isExpanded = Boolean(expanded);
+  const isExpanded = Boolean(expanded) && !isNativeTranscriptEmpty();
   panel.classList.toggle("is-folded", !isExpanded);
   panel.querySelectorAll("[data-native-transcript-toggle]").forEach((button) => {
     button.setAttribute("aria-expanded", String(isExpanded));
@@ -1228,7 +1273,11 @@ function renderNativeTranscriptHeaderControls(panel) {
 }
 
 function getNativeTranscriptPlaceholderText() {
-  if (state.subtitleFetchState === "loading" || state.subtitleFetchState === "idle") {
+  if (
+    state.fetchClipSignature !== computeCurrentClipSignature() ||
+    state.subtitleFetchState === "loading" ||
+    state.subtitleFetchState === "idle"
+  ) {
     return "正在加载字幕...";
   }
   if (state.subtitleFetchState === "error") {
@@ -1245,6 +1294,11 @@ function renderNativeTranscriptPanel({ force = false } = {}) {
   }
 
   renderNativeTranscriptHeaderControls(panel);
+  if (isNativeTranscriptEmpty()) {
+    autoFoldNativeTranscriptIfEmpty();
+  } else {
+    clearNativeTranscriptEmptyNotice(panel);
+  }
 
   const transcriptItems = getReadingTranscriptItems();
   const renderKey = [
@@ -1304,6 +1358,9 @@ function ensureNativeTranscriptLoaded({ force = false } = {}) {
   }
 
   const signature = computeCurrentClipSignature();
+  if (signature !== state.currentClipSignature) {
+    resetClipState();
+  }
   initializeNativeTranscriptForSignature(signature);
   if (
     !force &&
@@ -1329,7 +1386,7 @@ function ensureNativeTranscriptLoaded({ force = false } = {}) {
       logWarn("[Bilibili Reader] native transcript load failed", error);
     })
     .finally(() => {
-      if (computeCurrentClipSignature() === loadSignature) {
+      if (isRunActive(loadRunId) && state.nativeTranscriptLoadPromise === loadPromise) {
         state.nativeTranscriptLoadedSignature = loadSignature;
         autoFoldNativeTranscriptIfEmpty(loadSignature);
       }
@@ -1337,9 +1394,12 @@ function ensureNativeTranscriptLoaded({ force = false } = {}) {
         state.nativeTranscriptLoadPromise = null;
         state.nativeTranscriptLoadSignature = "";
       }
-      renderNativeTranscriptPanel();
-      syncNativeTranscriptPlayback(true);
+      if (isRunActive(loadRunId)) {
+        renderNativeTranscriptPanel();
+        syncNativeTranscriptPlayback(true);
+      }
     });
+  const loadRunId = state.fetchRunId;
   state.nativeTranscriptLoadSignature = loadSignature;
   state.nativeTranscriptLoadPromise = loadPromise;
   return loadPromise;
@@ -1357,8 +1417,8 @@ function initializeNativeTranscriptForSignature(signature = computeCurrentClipSi
 
 function autoFoldNativeTranscriptIfEmpty(signature = computeCurrentClipSignature()) {
   if (
-    state.subtitleFetchState !== "empty" ||
-    state.nativeTranscriptAutoFoldedSignature === signature
+    !isNativeTranscriptEmpty() ||
+    signature !== computeCurrentClipSignature()
   ) {
     return;
   }
@@ -1514,23 +1574,33 @@ function onNativeTranscriptChange(event) {
     return;
   }
   const previousFetchState = state.subtitleFetchState;
+  const runId = state.fetchRunId;
   select.disabled = true;
   loadSubtitle(
     url,
     String(option.dataset.lang || "unknown"),
-    state.fetchRunId,
+    runId,
     String(option.dataset.id || "")
   )
     .then(() => {
+      if (!isRunActive(runId)) {
+        return;
+      }
       renderNativeTranscriptPanel();
       syncNativeTranscriptPlayback(true);
     })
     .catch((error) => {
+      if (isStaleRunError(error) || !isRunActive(runId)) {
+        return;
+      }
       state.subtitleFetchState = previousFetchState === "ready" ? "ready" : "error";
       logWarn("[Bilibili Reader] native subtitle switch failed", error);
       renderNativeTranscriptPanel({ force: true });
     })
     .finally(() => {
+      if (!isRunActive(runId)) {
+        return;
+      }
       const currentSelect = document.getElementById(ids.nativeTranscriptSelect);
       if (currentSelect) {
         currentSelect.disabled = state.subtitles.length === 0;
@@ -1606,6 +1676,7 @@ function bindRuntimeEvents() {
     }
 
     if (message.type === "popup-select-subtitle") {
+      const runId = state.fetchRunId;
       const url = String(message.url || "").trim();
       const lang = String(message.lang || "unknown");
       const subtitleId = String(message.subtitleId || "");
@@ -1613,8 +1684,9 @@ function bindRuntimeEvents() {
         sendResponse({ ok: false, error: "Missing subtitle URL", payload: getPopupPayload() });
         return false;
       }
-      loadSubtitle(url, lang, state.fetchRunId, subtitleId)
+      loadSubtitle(url, lang, runId, subtitleId)
         .then(() => {
+          ensureRunActive(runId);
           setStatus("字幕切换完成。");
           renderSubtitleSelect();
           sendResponse({ ok: true, payload: getPopupPayload() });
@@ -1945,7 +2017,7 @@ function startUrlWatcher() {
   }
   state.urlWatcherStarted = true;
 
-  window.setInterval(() => {
+  const checkCurrentClip = () => {
     const nextUrl = location.href;
     const nextSignature = computeCurrentClipSignature();
     if (nextSignature === state.currentClipSignature) {
@@ -1970,7 +2042,11 @@ function startUrlWatcher() {
     }
     if (state.readingViewOpen || shouldEnterReaderMode) {
       renderReadingStatus("检测到视频变化，正在自动刷新字幕...");
+      const changeRunId = state.fetchRunId;
       waitForVideoMetadata().then(() => {
+        if (changeRunId !== state.fetchRunId || computeCurrentClipSignature() !== nextSignature) {
+          return;
+        }
         refreshClip().catch((error) => {
           if (!isStaleRunError(error)) {
             renderReadingStatus(`自动刷新失败：${getErrorMessage(error)}`);
@@ -1981,10 +2057,15 @@ function startUrlWatcher() {
     }
     setStatus("检测到页面变化，正在自动加载当前视频字幕...");
     ensureNativeTranscriptLoaded({ force: true });
-  }, 1200);
+  };
+  window.addEventListener("popstate", checkCurrentClip);
+  window.setInterval(checkCurrentClip, 250);
 }
 
 function resetClipState({ preserveReadingContent = false } = {}) {
+  // 切换时立即使旧请求失效，不能等新请求开始后才递增编号。
+  state.fetchRunId += 1;
+  state.fetchClipSignature = "";
   state.bvid = "";
   state.aid = "";
   state.cid = "";
@@ -1999,14 +2080,15 @@ function resetClipState({ preserveReadingContent = false } = {}) {
     state.title = "";
     state.author = "";
     state.uploadDate = "";
-    state.subtitles = [];
-    state.selectedSubtitleId = "";
-    state.selectedSubtitleUrl = "";
-    state.selectedSubtitleLang = "";
-    state.subtitleBody = [];
-    state.chapters = [];
   }
-  state.subtitleFetchState = preserveReadingContent ? "loading" : "idle";
+  // 保留阅读视图布局和合集信息时，也必须清空上一集的字幕与章节。
+  state.subtitles = [];
+  state.selectedSubtitleId = "";
+  state.selectedSubtitleUrl = "";
+  state.selectedSubtitleLang = "";
+  state.subtitleBody = [];
+  state.chapters = [];
+  state.subtitleFetchState = "loading";
   state.hotComments = [];
   state.markdown = "";
   state.srt = "";
@@ -2016,6 +2098,8 @@ function resetClipState({ preserveReadingContent = false } = {}) {
   state.readingActiveSubtitleIndex = -1;
   state.readingActiveChapterIndex = -1;
   state.nativeTranscriptLoadedSignature = "";
+  state.nativeTranscriptLoadPromise = null;
+  state.nativeTranscriptLoadSignature = "";
   state.nativeTranscriptAutoFoldedSignature = "";
   state.nativeTranscriptRenderedKey = "";
   state.nativeTranscriptOpen = true;
@@ -2025,16 +2109,12 @@ function resetClipState({ preserveReadingContent = false } = {}) {
   stopReaderPlayerObserver();
 
   renderMeta();
-  if (!preserveReadingContent) {
-    renderSubtitleSelect();
-    byId(ids.preview).value = "";
-  }
+  renderSubtitleSelect();
+  byId(ids.preview).value = "";
   setMessage("");
   renderNativeTranscriptPanel();
-  if (state.readingViewOpen && !preserveReadingContent) {
+  if (state.readingViewOpen) {
     renderReadingView();
-    renderReadingStatus("请先点击“刷新抓取”加载当前视频字幕。");
-  } else if (state.readingViewOpen) {
     renderReadingStatus("正在切换选集并加载新字幕...");
   }
 }
@@ -2056,8 +2136,24 @@ function clearSubtitleContentAfterFetchError() {
   setMessage("");
 }
 
+async function finishNoSubtitleLoad(runId) {
+  ensureRunActive(runId);
+  applyNoSubtitleState();
+  renderMeta();
+  renderSubtitleSelect();
+  await refreshOpenReadingView("当前视频无可用字幕。", runId);
+  ensureRunActive(runId);
+  setStatus("当前视频无可用字幕。");
+}
+
 async function refreshClip() {
+  const clipUrl = location.href;
+  const clipSignature = computeCurrentClipSignature(clipUrl);
+  if (state.currentClipSignature !== clipSignature) {
+    resetClipState({ preserveReadingContent: state.readingViewOpen && isReaderMode(clipUrl) });
+  }
   const runId = ++state.fetchRunId;
+  state.fetchClipSignature = clipSignature;
   try {
     setBusyState(true);
     setMessage("");
@@ -2067,18 +2163,23 @@ async function refreshClip() {
     if (state.readingViewOpen) {
       renderReadingView();
     }
-    state.settings = await getSettings();
+    const settings = await getSettings();
     ensureRunActive(runId);
+    state.settings = settings;
 
-    state.bvid = extractBvid(location.href);
+    const bvid = extractBvid(clipUrl);
+    state.bvid = bvid;
     if (!state.bvid) {
       throw new Error("当前页面不是标准 BV 视频地址，无法抓取字幕。");
     }
 
-    const pageIndex = extractPageIndex(location.href);
-    const oid = extractOid(location.href);
-    const hasPageParam = hasExplicitPageParam(location.href);
-    const meta = await retryAsync(() => fetchVideoMeta(state.bvid), 2, 250);
+    const pageIndex = extractPageIndex(clipUrl);
+    const oid = extractOid(clipUrl);
+    const hasPageParam = hasExplicitPageParam(clipUrl);
+    const meta = await retryAsync(() => {
+      ensureRunActive(runId);
+      return fetchVideoMeta(bvid);
+    }, 2, 250);
     ensureRunActive(runId);
 
     // 调试：打印 API 返回的原始数据
@@ -2094,7 +2195,6 @@ async function refreshClip() {
     state.uploadDate = meta.uploadDate || readUploadDate();
     state.description = meta.description || readVideoDescription();
     state.pageCount = Array.isArray(meta.pages) ? meta.pages.length : 0;
-    state.currentClipSignature = computeCurrentClipSignature();
     let resolvedPageIndex = pageIndex;
     if ((meta.pages || []).length > 1 && !hasPageParam) {
       const pageIndexFromOid = pickPageIndexFromOid(meta.pages, oid);
@@ -2142,8 +2242,14 @@ async function refreshClip() {
     });
 
     setStatus("正在获取可用字幕...");
+    const cid = state.cid;
+    const aid = state.aid;
+    const fetchCurrentSubtitleBundle = () => {
+      ensureRunActive(runId);
+      return fetchSubtitleBundle(bvid, cid, aid, meta.subtitleTracks || []);
+    };
     let subtitleBundle = await retryAsync(
-      () => fetchSubtitleBundle(state.bvid, state.cid, state.aid),
+      fetchCurrentSubtitleBundle,
       3,
       500
     );
@@ -2170,11 +2276,7 @@ async function refreshClip() {
 
     // 无字幕时也允许进入阅读视图，只是字幕区域保持空态。
     if (state.subtitles.length === 0) {
-      applyNoSubtitleState();
-      renderMeta();
-      renderSubtitleSelect();
-      await refreshOpenReadingView("当前视频无字幕。", runId);
-      setStatus("当前视频无字幕。");
+      await finishNoSubtitleLoad(runId);
       return;
     }
 
@@ -2188,11 +2290,7 @@ async function refreshClip() {
     });
 
     if (!preferred) {
-      applyNoSubtitleState();
-      renderMeta();
-      renderSubtitleSelect();
-      await refreshOpenReadingView("当前视频无字幕。", runId);
-      setStatus("当前视频无字幕。");
+      await finishNoSubtitleLoad(runId);
       return;
     }
 
@@ -2202,14 +2300,12 @@ async function refreshClip() {
     try {
       selected = await tryLoadSubtitleCandidates(candidates, runId, forceRefresh);
     } catch (error) {
-      const message = getErrorMessage(error, "");
-      if (!message.includes("HTTP") && error?.code !== "SUBTITLE_DURATION_MISMATCH") {
-        throw error;
-      }
+      ensureRunActive(runId);
 
-      // Retry because subtitle signed URLs may expire quickly or hit rate limit.
+      // 正文失败时先重新核对列表，空列表应收起面板，不能沿用旧错误。
+      // 非空列表再用新的签名地址重试，网络故障仍保留为加载错误。
       subtitleBundle = await retryAsync(
-        () => fetchSubtitleBundle(state.bvid, state.cid, state.aid),
+        fetchCurrentSubtitleBundle,
         2,
         500
       );
@@ -2222,7 +2318,8 @@ async function refreshClip() {
         previousLang: preferred.lanDoc || preferred.lan || ""
       });
       if (!retryPreferred) {
-        throw error;
+        await finishNoSubtitleLoad(runId);
+        return;
       }
       const retryCandidates = buildSubtitleCandidates(state.subtitles, retryPreferred);
       selected = await tryLoadSubtitleCandidates(retryCandidates, runId, forceRefresh);
@@ -2239,28 +2336,27 @@ async function refreshClip() {
     renderMeta();
     renderSubtitleSelect();
     await refreshOpenReadingView("抓取完成，阅读视图已同步最新字幕。", runId);
+    ensureRunActive(runId);
     setStatus("抓取完成，可以复制、下载或发送到 Obsidian。");
   } catch (error) {
-    if (isStaleRunError(error)) {
+    if (isStaleRunError(error) || !isRunActive(runId)) {
+      return;
+    }
+    if (isUnavailableSubtitleError(error)) {
+      await finishNoSubtitleLoad(runId);
       return;
     }
     // 字幕正文与章节列表来自不同请求。字幕域名被拦截、网络失败或签名
     // 过期时，保留已经成功取得的章节和当前视频元数据。
-    if (state.bvid && state.cid) {
-      clearSubtitleContentAfterFetchError();
-      state.subtitleFetchState = "error";
-    } else {
-      resetClipState();
-      state.subtitleFetchState = "error";
-    }
+    clearSubtitleContentAfterFetchError();
+    state.subtitleFetchState = "error";
     await refreshOpenReadingView("字幕加载失败，请刷新重试。", runId);
-    if (error?.code === "SUBTITLE_DURATION_MISMATCH") {
-      setStatus("抓取失败：未找到与当前视频时长匹配的字幕轨，可能该视频无可用字幕。");
+    if (!isRunActive(runId)) {
       return;
     }
     setStatus(`抓取失败：${getErrorMessage(error)}`);
   } finally {
-    if (runId === state.fetchRunId) {
+    if (isRunActive(runId)) {
       setBusyState(false);
       renderNativeTranscriptPanel();
     }
@@ -2268,6 +2364,7 @@ async function refreshClip() {
 }
 
 async function onSubtitleChange(event) {
+  const runId = state.fetchRunId;
   const value = event.target.value;
   const option = event.target.options[event.target.selectedIndex];
   const lang = option?.dataset.lang || "unknown";
@@ -2280,19 +2377,23 @@ async function onSubtitleChange(event) {
     setBusyState(true);
     setStatus(`正在切换字幕：${lang}`);
     setMessage("");
-    await loadSubtitle(value, lang, state.fetchRunId, subtitleId);
+    await loadSubtitle(value, lang, runId, subtitleId);
+    ensureRunActive(runId);
     setStatus("字幕切换完成。");
   } catch (error) {
-    if (isStaleRunError(error)) {
+    if (isStaleRunError(error) || !isRunActive(runId)) {
       return;
     }
     setStatus(`切换字幕失败：${getErrorMessage(error)}`);
   } finally {
-    setBusyState(false);
+    if (isRunActive(runId)) {
+      setBusyState(false);
+    }
   }
 }
 
 async function loadSubtitle(url, lang, runId = state.fetchRunId, subtitleId = "", forceRefresh = false) {
+  ensureRunActive(runId);
   if (!url) {
     throw new Error("字幕 URL 为空。");
   }
@@ -2308,6 +2409,7 @@ async function loadSubtitle(url, lang, runId = state.fetchRunId, subtitleId = ""
   // 尝试从缓存读取
   if (!forceRefresh) {
     const cachedBody = await loadSubtitleFromCache(cacheKey);
+    ensureRunActive(runId);
     if (cachedBody && Array.isArray(cachedBody) && cachedBody.length > 0) {
       const cachedCheck = validateSubtitleByDuration(cachedBody, state.videoDuration);
       if (!cachedCheck.ok) {
@@ -2316,6 +2418,7 @@ async function loadSubtitle(url, lang, runId = state.fetchRunId, subtitleId = ""
           reason: cachedCheck.reason
         });
         await clearSubtitleCacheByKey(cacheKey);
+        ensureRunActive(runId);
       } else {
         logInfo("[BOC] using cached subtitle", { cacheKey, itemCount: cachedBody.length });
         ensureRunActive(runId);
@@ -2324,7 +2427,8 @@ async function loadSubtitle(url, lang, runId = state.fetchRunId, subtitleId = ""
         state.selectedSubtitleLang = lang;
         state.subtitleBody = cachedBody;
         state.subtitleFetchState = "ready";
-        await refreshDerivedContent();
+        await refreshDerivedContent({ runId });
+        ensureRunActive(runId);
         if (state.readingViewOpen) {
           renderReadingView();
           syncReadingViewPlayback(true);
@@ -2338,9 +2442,13 @@ async function loadSubtitle(url, lang, runId = state.fetchRunId, subtitleId = ""
   // 从网络获取
   const subtitle = await fetchSubtitleBody(url);
   ensureRunActive(runId);
-  const body = Array.isArray(subtitle.body) ? subtitle.body : [];
+  const body = Array.isArray(subtitle?.body)
+    ? subtitle.body.filter((item) => String(item?.content || "").trim())
+    : [];
   if (body.length === 0) {
-    throw new Error("字幕文件为空。");
+    const error = new Error("字幕文件为空。");
+    error.code = "SUBTITLE_EMPTY";
+    throw error;
   }
   const durationCheck = validateSubtitleByDuration(body, state.videoDuration);
   if (!durationCheck.ok) {
@@ -2352,13 +2460,15 @@ async function loadSubtitle(url, lang, runId = state.fetchRunId, subtitleId = ""
 
   // 存入缓存
   await saveSubtitleToCache(cacheKey, body);
+  ensureRunActive(runId);
 
   state.selectedSubtitleId = subtitleId ? String(subtitleId) : state.selectedSubtitleId;
   state.selectedSubtitleUrl = url;
   state.selectedSubtitleLang = lang;
   state.subtitleBody = body;
   state.subtitleFetchState = "ready";
-  await refreshDerivedContent();
+  await refreshDerivedContent({ runId });
+  ensureRunActive(runId);
   if (state.readingViewOpen) {
     renderReadingView();
     syncReadingViewPlayback(true);
@@ -2604,17 +2714,24 @@ function bindReadingTranscriptHeaderControls(heading) {
         return;
       }
       select.disabled = true;
+      const runId = state.fetchRunId;
       loadSubtitle(
         url,
         String(option.dataset.lang || "unknown"),
-        state.fetchRunId,
+        runId,
         String(option.dataset.id || "")
       )
         .then(() => {
+          if (!isRunActive(runId)) {
+            return;
+          }
           renderReadingView();
           syncReadingViewPlayback(true);
         })
         .catch((error) => {
+          if (isStaleRunError(error) || !isRunActive(runId)) {
+            return;
+          }
           logWarn("[BOC] failed to switch subtitle in reading transcript header", error);
           syncReadingTranscriptHeaderControls();
         });
@@ -2831,6 +2948,7 @@ function setMessage(text) {
 }
 
 function applyNoSubtitleState() {
+  state.subtitles = [];
   state.selectedSubtitleId = "";
   state.selectedSubtitleUrl = "";
   state.selectedSubtitleLang = "";
@@ -2938,7 +3056,12 @@ function maybeRefreshReaderSubtitleInBackground() {
   if (state.subtitleBody.length) {
     return;
   }
+  const signature = computeCurrentClipSignature();
+  const runId = state.fetchRunId;
   waitForVideoMetadata().then(() => {
+    if (runId !== state.fetchRunId || signature !== computeCurrentClipSignature()) {
+      return;
+    }
     refreshClip().catch((error) => {
       if (!isStaleRunError(error)) {
         renderReadingStatus(`字幕加载失败：${getErrorMessage(error)}`);
@@ -3305,7 +3428,10 @@ function renderReadingCollection() {
 }
 
 function getReadingTranscriptPlaceholderText() {
-  if (state.subtitleFetchState === "loading") {
+  if (
+    state.fetchClipSignature !== computeCurrentClipSignature() ||
+    state.subtitleFetchState === "loading"
+  ) {
     return "正在加载字幕...";
   }
   if (state.subtitleFetchState === "error") {
@@ -3315,6 +3441,9 @@ function getReadingTranscriptPlaceholderText() {
 }
 
 function getReadingTranscriptItems(body = state.subtitleBody) {
+  if (state.fetchClipSignature !== computeCurrentClipSignature()) {
+    return [];
+  }
   return (Array.isArray(body) ? body : [])
     .map((item, index) => ({
       index,
@@ -5656,7 +5785,7 @@ async function getSettings() {
 }
 
 async function refreshOpenReadingView(statusText, runId = state.fetchRunId) {
-  if (runId !== state.fetchRunId || !state.readingViewOpen || !isReaderMode()) {
+  if (!isRunActive(runId) || !state.readingViewOpen || !isReaderMode()) {
     return;
   }
 
@@ -5667,7 +5796,7 @@ async function refreshOpenReadingView(statusText, runId = state.fetchRunId) {
   } catch (error) {
     logWarn("[BOC] failed to remount reader after clip change", error);
   }
-  if (runId !== state.fetchRunId || !state.readingViewOpen || !isReaderMode()) {
+  if (!isRunActive(runId) || !state.readingViewOpen || !isReaderMode()) {
     return;
   }
 
@@ -5803,8 +5932,15 @@ function extractOid(url) {
   }
 }
 
+function isRunActive(runId) {
+  return (
+    runId === state.fetchRunId &&
+    state.fetchClipSignature === computeCurrentClipSignature()
+  );
+}
+
 function ensureRunActive(runId) {
-  if (runId !== state.fetchRunId) {
+  if (!isRunActive(runId)) {
     const error = new Error("Stale refresh run");
     error.code = "STALE_RUN";
     throw error;
@@ -5890,6 +6026,10 @@ async function fetchVideoMeta(bvid) {
     uploadDate,
     defaultCid: data.cid ? String(data.cid) : "",
     defaultDuration: Number(data.duration || 0) || 0,
+    subtitleTracks: mapSubtitleTracks(data.subtitle?.list || [], "video-meta").map((track) => ({
+      ...track,
+      cid: track.cid || String(data.cid || "")
+    })),
     collection: mapVideoCollection(data, bvid),
     pages: pages.map((item) => ({
       cid: String(item.cid || ""),
@@ -6070,9 +6210,9 @@ function readUploadDate() {
   return formatLocalDate();
 }
 
-async function fetchSubtitleBundle(bvid, cid, aid = "") {
+async function fetchSubtitleBundle(bvid, cid, aid = "", knownTracks = []) {
   const requests = buildSubtitleInfoRequests({ bvid, cid, aid });
-  const fetchByRequest = async (request) => {
+  const fetchByRequest = async (request, requireVerifiedOwner = false) => {
     logInfo("[BOC] fetch subtitles list", {
       source: request.source,
       url: request.url,
@@ -6086,10 +6226,25 @@ async function fetchSubtitleBundle(bvid, cid, aid = "") {
     if (payload.code !== 0) {
       throw buildBiliApiError(payload, "无法获取字幕列表");
     }
+    validateSubtitleResponseIdentity(payload.data, { bvid, cid, aid });
 
     const chapters = mapChaptersFromPlayerData(payload.data);
     const subtitles = mapSubtitleTracks(payload.data?.subtitle?.subtitles || [], request.source);
-    const withUrl = subtitles.filter((item) => item.subtitleUrl);
+    const withUrl = subtitles.filter((item) => {
+      if (!item.subtitleUrl) {
+        return false;
+      }
+      if (!isSubtitleTrackForVideo(item, { aid, cid, knownTracks, requireVerifiedOwner })) {
+        logWarn("[BOC] rejected subtitle track without matching video ownership", {
+          source: request.source,
+          subtitleId: item.id,
+          bvid,
+          cid
+        });
+        return false;
+      }
+      return true;
+    });
     return { source: request.source, chapters, withUrl };
   };
 
@@ -6100,35 +6255,25 @@ async function fetchSubtitleBundle(bvid, cid, aid = "") {
   const primaryRequest = requests[0];
   try {
     const primaryResult = await fetchByRequest(primaryRequest);
-    if (primaryResult.withUrl.length > 0) {
-      return { tracks: primaryResult.withUrl, chapters: primaryResult.chapters };
-    }
-    // 切集后播放器接口可能短暂返回空字幕；主来源为空时再核对一次次来源，
-    // 避免把“接口尚未就绪”误判为“当前视频无字幕”。
-    if (requests.length > 1) {
-      const secondaryRequest = requests[1];
+    if (primaryResult.withUrl.length === 0 && requests.length > 1) {
+      // 主接口为空时，只接受能从轨道路径或视频元数据验证归属的备用字幕。
+      // 备用接口失败不能把已经成功返回的空结果变成“加载错误”。
       try {
-        const secondaryResult = await fetchByRequest(secondaryRequest);
+        const secondaryResult = await fetchByRequest(requests[1], true);
         if (secondaryResult.withUrl.length > 0) {
-          logWarn("[BOC] primary subtitles source empty, using fallback source", {
-            primary: primaryRequest.source,
-            fallback: secondaryRequest.source
-          });
           return {
             tracks: secondaryResult.withUrl,
-            chapters: primaryResult.chapters.length
-              ? primaryResult.chapters
-              : secondaryResult.chapters
+            chapters: primaryResult.chapters.length ? primaryResult.chapters : secondaryResult.chapters
           };
         }
-      } catch (secondaryError) {
-        logWarn("[BOC] fallback subtitles source failed after empty primary", {
-          source: secondaryRequest.source,
-          message: getErrorMessage(secondaryError)
+      } catch (error) {
+        logWarn("[BOC] fallback subtitle verification failed after empty primary", {
+          source: requests[1].source,
+          message: getErrorMessage(error)
         });
       }
     }
-    return { tracks: [], chapters: primaryResult.chapters };
+    return { tracks: primaryResult.withUrl, chapters: primaryResult.chapters };
   } catch (primaryError) {
     logWarn("[BOC] subtitles API request failed", {
       source: primaryRequest.source,
@@ -6139,7 +6284,7 @@ async function fetchSubtitleBundle(bvid, cid, aid = "") {
     if (requests.length > 1) {
       const secondaryRequest = requests[1];
       try {
-        const secondaryResult = await fetchByRequest(secondaryRequest);
+        const secondaryResult = await fetchByRequest(secondaryRequest, true);
         if (secondaryResult.withUrl.length > 0) {
           logWarn("[BOC] primary subtitles source failed, using fallback source", {
             primary: primaryRequest.source,
@@ -6159,6 +6304,44 @@ async function fetchSubtitleBundle(bvid, cid, aid = "") {
 
     throw primaryError;
   }
+}
+
+function validateSubtitleResponseIdentity(data, { bvid, cid, aid }) {
+  const expected = { bvid, cid, aid };
+  const invalid = !data || !data.cid ||
+    Object.entries(expected).some(([key, value]) => {
+      return value && data[key] !== undefined && String(data[key]) !== String(value);
+    });
+  if (invalid) {
+    const error = new Error("字幕接口返回的视频身份不匹配。");
+    error.code = "SUBTITLE_RESPONSE_IDENTITY_MISMATCH";
+    error.retryable = true;
+    throw error;
+  }
+}
+
+function isSubtitleTrackForVideo(track, { aid, cid, knownTracks = [], requireVerifiedOwner = false }) {
+  try {
+    const path = new URL(track.subtitleUrl).pathname;
+    // 已观察到的 prod AI 字幕路径以 aid+cid 开头；其他路径不作格式假设。
+    const match = path.match(/^\/bfs\/ai_subtitle\/prod\/(\d{16,})/);
+    if (match && aid && cid) {
+      return match[1].startsWith(`${aid}${cid}`);
+    }
+  } catch {
+    return false;
+  }
+  if (knownTracks.some((known) => {
+    if (known.cid !== String(cid)) {
+      return false;
+    }
+    return (track.id && known.id === track.id) ||
+      (known.subtitleUrl &&
+        normalizeSubtitleUrlForCache(known.subtitleUrl) === normalizeSubtitleUrlForCache(track.subtitleUrl));
+  })) {
+    return true;
+  }
+  return !requireVerifiedOwner;
 }
 
 function buildSubtitleInfoRequests({ bvid, cid, aid }) {
@@ -6202,7 +6385,8 @@ function buildBiliApiError(payload, fallbackMessage) {
 
 function mapSubtitleTracks(subtitles, source = "unknown") {
   return (subtitles || []).map((item) => ({
-    id: item?.id === undefined || item?.id === null ? "" : String(item.id),
+    id: String(item?.id_str || item?.id || ""),
+    cid: String(item?.cid || ""),
     lan: item?.lan || "",
     lanDoc: item?.lan_doc || "",
     subtitleUrl: normalizeSubtitleUrl(item?.subtitle_url || ""),
@@ -6366,6 +6550,7 @@ function buildSubtitleCandidates(subtitles, preferred) {
 
 async function tryLoadSubtitleCandidates(candidates, runId, forceRefresh) {
   let lastError = null;
+  let lastLoadError = null;
   for (const item of candidates || []) {
     try {
       logInfo("[BOC] try subtitle track", {
@@ -6384,6 +6569,9 @@ async function tryLoadSubtitleCandidates(candidates, runId, forceRefresh) {
       return item;
     } catch (error) {
       lastError = error;
+      if (!isUnavailableSubtitleError(error)) {
+        lastLoadError = error;
+      }
       const reasonCode = toReadableText(error?.code, "");
       const reasonMessage = getErrorMessage(error, "unknown");
       const meta = {
@@ -6402,10 +6590,17 @@ async function tryLoadSubtitleCandidates(candidates, runId, forceRefresh) {
     }
   }
 
-  if (lastError) {
-    throw lastError;
+  if (lastLoadError) {
+    throw lastLoadError;
   }
-  throw new Error("这个视频暂时没有可用字幕。");
+  const error = new Error("当前视频没有可用字幕。");
+  error.code = "NO_USABLE_SUBTITLE";
+  error.cause = lastError;
+  throw error;
+}
+
+function isUnavailableSubtitleError(error) {
+  return ["SUBTITLE_EMPTY", "SUBTITLE_DURATION_MISMATCH", "NO_USABLE_SUBTITLE"].includes(error?.code);
 }
 
 function isAiSubtitle(item) {
@@ -6595,20 +6790,30 @@ function rebuildDerivedContent() {
   byId(ids.preview).value = body.length ? buildSubtitlePreview(body, state.settings) : "";
 }
 
-async function refreshDerivedContent({ refreshComments = false } = {}) {
+async function refreshDerivedContent({ refreshComments = false, runId = null } = {}) {
   if (state.settings?.includeHotCommentsInNote) {
     const shouldFetchComments =
       refreshComments || !Array.isArray(state.hotComments) || state.hotComments.length === 0;
     if (shouldFetchComments) {
       try {
-        state.hotComments = await fetchHotComments(20);
+        const comments = await fetchHotComments(20);
+        if (runId !== null) {
+          ensureRunActive(runId);
+        }
+        state.hotComments = comments;
       } catch (error) {
+        if (runId !== null) {
+          ensureRunActive(runId);
+        }
         state.hotComments = [];
         logWarn("[BOC] failed to fetch hot comments for note export", error);
       }
     }
   }
 
+  if (runId !== null) {
+    ensureRunActive(runId);
+  }
   rebuildDerivedContent();
 }
 

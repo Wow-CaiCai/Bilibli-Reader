@@ -136,8 +136,8 @@ function ensureNativeTranscriptPanel() {
   bindNativeTranscriptPanelResize();
   syncNativeTranscriptPanelAlignment();
   syncNativeTranscriptPanelHeight();
-  renderNativeTranscriptPanel({ force: created });
   ensureNativeTranscriptLoaded();
+  renderNativeTranscriptPanel({ force: created });
   return panel;
 }
 
@@ -146,6 +146,11 @@ function bindNativeTranscriptPanelEvents(panel) {
   const returnButton = panel.querySelector(`#${ids.nativeTranscriptReturnButton}`);
   const themeButton = panel.querySelector(`#${ids.nativeTranscriptThemeButton}`);
   const toggle = () => {
+    if (isNativeTranscriptEmpty()) {
+      autoFoldNativeTranscriptIfEmpty();
+      showNativeTranscriptEmptyNotice(panel);
+      return;
+    }
     state.nativeTranscriptOpen = !state.nativeTranscriptOpen;
     setNativeTranscriptExpanded(panel, state.nativeTranscriptOpen);
     if (state.nativeTranscriptOpen) {
@@ -157,6 +162,11 @@ function bindNativeTranscriptPanelEvents(panel) {
     button.addEventListener("click", toggle);
   });
   returnButton?.addEventListener("click", () => {
+    if (isNativeTranscriptEmpty()) {
+      autoFoldNativeTranscriptIfEmpty();
+      showNativeTranscriptEmptyNotice(panel);
+      return;
+    }
     state.nativeTranscriptManualScrollPauseUntil = 0;
     if (!state.nativeTranscriptOpen) {
       state.nativeTranscriptOpen = true;
@@ -188,11 +198,32 @@ function bindNativeTranscriptPanelEvents(panel) {
   body?.addEventListener("pointerdown", noteManualScroll, { passive: true });
 }
 
+function isNativeTranscriptEmpty() {
+  return (
+    state.fetchClipSignature === computeCurrentClipSignature() &&
+    state.subtitleFetchState === "empty"
+  );
+}
+
+function clearNativeTranscriptEmptyNotice(panel) {
+  panel?.querySelector(".blr-native-transcript-empty-notice")?.remove();
+}
+
+function showNativeTranscriptEmptyNotice(panel) {
+  clearNativeTranscriptEmptyNotice(panel);
+  const notice = document.createElement("div");
+  notice.className = "blr-native-transcript-empty-notice";
+  notice.setAttribute("role", "status");
+  notice.textContent = "当前视频无字幕";
+  notice.addEventListener("animationend", () => notice.remove(), { once: true });
+  panel.appendChild(notice);
+}
+
 function setNativeTranscriptExpanded(panel, expanded) {
   if (!panel) {
     return;
   }
-  const isExpanded = Boolean(expanded);
+  const isExpanded = Boolean(expanded) && !isNativeTranscriptEmpty();
   panel.classList.toggle("is-folded", !isExpanded);
   panel.querySelectorAll("[data-native-transcript-toggle]").forEach((button) => {
     button.setAttribute("aria-expanded", String(isExpanded));
@@ -311,7 +342,11 @@ function renderNativeTranscriptHeaderControls(panel) {
 }
 
 function getNativeTranscriptPlaceholderText() {
-  if (state.subtitleFetchState === "loading" || state.subtitleFetchState === "idle") {
+  if (
+    state.fetchClipSignature !== computeCurrentClipSignature() ||
+    state.subtitleFetchState === "loading" ||
+    state.subtitleFetchState === "idle"
+  ) {
     return "正在加载字幕...";
   }
   if (state.subtitleFetchState === "error") {
@@ -328,6 +363,11 @@ function renderNativeTranscriptPanel({ force = false } = {}) {
   }
 
   renderNativeTranscriptHeaderControls(panel);
+  if (isNativeTranscriptEmpty()) {
+    autoFoldNativeTranscriptIfEmpty();
+  } else {
+    clearNativeTranscriptEmptyNotice(panel);
+  }
 
   const transcriptItems = getReadingTranscriptItems();
   const renderKey = [
@@ -387,6 +427,9 @@ function ensureNativeTranscriptLoaded({ force = false } = {}) {
   }
 
   const signature = computeCurrentClipSignature();
+  if (signature !== state.currentClipSignature) {
+    resetClipState();
+  }
   initializeNativeTranscriptForSignature(signature);
   if (
     !force &&
@@ -412,7 +455,7 @@ function ensureNativeTranscriptLoaded({ force = false } = {}) {
       logWarn("[Bilibili Reader] native transcript load failed", error);
     })
     .finally(() => {
-      if (computeCurrentClipSignature() === loadSignature) {
+      if (isRunActive(loadRunId) && state.nativeTranscriptLoadPromise === loadPromise) {
         state.nativeTranscriptLoadedSignature = loadSignature;
         autoFoldNativeTranscriptIfEmpty(loadSignature);
       }
@@ -420,9 +463,12 @@ function ensureNativeTranscriptLoaded({ force = false } = {}) {
         state.nativeTranscriptLoadPromise = null;
         state.nativeTranscriptLoadSignature = "";
       }
-      renderNativeTranscriptPanel();
-      syncNativeTranscriptPlayback(true);
+      if (isRunActive(loadRunId)) {
+        renderNativeTranscriptPanel();
+        syncNativeTranscriptPlayback(true);
+      }
     });
+  const loadRunId = state.fetchRunId;
   state.nativeTranscriptLoadSignature = loadSignature;
   state.nativeTranscriptLoadPromise = loadPromise;
   return loadPromise;
@@ -440,8 +486,8 @@ function initializeNativeTranscriptForSignature(signature = computeCurrentClipSi
 
 function autoFoldNativeTranscriptIfEmpty(signature = computeCurrentClipSignature()) {
   if (
-    state.subtitleFetchState !== "empty" ||
-    state.nativeTranscriptAutoFoldedSignature === signature
+    !isNativeTranscriptEmpty() ||
+    signature !== computeCurrentClipSignature()
   ) {
     return;
   }
@@ -597,23 +643,33 @@ function onNativeTranscriptChange(event) {
     return;
   }
   const previousFetchState = state.subtitleFetchState;
+  const runId = state.fetchRunId;
   select.disabled = true;
   loadSubtitle(
     url,
     String(option.dataset.lang || "unknown"),
-    state.fetchRunId,
+    runId,
     String(option.dataset.id || "")
   )
     .then(() => {
+      if (!isRunActive(runId)) {
+        return;
+      }
       renderNativeTranscriptPanel();
       syncNativeTranscriptPlayback(true);
     })
     .catch((error) => {
+      if (isStaleRunError(error) || !isRunActive(runId)) {
+        return;
+      }
       state.subtitleFetchState = previousFetchState === "ready" ? "ready" : "error";
       logWarn("[Bilibili Reader] native subtitle switch failed", error);
       renderNativeTranscriptPanel({ force: true });
     })
     .finally(() => {
+      if (!isRunActive(runId)) {
+        return;
+      }
       const currentSelect = document.getElementById(ids.nativeTranscriptSelect);
       if (currentSelect) {
         currentSelect.disabled = state.subtitles.length === 0;
