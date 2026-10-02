@@ -21,7 +21,7 @@
   display: block;
 }
 
-/* Keep the video as the visual anchor while the surrounding page dissolves. */
+/* Move the player and subtitle panel together while the page dissolves. */
 html[data-blr-reader-transition]::view-transition {
   pointer-events: none;
 }
@@ -41,26 +41,26 @@ html[data-blr-reader-transition="enter"]::view-transition-new(root) {
   animation: blr-reader-fade-in 240ms ease-out both;
 }
 
-html[data-blr-reader-transition]::view-transition-image-pair(blr-reader-player) {
+html[data-blr-reader-transition]::view-transition-image-pair(blr-reader-player),
+html[data-blr-reader-transition]::view-transition-image-pair(blr-reader-transcript) {
   isolation: auto;
 }
 
-html[data-blr-reader-transition="enter"]::view-transition-old(blr-reader-player) {
+html[data-blr-reader-transition="enter"]::view-transition-old(blr-reader-player),
+html[data-blr-reader-transition="enter"]::view-transition-old(blr-reader-transcript) {
   animation: blr-reader-fade-out 140ms ease-out both;
 }
 
-html[data-blr-reader-transition="enter"]::view-transition-new(blr-reader-player) {
+html[data-blr-reader-transition="enter"]::view-transition-new(blr-reader-player),
+html[data-blr-reader-transition="enter"]::view-transition-new(blr-reader-transcript) {
   animation: blr-reader-fade-in 180ms ease-out both;
 }
 
-html[data-blr-reader-transition]::view-transition-new(blr-reader-player) {
+html[data-blr-reader-transition]::view-transition-new(blr-reader-player),
+html[data-blr-reader-transition="enter"]::view-transition-new(blr-reader-transcript) {
   mix-blend-mode: normal;
   height: 100%;
   object-fit: fill;
-}
-
-html[data-blr-reader-transition="enter"]::view-transition-new(blr-reader-transcript) {
-  animation: blr-reader-panel-in 280ms cubic-bezier(0.22, 1, 0.36, 1) 40ms both;
 }
 
 /* Return to the original layout with a shorter, responsive transition. */

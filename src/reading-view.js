@@ -93,8 +93,12 @@ async function transitionReaderMode(update, direction) {
     node.style.setProperty("view-transition-name", name);
   };
   nameNode(player, "blr-reader-player");
-  if (direction === "exit") {
-    nameNode(document.getElementById("blr-reading-inline-host"), "blr-reader-transcript");
+  const sourceTranscript = document.getElementById(
+    direction === "enter" ? ids.nativeTranscriptPanel : "blr-reading-inline-host"
+  );
+  const transcriptRect = sourceTranscript?.getBoundingClientRect();
+  if (transcriptRect?.width > 0 && transcriptRect.height > 0) {
+    nameNode(sourceTranscript, "blr-reader-transcript");
   }
   root.setAttribute("data-blr-reader-transition", direction);
   let cancelled = false;
@@ -131,6 +135,9 @@ async function transitionReaderMode(update, direction) {
         nameNode(nextPlayer, "blr-reader-player");
       }
       if (direction === "enter") {
+        // Match the native subtitle panel to the reader column so both the
+        // player and transcript move together, rather than revealing it later.
+        sourceTranscript?.style.removeProperty("view-transition-name");
         nameNode(document.getElementById("blr-reading-inline-host"), "blr-reader-transcript");
       }
     });
