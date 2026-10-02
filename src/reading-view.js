@@ -52,8 +52,14 @@ async function exitReaderMode() {
 
 async function transitionReaderMode(update, direction) {
   const root = document.documentElement;
-  const player = findReaderPlayerHost(getRuntimeVideoElement());
+  const playerHost = findReaderPlayerHost(getRuntimeVideoElement());
+  // Capture the layout box, not the native player's independently resized
+  // inner surface. Both snapshots must use the same coordinate system.
+  const player = playerHost && (getReaderPlayerWrapNode(playerHost) || playerHost);
   const rect = player?.getBoundingClientRect();
+  // Stop any in-flight smooth scroll before capturing either template.
+  stopTranscriptScroll(document.getElementById("blr-reading-inline-host"));
+  stopTranscriptScroll(document.getElementById(ids.nativeTranscriptList));
   // Only capture a player already on screen. Direct reader links and pages
   // still loading use the normal mounting/retry path.
   if (
@@ -84,6 +90,22 @@ async function transitionReaderMode(update, direction) {
   }
 
   const namedNodes = new Map();
+  const transitionStyles = new Map();
+  const setTransitionStyle = (name, value) => {
+    if (!transitionStyles.has(name)) {
+      transitionStyles.set(name, {
+        value: root.style.getPropertyValue(name),
+        priority: root.style.getPropertyPriority(name)
+      });
+    }
+    root.style.setProperty(name, value);
+  };
+  if (direction === "exit") {
+    setTransitionStyle("--blr-exit-player-width", `${rect.width}px`);
+    setTransitionStyle("--blr-exit-player-height", `${rect.height}px`);
+    setTransitionStyle("--blr-exit-player-from-x", `${rect.left}px`);
+    setTransitionStyle("--blr-exit-player-from-y", `${rect.top}px`);
+  }
   const nameNode = (node, name) => {
     if (!node || namedNodes.has(node)) return;
     namedNodes.set(node, {
@@ -96,6 +118,12 @@ async function transitionReaderMode(update, direction) {
   const sourceTranscript = document.getElementById(
     direction === "enter" ? ids.nativeTranscriptPanel : "blr-reading-inline-host"
   );
+  const sourceScrollAnchor = captureTranscriptScrollAnchor(
+    direction === "enter" ? document.getElementById(ids.nativeTranscriptList) : sourceTranscript,
+    direction === "enter" ? ".blr-native-transcript-segment" : ".blr-reading-complete-segment"
+  );
+  const sourceFollowPauseUntil = direction === "enter"
+    ? state.nativeTranscriptManualScrollPauseUntil : state.readingManualScrollPauseUntil;
   const transcriptRect = sourceTranscript?.getBoundingClientRect();
   if (transcriptRect?.width > 0 && transcriptRect.height > 0) {
     nameNode(sourceTranscript, "blr-reader-transcript");
@@ -109,12 +137,30 @@ async function transitionReaderMode(update, direction) {
     if (cleanedUp) return;
     cleanedUp = true;
     window.clearTimeout(timeout);
+    window.removeEventListener("resize", cancel);
+    const pendingReadingRender = state.readingModeTransition?.cancel === cancel &&
+      state.readingModeTransition.pendingReadingRender;
     namedNodes.forEach(({ value, priority }, node) => {
       if (value) node.style.setProperty("view-transition-name", value, priority);
       else node.style.removeProperty("view-transition-name");
     });
+    transitionStyles.forEach(({ value, priority }, name) => {
+      if (value) root.style.setProperty(name, value, priority);
+      else root.style.removeProperty(name);
+    });
     root.removeAttribute("data-blr-reader-transition");
+    root.removeAttribute("data-blr-reader-transcript-transition");
     if (state.readingModeTransition?.cancel === cancel) state.readingModeTransition = null;
+    if (pendingReadingRender && state.readingViewOpen) {
+      renderReadingView();
+      syncReadingViewPlayback(true);
+    }
+    if (direction === "exit" && !state.readingViewOpen) {
+      clearReaderPageFocus();
+      scheduleNativeTranscriptPanelSync(0);
+      schedulePlayerAiQuickActionSync(0);
+      cleanupReaderFloatingArtifacts();
+    }
   };
   const cancel = () => {
     cancelled = true;
@@ -127,31 +173,84 @@ async function transitionReaderMode(update, direction) {
       await update();
       if (cancelled || (direction === "enter" && !state.readingViewOpen)) return;
       // The mounting code can replace the original player on watch-later pages.
-      const nextPlayer = direction === "enter"
+      const nextHost = direction === "enter"
         ? state.readingPlayerHost
         : findReaderPlayerHost(getRuntimeVideoElement());
+      const nextPlayer = nextHost && (getReaderPlayerWrapNode(nextHost) || nextHost);
       if (nextPlayer !== player) {
         player.style.removeProperty("view-transition-name");
         nameNode(nextPlayer, "blr-reader-player");
       }
+      if (direction === "exit") {
+        const target = nextPlayer?.getBoundingClientRect();
+        if (!target || target.width <= 0 || target.height <= 0) {
+          transition.skipTransition();
+          return;
+        }
+        // Keep the captured bitmap's size constant. Only the group's transform
+        // moves/scales it; the browser must not also interpolate its width.
+        setTransitionStyle("--blr-exit-player-to-x", `${target.left}px`);
+        setTransitionStyle("--blr-exit-player-to-y", `${target.top}px`);
+        setTransitionStyle("--blr-exit-player-scale-x", String(target.width / rect.width));
+        setTransitionStyle("--blr-exit-player-scale-y", String(target.height / rect.height));
+      }
+      // Match the subtitle panels in both directions. The native panel must
+      // already exist in the new snapshot instead of appearing after exit.
+      sourceTranscript?.style.removeProperty("view-transition-name");
+      const targetTranscript = document.getElementById(
+        direction === "enter" ? "blr-reading-inline-host" : ids.nativeTranscriptPanel
+      );
+      const targetScrollContainer = direction === "enter"
+        ? targetTranscript : document.getElementById(ids.nativeTranscriptList);
+      stopTranscriptScroll(targetScrollContainer);
+      transferTranscriptScrollAnchor(sourceScrollAnchor, targetScrollContainer,
+        direction === "enter" ? "data-index" : "data-native-transcript-index");
       if (direction === "enter") {
-        // Match the native subtitle panel to the reader column so both the
-        // player and transcript move together, rather than revealing it later.
-        sourceTranscript?.style.removeProperty("view-transition-name");
-        nameNode(document.getElementById("blr-reading-inline-host"), "blr-reader-transcript");
+        state.readingManualScrollPauseUntil = Math.max(state.readingManualScrollPauseUntil, sourceFollowPauseUntil);
+        updateReaderFollowState();
+      } else {
+        state.nativeTranscriptManualScrollPauseUntil = Math.max(state.nativeTranscriptManualScrollPauseUntil, sourceFollowPauseUntil);
+      }
+      nameNode(targetTranscript, "blr-reader-transcript");
+      const targetTranscriptRect = targetTranscript?.getBoundingClientRect();
+      if (
+        transcriptRect?.width > 0 && transcriptRect.height > 0 &&
+        targetTranscriptRect?.width > 0 && targetTranscriptRect.height > 0
+      ) {
+        // Translate the two real templates along the same path. Each keeps its
+        // own dimensions and typography; only their opacity changes en route.
+        [
+          ["from-x", transcriptRect.left], ["from-y", transcriptRect.top],
+          ["to-x", targetTranscriptRect.left], ["to-y", targetTranscriptRect.top],
+          ["from-width", transcriptRect.width], ["from-height", transcriptRect.height],
+          ["to-width", targetTranscriptRect.width], ["to-height", targetTranscriptRect.height],
+          ["width", Math.max(transcriptRect.width, targetTranscriptRect.width)],
+          ["height", Math.max(transcriptRect.height, targetTranscriptRect.height)]
+        ].forEach(([name, value]) => setTransitionStyle(`--blr-transcript-${name}`, `${value}px`));
+        root.setAttribute("data-blr-reader-transcript-transition", "1");
       }
     });
   } catch {
     cleanup();
     return update();
   }
-  state.readingModeTransition = { cancel, direction };
+  state.readingModeTransition = { cancel, direction, phase: "updating", finished: transition.finished };
+  window.addEventListener("resize", cancel, { once: true });
   // A slow player must not leave the old page frozen behind a snapshot.
   timeout = window.setTimeout(() => transition.skipTransition(), 900);
-  transition.ready.then(() => window.clearTimeout(timeout), () => {});
+  transition.ready.then(() => {
+    window.clearTimeout(timeout);
+    if (state.readingModeTransition?.cancel === cancel) {
+      state.readingModeTransition.phase = "animating";
+    }
+  }, () => {});
   transition.finished.then(cleanup, cleanup);
   // Skipped animations still perform the update; never mount a second time.
   await transition.updateCallbackDone;
+  if (direction === "exit") {
+    // Keep exit guards active until all snapshots have finished animating.
+    await transition.finished.catch(() => {});
+  }
 }
 
 async function prepareReaderMode() {
@@ -403,6 +502,7 @@ function findReaderPlayerHost(video) {
 }
 
 function closeReadingView() {
+  const deferCleanup = state.readingModeTransition?.direction === "exit";
   document.querySelectorAll("[data-blr-reader-fading]").forEach((node) => {
     node.removeAttribute("data-blr-reader-fading");
   });
@@ -468,21 +568,23 @@ function closeReadingView() {
   stopReadingViewSync();
   unbindReaderLayout();
   cleanupReaderPlayerHost();
-  clearReaderPageFocus();
-  const sendingBar = document.querySelector(".bpx-player-sending-bar");
-  if (sendingBar) {
-    sendingBar.setAttribute("data-blr-reader-hide-sending-bar", "1");
-    sendingBar.style.setProperty("display", "none", "important");
-    window.setTimeout(() => {
-      sendingBar.style.removeProperty("display");
-      sendingBar.removeAttribute("data-blr-reader-hide-sending-bar");
-    }, 200);
+  if (!deferCleanup) clearReaderPageFocus();
+  // Restore and populate the normal-page subtitles before the new snapshot.
+  // Observer-driven refreshes stay deferred while the snapshots animate.
+  ensureNativeTranscriptPanel();
+  // Restore the sending bar together with the native layout. Hiding it for
+  // 200ms changed the player's height in the middle of the exit transition.
+  if (!deferCleanup) {
+    window.setTimeout(() => cleanupReaderFloatingArtifacts(), 40);
+    window.setTimeout(() => cleanupReaderFloatingArtifacts(), 220);
   }
-  window.setTimeout(() => cleanupReaderFloatingArtifacts(), 40);
-  window.setTimeout(() => cleanupReaderFloatingArtifacts(), 220);
 }
 
 function renderReadingView() {
+  if (state.readingModeTransition?.phase === "animating") {
+    state.readingModeTransition.pendingReadingRender = true;
+    return;
+  }
   const titleNode = document.querySelector(".blr-reading-title");
   const pageTitleNode = byId(ids.readingPageTitle);
   const metaNode = byId(ids.readingMeta);
@@ -743,13 +845,21 @@ function bindReaderResizeHandle(node, side) {
   if (!node || node.dataset.blrBound === "1") return;
 
   node.addEventListener("pointerdown", (event) => {
-    if (event.button !== 0 || window.innerWidth <= 1180) return;
+    if (event.button !== 0 || window.innerWidth <= 1180 || state.readingModeTransition) return;
     event.preventDefault();
     node.setPointerCapture?.(event.pointerId);
     document.body.dataset.blrReaderResizing = side;
+    noteManualReaderInteraction();
+    const scrollAnchor = captureTranscriptScrollAnchor(
+      document.getElementById("blr-reading-inline-host"), ".blr-reading-complete-segment"
+    );
     const playerRect = getReaderPlayerWrapNode()?.getBoundingClientRect?.();
 
     const move = (moveEvent) => {
+      if (!state.readingViewOpen || !isReaderMode()) {
+        stop();
+        return;
+      }
       const pagePadding = getReaderPagePaddingPx();
       const halfGap = Math.min(24, Math.max(16, window.innerWidth * 0.014)) / 2;
       if (side === "chapter") {
@@ -768,14 +878,16 @@ function bindReaderResizeHandle(node, side) {
       }
       applyReaderColumnLayout();
       layoutReaderPlayerHost();
+      restoreTranscriptScrollAnchor(scrollAnchor);
     };
 
     const stop = () => {
-      node.releasePointerCapture?.(event.pointerId);
+      if (node.hasPointerCapture?.(event.pointerId)) node.releasePointerCapture(event.pointerId);
       document.body.removeAttribute("data-blr-reader-resizing");
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", stop);
       window.removeEventListener("pointercancel", stop);
+      noteManualReaderInteraction();
       state.settings = {
         ...state.settings,
         readerChapterWidthPx: state.readingChapterWidthPx,
@@ -793,6 +905,12 @@ function bindReaderResizeHandle(node, side) {
 }
 
 function updateReaderPreferences(next, { persist = true } = {}) {
+  state.readingModeTransition?.cancel();
+  noteManualReaderInteraction();
+  const scrollAnchor = captureTranscriptScrollAnchor(
+    document.getElementById("blr-reading-inline-host") || byId(ids.readingTranscriptList),
+    ".blr-reading-complete-segment"
+  );
   state.readingTheme = normalizeReaderTheme(next.readerTheme ?? state.readingTheme);
   state.readingFontScale = normalizeReaderFontScale(next.readerFontScale ?? state.readingFontScale);
   state.readingFontWeight = normalizeReaderFontWeight(next.readerFontWeight ?? state.readingFontWeight);
@@ -821,6 +939,8 @@ function updateReaderPreferences(next, { persist = true } = {}) {
     readerTimestampVisible: state.readingTimestampVisible
   };
   applyReadingViewPresentation();
+  updateReadingTranscriptTailSpacer();
+  restoreTranscriptScrollAnchor(scrollAnchor);
   if (persist) {
     persistReaderSettings();
   }
@@ -1135,7 +1255,6 @@ function cleanupReaderPlayerHostNode(playerHost) {
 }
 
 function cleanupReaderPlayerHost() {
-  restoreReaderPlayerContainer();
   unbindReaderPlayerControlsHover();
   unbindReaderHeaderActionsHover();
   if (state.readingControlsRecoveryTimer) {
@@ -1153,11 +1272,12 @@ function cleanupReaderPlayerHost() {
     node.style.removeProperty("--blr-reader-player-width");
   });
   const playerHost = state.readingPlayerHost;
-  if (!playerHost) {
-    return;
+  if (playerHost) {
+    setReaderPlayerControlsVisible(false, playerHost);
+    cleanupReaderPlayerHostNode(playerHost);
   }
-  setReaderPlayerControlsVisible(false, playerHost);
-  cleanupReaderPlayerHostNode(playerHost);
+  // Restore native dimensions last so cleanup cannot erase them again.
+  restoreReaderPlayerContainer();
   state.readingPlayerHost = null;
 }
 

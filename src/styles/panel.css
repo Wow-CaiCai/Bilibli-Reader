@@ -342,6 +342,8 @@ body[data-blr-reader-mode="1"] #blr-page-reader-entry {
 }
 
 .blr-native-transcript-list {
+  overflow-anchor: none;
+  scroll-behavior: auto;
   min-height: 0;
   flex: 1 1 auto;
   overflow-x: hidden;

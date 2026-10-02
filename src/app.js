@@ -238,7 +238,16 @@ function bindSettingsWatcher() {
     }
 
     getSettings()
-      .then((settings) => {
+      .then(async (settings) => {
+        const transition = state.readingModeTransition;
+        if (transition) {
+          // Storage echoes must not reflow the live target during its motion.
+          await transition.finished.catch(() => {});
+          settings = await getSettings();
+        }
+        const scrollAnchor = captureTranscriptScrollAnchor(
+          document.getElementById("blr-reading-inline-host"), ".blr-reading-complete-segment"
+        );
         const activeLayout = state.readingViewOpen
           ? {
               chapterWidth: state.readingChapterWidthPx,
@@ -264,6 +273,7 @@ function bindSettingsWatcher() {
           };
         }
         applyReadingViewPresentation();
+        restoreTranscriptScrollAnchor(scrollAnchor);
         schedulePlayerAiQuickActionSync();
       })
       .catch((error) => {

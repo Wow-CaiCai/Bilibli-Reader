@@ -1,6 +1,53 @@
 
+function stopTranscriptScroll(container) {
+  if (!container) return;
+  const until = Date.now() + 120;
+  state.readingProgrammaticScrollUntil = Math.max(state.readingProgrammaticScrollUntil, until);
+  state.nativeTranscriptProgrammaticScrollUntil = Math.max(state.nativeTranscriptProgrammaticScrollUntil, until);
+  container.scrollTo({ top: container.scrollTop, left: container.scrollLeft, behavior: "instant" });
+}
+
+function captureTranscriptScrollAnchor(container, selector) {
+  if (!container?.isConnected) return null;
+  stopTranscriptScroll(container);
+  const bounds = container.getBoundingClientRect();
+  const headingHeight = container.querySelector(".blr-reading-transcript-heading")?.getBoundingClientRect().height || 0;
+  const node = Array.from(container.querySelectorAll(selector)).find((item) => {
+    const rect = item.getBoundingClientRect();
+    return rect.bottom > bounds.top + headingHeight && rect.top < bounds.bottom;
+  });
+  return {
+    container, node, headingHeight,
+    offset: node ? node.getBoundingClientRect().top - bounds.top : 0,
+    scrollTop: container.scrollTop
+  };
+}
+
+function transferTranscriptScrollAnchor(anchor, container, indexAttribute) {
+  if (!anchor?.node || !container) return;
+  const index = Number(anchor.node.dataset.index ?? anchor.node.dataset.nativeTranscriptIndex);
+  if (!Number.isInteger(index) || index < 0) return;
+  const node = container.querySelector(`[${indexAttribute}="${index}"]`);
+  if (!node) return;
+  const headingHeight = container.querySelector(".blr-reading-transcript-heading")?.getBoundingClientRect().height || 0;
+  restoreTranscriptScrollAnchor({
+    container, node, scrollTop: container.scrollTop,
+    offset: headingHeight + Math.max(0, anchor.offset - anchor.headingHeight)
+  });
+}
+
+function restoreTranscriptScrollAnchor(anchor) {
+  if (!anchor?.container.isConnected) return;
+  const { container, node, offset, scrollTop } = anchor;
+  const top = node?.isConnected && container.contains(node)
+    ? container.scrollTop + node.getBoundingClientRect().top - container.getBoundingClientRect().top - offset
+    : scrollTop;
+  stopTranscriptScroll(container);
+  container.scrollTo({ top: Math.max(0, top), behavior: "instant" });
+}
+
 function syncReadingViewPlayback(forceScroll = false) {
-  if (!state.readingViewOpen) {
+  if (!state.readingViewOpen || state.readingModeTransition?.phase === "animating") {
     return;
   }
 
@@ -88,7 +135,7 @@ function setActiveReadingItems(subtitleIndex, chapterIndex, shouldScroll = false
   }
 
   if (shouldScroll && state.readingAutoScroll) {
-    if (Date.now() < state.readingManualScrollPauseUntil) {
+    if (document.body.hasAttribute("data-blr-reader-resizing") || Date.now() < state.readingManualScrollPauseUntil) {
       updateReaderFollowState();
       state.readingActiveSubtitleIndex = subtitleIndex;
       state.readingActiveChapterIndex = chapterIndex;
