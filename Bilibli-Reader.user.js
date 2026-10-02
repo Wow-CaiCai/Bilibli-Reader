@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bilibili Reader｜哔哩哔哩阅读模式
 // @namespace    https://github.com/bilibli-reader
-// @version      0.0.9-alpha.17
+// @version      0.0.9
 // @description  将 B 站视频切换为视频、章节与字幕联动的阅读视图
 // @author       Wow-CaiCai
 // @license      MIT
@@ -293,7 +293,7 @@ const DEFAULT_SETTINGS = {
 };
 const PLAYER_AI_ICON_VARIANT = "badge";
 
-const READER_VERSION = "0.0.9-alpha.17";
+const READER_VERSION = "0.0.9";
 const CACHE_KEY_PREFIX = "bilibli_reader_subtitle_cache_";
 globalThis.__BILIBLI_READER_CONTENT_SCRIPT_LOADED__ = READER_VERSION;
 const state = {
