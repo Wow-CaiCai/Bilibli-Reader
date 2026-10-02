@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bilibili Reader｜哔哩哔哩阅读模式
 // @namespace    https://github.com/bilibli-reader
-// @version      0.0.9-alpha.12
+// @version      0.0.9-alpha.13
 // @description  将 B 站视频切换为视频、章节与字幕联动的阅读视图
 // @author       Wow-CaiCai
 // @license      MIT
@@ -293,7 +293,7 @@ const DEFAULT_SETTINGS = {
 };
 const PLAYER_AI_ICON_VARIANT = "badge";
 
-const READER_VERSION = "0.0.9-alpha.12";
+const READER_VERSION = "0.0.9-alpha.13";
 const CACHE_KEY_PREFIX = "bilibli_reader_subtitle_cache_";
 globalThis.__BILIBLI_READER_CONTENT_SCRIPT_LOADED__ = READER_VERSION;
 const state = {
@@ -476,13 +476,20 @@ function getReaderPagePaddingPx() {
 function getReaderMainWidthLimit() {
   const pagePadding = getReaderPagePaddingPx();
   if (window.innerWidth > 1180) {
-    const { transcriptWidth } = getEffectiveReaderColumnWidths();
-    const gap = Math.min(24, Math.max(16, window.innerWidth * 0.014));
+    const { transcriptWidth, gap } = getEffectiveReaderColumnWidths();
     const availableWidth = window.innerWidth - pagePadding * 2 - transcriptWidth - gap;
-    const heightLimitedWidth = Math.max(420, (window.innerHeight - 190) * (16 / 9));
-    return Math.max(420, Math.min(availableWidth, heightLimitedWidth));
+    // Fit against the real video ratio and player top in layoutReaderPlayerHost.
+    return Math.max(420, availableWidth);
   }
   return Math.max(320, Math.min(getReaderContentMaxPx(), window.innerWidth - pagePadding * 2));
+}
+
+function getReaderPlayerMaxHeightPx(playerTop) {
+  const hasChapterRail = window.innerWidth > 1180 && state.readingChapterVisible &&
+    normalizeChapters(state.chapters || []).length > 0;
+  // Keep the chapter rail (112px), its gap (12px), and bottom padding (24px).
+  const bottomSpace = hasChapterRail ? 148 : 24;
+  return Math.max(240, window.innerHeight - playerTop - bottomSpace);
 }
 
 function normalizeReaderColumnWidth(value, fallback, min, max) {
@@ -3239,6 +3246,8 @@ async function prepareReaderMode() {
   state.readingNativePageMode = true;
   document.body.setAttribute("data-blr-reading-active", "1");
   hydrateReaderStateFromSettings(state.settings);
+  // Each entry starts at the largest fitted size; dragging still works afterward.
+  state.readingVideoHeightPx = 0;
   applyReadingViewPresentation();
   alignReaderViewportToPlayer();
   await sleep(0);
@@ -3844,7 +3853,7 @@ function bindReaderResizeHandle(node, side) {
       const halfGap = Math.min(24, Math.max(16, window.innerWidth * 0.014)) / 2;
       if (side === "chapter") {
         if (!playerRect) return;
-        const maxHeight = Math.max(240, window.innerHeight - playerRect.top - 148);
+        const maxHeight = getReaderPlayerMaxHeightPx(playerRect.top);
         state.readingVideoHeightPx = Math.round(
           Math.min(maxHeight, Math.max(240, moveEvent.clientY - playerRect.top))
         );
@@ -4158,7 +4167,7 @@ function layoutReaderPlayerHost() {
     const widthLimit = getReaderMainWidthLimit();
     const wrapRect = getReaderPlayerWrapNode(playerHost)?.getBoundingClientRect?.();
     const layoutTop = Number.isFinite(wrapRect?.top) ? wrapRect.top : rect.top;
-    const maxHeight = Math.max(240, window.innerHeight - layoutTop - 148);
+    const maxHeight = getReaderPlayerMaxHeightPx(layoutTop);
     const heightLimit = state.readingVideoHeightPx > 0
       ? Math.min(maxHeight, Math.max(240, state.readingVideoHeightPx))
       : maxHeight;
