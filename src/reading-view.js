@@ -1163,6 +1163,12 @@ function layoutReaderPlayerHost() {
     return;
   }
 
+  const video = state.readingVideoEl || getRuntimeVideoElement();
+  const aspectRatio =
+    Number(video?.videoWidth) > 0 && Number(video?.videoHeight) > 0
+      ? Number(video.videoWidth) / Number(video.videoHeight)
+      : 16 / 9;
+
   if (state.readingNativePageMode) {
     const rect = playerHost.getBoundingClientRect();
     if (!(rect.width > 0) || !(rect.height > 0)) {
@@ -1173,17 +1179,19 @@ function layoutReaderPlayerHost() {
     const wrapRect = getReaderPlayerWrapNode(playerHost)?.getBoundingClientRect?.();
     const layoutTop = Number.isFinite(wrapRect?.top) ? wrapRect.top : rect.top;
     const maxHeight = Math.max(240, window.innerHeight - layoutTop - 148);
-    let renderedWidth = widthLimit;
-    let renderedHeight = maxHeight;
-    if (state.readingVideoHeightPx > 0) {
-      renderedHeight = Math.min(maxHeight, Math.max(240, state.readingVideoHeightPx));
-    }
+    const heightLimit = state.readingVideoHeightPx > 0
+      ? Math.min(maxHeight, Math.max(240, state.readingVideoHeightPx))
+      : maxHeight;
+    // Fit the whole video, then size the player to that same aspect ratio.
+    // Filling the width and height independently creates letterbox bars.
+    const renderedWidth = Math.min(widthLimit, heightLimit * aspectRatio);
+    const renderedHeight = renderedWidth / aspectRatio;
 
     clearNativeReaderFloatingStyles(playerHost);
     cleanupReaderPlayerHostNode(playerHost);
     [document.documentElement, document.body, readingView].forEach((node) => {
-      node.style.setProperty("--blr-reader-player-rendered-width", `${Math.round(renderedWidth)}px`);
-      node.style.setProperty("--blr-reader-player-rendered-height", `${Math.round(renderedHeight)}px`);
+      node.style.setProperty("--blr-reader-player-rendered-width", `${renderedWidth}px`);
+      node.style.setProperty("--blr-reader-player-rendered-height", `${renderedHeight}px`);
     });
     updateReaderChapterRailPosition();
     updateReadingTranscriptTailSpacer();
@@ -1203,24 +1211,19 @@ function layoutReaderPlayerHost() {
     return;
   }
 
-  const video = state.readingVideoEl;
-  const aspectRatio =
-    Number(video?.videoWidth) > 0 && Number(video?.videoHeight) > 0
-      ? Number(video.videoWidth) / Number(video.videoHeight)
-      : 16 / 9;
-  const targetHeight = rect.height;
-  const targetWidth = Math.min(rect.width, targetHeight * aspectRatio);
+  const targetWidth = Math.min(rect.width, rect.height * aspectRatio);
+  const targetHeight = targetWidth / aspectRatio;
   const left = rect.left + (rect.width - targetWidth) / 2;
 
   [document.documentElement, document.body, readingView].forEach((node) => {
-    node.style.setProperty("--blr-reader-player-rendered-width", `${Math.round(targetWidth)}px`);
-    node.style.setProperty("--blr-reader-player-rendered-height", `${Math.round(targetHeight)}px`);
+    node.style.setProperty("--blr-reader-player-rendered-width", `${targetWidth}px`);
+    node.style.setProperty("--blr-reader-player-rendered-height", `${targetHeight}px`);
   });
   playerHost.style.setProperty("position", "fixed", "important");
   playerHost.style.setProperty("left", `${Math.round(left)}px`, "important");
   playerHost.style.setProperty("top", `${Math.round(rect.top)}px`, "important");
-  playerHost.style.setProperty("width", `${Math.round(targetWidth)}px`, "important");
-  playerHost.style.setProperty("height", `${Math.round(targetHeight)}px`, "important");
+  playerHost.style.setProperty("width", `${targetWidth}px`, "important");
+  playerHost.style.setProperty("height", `${targetHeight}px`, "important");
   playerHost.style.setProperty("margin", "0", "important");
   playerHost.style.setProperty("z-index", "2147483647", "important");
   playerHost.style.setProperty("max-width", "none", "important");
@@ -1323,6 +1326,7 @@ function stopReadingViewSync() {
     video.removeEventListener("timeupdate", video.__blrReadingSyncHandler);
     video.removeEventListener("seeked", video.__blrReadingSyncHandler);
     video.removeEventListener("loadedmetadata", video.__blrReadingSyncHandler);
+    video.removeEventListener("resize", video.__blrReadingSyncHandler);
     delete video.__blrReadingSyncHandler;
   }
   state.readingVideoEventsBound = false;
@@ -1366,6 +1370,7 @@ function bindReadingViewVideo(video = getRuntimeVideoElement()) {
       prev.removeEventListener("timeupdate", prev.__blrReadingSyncHandler);
       prev.removeEventListener("seeked", prev.__blrReadingSyncHandler);
       prev.removeEventListener("loadedmetadata", prev.__blrReadingSyncHandler);
+      prev.removeEventListener("resize", prev.__blrReadingSyncHandler);
       delete prev.__blrReadingSyncHandler;
     }
     state.readingVideoEl = null;
@@ -1382,11 +1387,12 @@ function bindReadingViewVideo(video = getRuntimeVideoElement()) {
     prev.removeEventListener("timeupdate", prev.__blrReadingSyncHandler);
     prev.removeEventListener("seeked", prev.__blrReadingSyncHandler);
     prev.removeEventListener("loadedmetadata", prev.__blrReadingSyncHandler);
+    prev.removeEventListener("resize", prev.__blrReadingSyncHandler);
   }
 
   const syncHandler = (event) => {
     if (state.readingViewOpen) {
-      if (event?.type === "loadedmetadata") {
+      if (event?.type === "loadedmetadata" || event?.type === "resize") {
         layoutReaderPlayerHost();
       }
       if (event?.type === "seeked") {
@@ -1407,6 +1413,7 @@ function bindReadingViewVideo(video = getRuntimeVideoElement()) {
   video.addEventListener("timeupdate", syncHandler);
   video.addEventListener("seeked", syncHandler);
   video.addEventListener("loadedmetadata", syncHandler);
+  video.addEventListener("resize", syncHandler);
   video.__blrReadingSyncHandler = syncHandler;
   state.readingVideoEl = video;
   state.readingPlayerHost = findReaderPlayerHost(video) || state.readingPlayerHost;

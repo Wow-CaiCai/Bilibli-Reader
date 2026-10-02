@@ -48,7 +48,7 @@ const DEFAULT_SETTINGS = {
 };
 const PLAYER_AI_ICON_VARIANT = "badge";
 
-const READER_VERSION = "0.0.9-alpha.10";
+const READER_VERSION = "0.0.9-alpha.12";
 const CACHE_KEY_PREFIX = "bilibli_reader_subtitle_cache_";
 globalThis.__BILIBLI_READER_CONTENT_SCRIPT_LOADED__ = READER_VERSION;
 const state = {
@@ -283,12 +283,6 @@ function applyReaderColumnLayout() {
     node.style.setProperty("--blr-reader-transcript-width", `${transcriptWidth}px`);
     node.style.setProperty("--blr-reader-center-offset", `${centerOffset}px`);
     node.style.setProperty("--blr-reader-main-width", `${Math.round(mainWidth)}px`);
-    if (state.readingVideoHeightPx > 0) {
-      node.style.setProperty(
-        "--blr-reader-player-rendered-height",
-        `${Math.round(state.readingVideoHeightPx)}px`
-      );
-    }
   });
   document
     .getElementById(ids.readingChapterResizeHandle)

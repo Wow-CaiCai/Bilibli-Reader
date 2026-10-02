@@ -327,14 +327,14 @@ body[data-blr-reader-mode="1"] #blr-page-reader-entry {
   --blr-native-transcript-surface: #0f172a;
   --blr-native-transcript-text: #e5eefb;
   --blr-native-transcript-border: rgba(148, 163, 184, 0.28);
-  --blr-native-transcript-active: rgba(74, 222, 128, 0.16);
+  --blr-native-transcript-active: rgba(0, 174, 236, 0.16);
 }
 
 #blr-native-transcript-panel[data-theme="paper"] {
   --blr-native-transcript-surface: #f4eddc;
   --blr-native-transcript-text: #3b3124;
   --blr-native-transcript-border: rgba(180, 155, 112, 0.34);
-  --blr-native-transcript-active: rgba(47, 158, 68, 0.14);
+  --blr-native-transcript-active: rgba(0, 174, 236, 0.14);
 }
 
 .blr-native-transcript-body[hidden] {
