@@ -39,6 +39,7 @@ function schedulePlayerAiQuickActionSync(delayMs = 120) {
 }
 
 function syncPlayerAiQuickActionButton() {
+  if (state.readingModeTransition?.direction === "exit") return;
   const existing = document.getElementById("blr-player-ai-quick-action");
   const existingWrap = existing?.closest(".blr-player-ai-wrap");
   if (!state.settings?.enablePlayerAiQuickAction || state.readingViewOpen || isReaderMode()) {

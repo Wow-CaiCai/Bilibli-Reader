@@ -9,15 +9,262 @@ function cleanupReaderFloatingArtifacts(playerHost = state.readingPlayerHost) {
   }
 }
 
-async function enterReaderMode() {
+async function enterReaderMode({ animate = false } = {}) {
+  state.readingModeTransition?.cancel();
+  const open = () => {
+    const readerUrl = new URL(location.href);
+    readerUrl.searchParams.set("bilibli_reader", "1");
+    replaceReaderModeUrl(readerUrl.toString());
+    document.documentElement.setAttribute("data-blr-reader-mode", "1");
+    document.body.setAttribute("data-blr-reader-mode", "1");
+    state.playerAiQuickActionSuppressedUntil = Date.now() + 2500;
+    removePlayerAiQuickActionButton();
+    return prepareReaderMode();
+  };
+  if (!animate || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    return open();
+  }
+  return transitionReaderMode(open, "enter");
+}
+
+async function exitReaderMode() {
+  if (!state.readingViewOpen || state.readingViewClosing) return;
+  state.readingViewClosing = true;
+  state.readingModeTransition?.cancel();
+  document.documentElement.removeAttribute("data-blr-reader-entering");
+  const close = () => {
+    replaceReaderModeUrl(stripReaderModeUrl(location.href));
+    closeReadingView();
+  };
+  try {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      close();
+    } else {
+      await transitionReaderMode(close, "exit");
+    }
+  } catch (error) {
+    close();
+    throw error;
+  } finally {
+    state.readingViewClosing = false;
+  }
+}
+
+async function transitionReaderMode(update, direction) {
+  const root = document.documentElement;
+  const playerHost = findReaderPlayerHost(getRuntimeVideoElement());
+  // Capture the layout box, not the native player's independently resized
+  // inner surface. Both snapshots must use the same coordinate system.
+  const player = playerHost && (getReaderPlayerWrapNode(playerHost) || playerHost);
+  const rect = player?.getBoundingClientRect();
+  // Stop any in-flight smooth scroll before capturing either template.
+  stopTranscriptScroll(document.getElementById("blr-reading-inline-host"));
+  stopTranscriptScroll(document.getElementById(ids.nativeTranscriptList));
+  // Only capture a player already on screen. Direct reader links and pages
+  // still loading use the normal mounting/retry path.
+  if (
+    !document.startViewTransition || !rect || rect.width <= 0 || rect.height <= 0 ||
+    rect.bottom <= 0 || rect.top >= window.innerHeight || document.hidden
+  ) {
+    if (direction === "exit") {
+      const nodes = [
+        document.getElementById("blr-reading-inline-host"),
+        document.querySelector(".blr-reading-topbar")
+      ];
+      await Promise.all(nodes.filter((node) => node?.animate).map((node) => {
+        const animation = node.animate(
+          [{ opacity: 1, transform: "translateY(0)" }, { opacity: 0, transform: "translateY(6px)" }],
+          { duration: 150, easing: "ease-in", fill: "forwards" }
+        );
+        return animation.finished.catch(() => {}).finally(() => animation.cancel());
+      }));
+      return update();
+    }
+    root.setAttribute("data-blr-reader-entering", "1");
+    try {
+      await update();
+    } finally {
+      window.setTimeout(() => root.removeAttribute("data-blr-reader-entering"), 320);
+    }
+    return;
+  }
+
+  const namedNodes = new Map();
+  const transitionStyles = new Map();
+  const setTransitionStyle = (name, value) => {
+    if (!transitionStyles.has(name)) {
+      transitionStyles.set(name, {
+        value: root.style.getPropertyValue(name),
+        priority: root.style.getPropertyPriority(name)
+      });
+    }
+    root.style.setProperty(name, value);
+  };
+  if (direction === "exit") {
+    setTransitionStyle("--blr-exit-player-width", `${rect.width}px`);
+    setTransitionStyle("--blr-exit-player-height", `${rect.height}px`);
+    setTransitionStyle("--blr-exit-player-from-x", `${rect.left}px`);
+    setTransitionStyle("--blr-exit-player-from-y", `${rect.top}px`);
+  }
+  const nameNode = (node, name) => {
+    if (!node || namedNodes.has(node)) return;
+    namedNodes.set(node, {
+      value: node.style.getPropertyValue("view-transition-name"),
+      priority: node.style.getPropertyPriority("view-transition-name")
+    });
+    node.style.setProperty("view-transition-name", name);
+  };
+  nameNode(player, "blr-reader-player");
+  const sourceTranscript = document.getElementById(
+    direction === "enter" ? ids.nativeTranscriptPanel : "blr-reading-inline-host"
+  );
+  const sourceScrollAnchor = captureTranscriptScrollAnchor(
+    direction === "enter" ? document.getElementById(ids.nativeTranscriptList) : sourceTranscript,
+    direction === "enter" ? ".blr-native-transcript-segment" : ".blr-reading-complete-segment"
+  );
+  const sourceFollowPauseUntil = direction === "enter"
+    ? state.nativeTranscriptManualScrollPauseUntil : state.readingManualScrollPauseUntil;
+  const transcriptRect = sourceTranscript?.getBoundingClientRect();
+  if (transcriptRect?.width > 0 && transcriptRect.height > 0) {
+    nameNode(sourceTranscript, "blr-reader-transcript");
+  }
+  root.setAttribute("data-blr-reader-transition", direction);
+  let cancelled = false;
+  let cleanedUp = false;
+  let transition;
+  let timeout;
+  const cleanup = () => {
+    if (cleanedUp) return;
+    cleanedUp = true;
+    window.clearTimeout(timeout);
+    window.removeEventListener("resize", cancel);
+    const pendingReadingRender = state.readingModeTransition?.cancel === cancel &&
+      state.readingModeTransition.pendingReadingRender;
+    namedNodes.forEach(({ value, priority }, node) => {
+      if (value) node.style.setProperty("view-transition-name", value, priority);
+      else node.style.removeProperty("view-transition-name");
+    });
+    transitionStyles.forEach(({ value, priority }, name) => {
+      if (value) root.style.setProperty(name, value, priority);
+      else root.style.removeProperty(name);
+    });
+    root.removeAttribute("data-blr-reader-transition");
+    root.removeAttribute("data-blr-reader-transcript-transition");
+    if (state.readingModeTransition?.cancel === cancel) state.readingModeTransition = null;
+    if (pendingReadingRender && state.readingViewOpen) {
+      renderReadingView();
+      syncReadingViewPlayback(true);
+    }
+    if (direction === "exit" && !state.readingViewOpen) {
+      clearReaderPageFocus();
+      scheduleNativeTranscriptPanelSync(0);
+      schedulePlayerAiQuickActionSync(0);
+      cleanupReaderFloatingArtifacts();
+    }
+  };
+  const cancel = () => {
+    cancelled = true;
+    transition?.skipTransition();
+    cleanup();
+  };
+  try {
+    transition = document.startViewTransition(async () => {
+      if (cancelled) return;
+      await update();
+      if (cancelled || (direction === "enter" && !state.readingViewOpen)) return;
+      // The mounting code can replace the original player on watch-later pages.
+      const nextHost = direction === "enter"
+        ? state.readingPlayerHost
+        : findReaderPlayerHost(getRuntimeVideoElement());
+      const nextPlayer = nextHost && (getReaderPlayerWrapNode(nextHost) || nextHost);
+      if (nextPlayer !== player) {
+        player.style.removeProperty("view-transition-name");
+        nameNode(nextPlayer, "blr-reader-player");
+      }
+      if (direction === "exit") {
+        const target = nextPlayer?.getBoundingClientRect();
+        if (!target || target.width <= 0 || target.height <= 0) {
+          transition.skipTransition();
+          return;
+        }
+        // Keep the captured bitmap's size constant. Only the group's transform
+        // moves/scales it; the browser must not also interpolate its width.
+        setTransitionStyle("--blr-exit-player-to-x", `${target.left}px`);
+        setTransitionStyle("--blr-exit-player-to-y", `${target.top}px`);
+        setTransitionStyle("--blr-exit-player-scale-x", String(target.width / rect.width));
+        setTransitionStyle("--blr-exit-player-scale-y", String(target.height / rect.height));
+      }
+      // Match the subtitle panels in both directions. The native panel must
+      // already exist in the new snapshot instead of appearing after exit.
+      sourceTranscript?.style.removeProperty("view-transition-name");
+      const targetTranscript = document.getElementById(
+        direction === "enter" ? "blr-reading-inline-host" : ids.nativeTranscriptPanel
+      );
+      const targetScrollContainer = direction === "enter"
+        ? targetTranscript : document.getElementById(ids.nativeTranscriptList);
+      stopTranscriptScroll(targetScrollContainer);
+      transferTranscriptScrollAnchor(sourceScrollAnchor, targetScrollContainer,
+        direction === "enter" ? "data-index" : "data-native-transcript-index");
+      if (direction === "enter") {
+        state.readingManualScrollPauseUntil = Math.max(state.readingManualScrollPauseUntil, sourceFollowPauseUntil);
+        updateReaderFollowState();
+      } else {
+        state.nativeTranscriptManualScrollPauseUntil = Math.max(state.nativeTranscriptManualScrollPauseUntil, sourceFollowPauseUntil);
+      }
+      nameNode(targetTranscript, "blr-reader-transcript");
+      const targetTranscriptRect = targetTranscript?.getBoundingClientRect();
+      if (
+        transcriptRect?.width > 0 && transcriptRect.height > 0 &&
+        targetTranscriptRect?.width > 0 && targetTranscriptRect.height > 0
+      ) {
+        // Translate the two real templates along the same path. Each keeps its
+        // own dimensions and typography; only their opacity changes en route.
+        [
+          ["from-x", transcriptRect.left], ["from-y", transcriptRect.top],
+          ["to-x", targetTranscriptRect.left], ["to-y", targetTranscriptRect.top],
+          ["from-width", transcriptRect.width], ["from-height", transcriptRect.height],
+          ["to-width", targetTranscriptRect.width], ["to-height", targetTranscriptRect.height],
+          ["width", Math.max(transcriptRect.width, targetTranscriptRect.width)],
+          ["height", Math.max(transcriptRect.height, targetTranscriptRect.height)]
+        ].forEach(([name, value]) => setTransitionStyle(`--blr-transcript-${name}`, `${value}px`));
+        root.setAttribute("data-blr-reader-transcript-transition", "1");
+      }
+    });
+  } catch {
+    cleanup();
+    return update();
+  }
+  state.readingModeTransition = { cancel, direction, phase: "updating", finished: transition.finished };
+  window.addEventListener("resize", cancel, { once: true });
+  // A slow player must not leave the old page frozen behind a snapshot.
+  timeout = window.setTimeout(() => transition.skipTransition(), 900);
+  transition.ready.then(() => {
+    window.clearTimeout(timeout);
+    if (state.readingModeTransition?.cancel === cancel) {
+      state.readingModeTransition.phase = "animating";
+    }
+  }, () => {});
+  transition.finished.then(cleanup, cleanup);
+  // Skipped animations still perform the update; never mount a second time.
+  await transition.updateCallbackDone;
+  if (direction === "exit") {
+    // Keep exit guards active until all snapshots have finished animating.
+    await transition.finished.catch(() => {});
+  }
+}
+
+async function prepareReaderMode() {
   const readingView = byId(ids.readingView);
   state.readingViewOpen = true;
   state.readingNativePageMode = true;
   document.body.setAttribute("data-blr-reading-active", "1");
   hydrateReaderStateFromSettings(state.settings);
+  // Each entry gives the video its largest fitted size before allocating subtitles.
+  state.readingTranscriptAutoWidth = true;
   applyReadingViewPresentation();
   alignReaderViewportToPlayer();
   await sleep(0);
+  if (!state.readingViewOpen || !isReaderMode()) return;
   openReaderViewShell(readingView);
   applyReaderPageFocus();
   renderReadingView();
@@ -28,9 +275,11 @@ async function enterReaderMode() {
   }
 
   await sleep(0);
+  if (!state.readingViewOpen || !isReaderMode()) return;
 
   // Try to mount player, with more retries for slower pages (like watch later)
   const mounted = await ensureReaderPlayerMounted({ retries: 50, delayMs: 150, forceLayout: true });
+  if (!state.readingViewOpen || !isReaderMode()) return;
   const mountedPlayerHost = state.readingPlayerHost || earlyPlayerHost;
   if (mountedPlayerHost) {
     mountedPlayerHost.removeAttribute("data-blr-reader-fading");
@@ -147,6 +396,7 @@ function settleReaderModePresentation() {
 
 async function ensureReaderPlayerMounted({ retries = 1, delayMs = 100, forceLayout = false } = {}) {
   for (let attempt = 0; attempt < retries; attempt += 1) {
+    if (!state.readingViewOpen || !isReaderMode()) return false;
     const video = getRuntimeVideoElement();
     const playerHost = findReaderPlayerHost(video);
     if (video && playerHost) {
@@ -254,6 +504,10 @@ function findReaderPlayerHost(video) {
 }
 
 function closeReadingView() {
+  const deferCleanup = state.readingModeTransition?.direction === "exit";
+  document.querySelectorAll("[data-blr-reader-fading]").forEach((node) => {
+    node.removeAttribute("data-blr-reader-fading");
+  });
   cleanupReaderFloatingArtifacts();
   state.readingViewOpen = false;
   state.readingNativePageMode = false;
@@ -316,21 +570,23 @@ function closeReadingView() {
   stopReadingViewSync();
   unbindReaderLayout();
   cleanupReaderPlayerHost();
-  clearReaderPageFocus();
-  const sendingBar = document.querySelector(".bpx-player-sending-bar");
-  if (sendingBar) {
-    sendingBar.setAttribute("data-blr-reader-hide-sending-bar", "1");
-    sendingBar.style.setProperty("display", "none", "important");
-    window.setTimeout(() => {
-      sendingBar.style.removeProperty("display");
-      sendingBar.removeAttribute("data-blr-reader-hide-sending-bar");
-    }, 200);
+  if (!deferCleanup) clearReaderPageFocus();
+  // Restore and populate the normal-page subtitles before the new snapshot.
+  // Observer-driven refreshes stay deferred while the snapshots animate.
+  ensureNativeTranscriptPanel();
+  // Restore the sending bar together with the native layout. Hiding it for
+  // 200ms changed the player's height in the middle of the exit transition.
+  if (!deferCleanup) {
+    window.setTimeout(() => cleanupReaderFloatingArtifacts(), 40);
+    window.setTimeout(() => cleanupReaderFloatingArtifacts(), 220);
   }
-  window.setTimeout(() => cleanupReaderFloatingArtifacts(), 40);
-  window.setTimeout(() => cleanupReaderFloatingArtifacts(), 220);
 }
 
 function renderReadingView() {
+  if (state.readingModeTransition?.phase === "animating") {
+    state.readingModeTransition.pendingReadingRender = true;
+    return;
+  }
   const titleNode = document.querySelector(".blr-reading-title");
   const pageTitleNode = byId(ids.readingPageTitle);
   const metaNode = byId(ids.readingMeta);
@@ -407,6 +663,9 @@ function renderReadingView() {
   updateReaderChapterPresence(hasChapters);
   applyReadingViewPresentation();
   updateReadingTranscriptTailSpacer();
+  // Position newly rendered text before the transition captures the reader.
+  // A smooth initial scroll continues after the entrance animation finishes.
+  state.readingNextScrollBehavior = "auto";
   state.readingActiveSubtitleIndex = -1;
   state.readingActiveChapterIndex = -1;
 }
@@ -513,7 +772,6 @@ function hydrateReaderStateFromSettings(settings = state.settings) {
   state.readingContentWidth = normalizeReaderContentWidth(settings?.readerContentWidth);
   state.readingChapterWidthPx = normalizeReaderColumnWidth(settings?.readerChapterWidthPx, 220, 140, 360);
   state.readingTranscriptWidthPx = normalizeReaderColumnWidth(settings?.readerTranscriptWidthPx, 440, 280, 720);
-  state.readingVideoHeightPx = normalizeReaderVideoHeight(settings?.readerVideoHeightPx);
   // The retired settings panel could persist hidden sections. Keep both visible now that
   // the only reader controls live in the transcript header.
   state.readingChapterVisible = true;
@@ -584,48 +842,48 @@ function updateReaderChapterPresence(hasChapters) {
   document.body.dataset.blrReaderHasChapters = value;
 }
 
-function bindReaderResizeHandle(node, side) {
+function bindReaderResizeHandle(node) {
   if (!node || node.dataset.blrBound === "1") return;
 
   node.addEventListener("pointerdown", (event) => {
-    if (event.button !== 0 || window.innerWidth <= 1180) return;
+    if (event.button !== 0 || window.innerWidth <= 1180 || state.readingModeTransition) return;
     event.preventDefault();
     node.setPointerCapture?.(event.pointerId);
-    document.body.dataset.blrReaderResizing = side;
-    const playerRect = getReaderPlayerWrapNode()?.getBoundingClientRect?.();
+    document.body.dataset.blrReaderResizing = "transcript";
+    noteManualReaderInteraction();
+    const scrollAnchor = captureTranscriptScrollAnchor(
+      document.getElementById("blr-reading-inline-host"), ".blr-reading-complete-segment"
+    );
 
     const move = (moveEvent) => {
-      const pagePadding = getReaderPagePaddingPx();
-      const halfGap = Math.min(24, Math.max(16, window.innerWidth * 0.014)) / 2;
-      if (side === "chapter") {
-        if (!playerRect) return;
-        const maxHeight = Math.max(240, window.innerHeight - playerRect.top - 148);
-        state.readingVideoHeightPx = Math.round(
-          Math.min(maxHeight, Math.max(240, moveEvent.clientY - playerRect.top))
-        );
-      } else {
-        state.readingTranscriptWidthPx = normalizeReaderColumnWidth(
-          window.innerWidth - pagePadding - moveEvent.clientX - halfGap,
-          state.readingTranscriptWidthPx,
-          280,
-          720
-        );
+      if (!state.readingViewOpen || !isReaderMode()) {
+        stop();
+        return;
       }
+      const pagePadding = getReaderPagePaddingPx();
+      const { gap, minTranscriptWidth, maxTranscriptWidth } = getEffectiveReaderColumnWidths();
+      state.readingTranscriptAutoWidth = false;
+      state.readingTranscriptWidthPx = normalizeReaderColumnWidth(
+        window.innerWidth - pagePadding - moveEvent.clientX - gap / 2,
+        state.readingTranscriptWidthPx,
+        minTranscriptWidth,
+        maxTranscriptWidth
+      );
       applyReaderColumnLayout();
       layoutReaderPlayerHost();
+      restoreTranscriptScrollAnchor(scrollAnchor);
     };
 
     const stop = () => {
-      node.releasePointerCapture?.(event.pointerId);
+      if (node.hasPointerCapture?.(event.pointerId)) node.releasePointerCapture(event.pointerId);
       document.body.removeAttribute("data-blr-reader-resizing");
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", stop);
       window.removeEventListener("pointercancel", stop);
+      noteManualReaderInteraction();
       state.settings = {
         ...state.settings,
-        readerChapterWidthPx: state.readingChapterWidthPx,
-        readerTranscriptWidthPx: state.readingTranscriptWidthPx,
-        readerVideoHeightPx: state.readingVideoHeightPx
+        readerTranscriptWidthPx: state.readingTranscriptWidthPx
       };
       persistReaderSettings();
     };
@@ -638,6 +896,12 @@ function bindReaderResizeHandle(node, side) {
 }
 
 function updateReaderPreferences(next, { persist = true } = {}) {
+  state.readingModeTransition?.cancel();
+  noteManualReaderInteraction();
+  const scrollAnchor = captureTranscriptScrollAnchor(
+    document.getElementById("blr-reading-inline-host") || byId(ids.readingTranscriptList),
+    ".blr-reading-complete-segment"
+  );
   state.readingTheme = normalizeReaderTheme(next.readerTheme ?? state.readingTheme);
   state.readingFontScale = normalizeReaderFontScale(next.readerFontScale ?? state.readingFontScale);
   state.readingFontWeight = normalizeReaderFontWeight(next.readerFontWeight ?? state.readingFontWeight);
@@ -666,6 +930,8 @@ function updateReaderPreferences(next, { persist = true } = {}) {
     readerTimestampVisible: state.readingTimestampVisible
   };
   applyReadingViewPresentation();
+  updateReadingTranscriptTailSpacer();
+  restoreTranscriptScrollAnchor(scrollAnchor);
   if (persist) {
     persistReaderSettings();
   }
@@ -888,6 +1154,8 @@ function layoutReaderPlayerHost() {
     return;
   }
 
+  const aspectRatio = getReaderVideoAspectRatio();
+
   if (state.readingNativePageMode) {
     const rect = playerHost.getBoundingClientRect();
     if (!(rect.width > 0) || !(rect.height > 0)) {
@@ -897,18 +1165,17 @@ function layoutReaderPlayerHost() {
     const widthLimit = getReaderMainWidthLimit();
     const wrapRect = getReaderPlayerWrapNode(playerHost)?.getBoundingClientRect?.();
     const layoutTop = Number.isFinite(wrapRect?.top) ? wrapRect.top : rect.top;
-    const maxHeight = Math.max(240, window.innerHeight - layoutTop - 148);
-    let renderedWidth = widthLimit;
-    let renderedHeight = maxHeight;
-    if (state.readingVideoHeightPx > 0) {
-      renderedHeight = Math.min(maxHeight, Math.max(240, state.readingVideoHeightPx));
-    }
+    const maxHeight = getReaderPlayerMaxHeightPx(layoutTop);
+    // Fit the whole video, then size the player to that same aspect ratio.
+    // Filling the width and height independently creates letterbox bars.
+    const renderedWidth = Math.min(widthLimit, maxHeight * aspectRatio);
+    const renderedHeight = renderedWidth / aspectRatio;
 
     clearNativeReaderFloatingStyles(playerHost);
     cleanupReaderPlayerHostNode(playerHost);
     [document.documentElement, document.body, readingView].forEach((node) => {
-      node.style.setProperty("--blr-reader-player-rendered-width", `${Math.round(renderedWidth)}px`);
-      node.style.setProperty("--blr-reader-player-rendered-height", `${Math.round(renderedHeight)}px`);
+      node.style.setProperty("--blr-reader-player-rendered-width", `${renderedWidth}px`);
+      node.style.setProperty("--blr-reader-player-rendered-height", `${renderedHeight}px`);
     });
     updateReaderChapterRailPosition();
     updateReadingTranscriptTailSpacer();
@@ -928,24 +1195,20 @@ function layoutReaderPlayerHost() {
     return;
   }
 
-  const video = state.readingVideoEl;
-  const aspectRatio =
-    Number(video?.videoWidth) > 0 && Number(video?.videoHeight) > 0
-      ? Number(video.videoWidth) / Number(video.videoHeight)
-      : 16 / 9;
-  const targetHeight = rect.height;
-  const targetWidth = Math.min(rect.width, targetHeight * aspectRatio);
+  const maxHeight = Math.min(rect.height, getReaderPlayerMaxHeightPx(rect.top));
+  const targetWidth = Math.min(rect.width, maxHeight * aspectRatio);
+  const targetHeight = targetWidth / aspectRatio;
   const left = rect.left + (rect.width - targetWidth) / 2;
 
   [document.documentElement, document.body, readingView].forEach((node) => {
-    node.style.setProperty("--blr-reader-player-rendered-width", `${Math.round(targetWidth)}px`);
-    node.style.setProperty("--blr-reader-player-rendered-height", `${Math.round(targetHeight)}px`);
+    node.style.setProperty("--blr-reader-player-rendered-width", `${targetWidth}px`);
+    node.style.setProperty("--blr-reader-player-rendered-height", `${targetHeight}px`);
   });
   playerHost.style.setProperty("position", "fixed", "important");
   playerHost.style.setProperty("left", `${Math.round(left)}px`, "important");
   playerHost.style.setProperty("top", `${Math.round(rect.top)}px`, "important");
-  playerHost.style.setProperty("width", `${Math.round(targetWidth)}px`, "important");
-  playerHost.style.setProperty("height", `${Math.round(targetHeight)}px`, "important");
+  playerHost.style.setProperty("width", `${targetWidth}px`, "important");
+  playerHost.style.setProperty("height", `${targetHeight}px`, "important");
   playerHost.style.setProperty("margin", "0", "important");
   playerHost.style.setProperty("z-index", "2147483647", "important");
   playerHost.style.setProperty("max-width", "none", "important");
@@ -980,7 +1243,6 @@ function cleanupReaderPlayerHostNode(playerHost) {
 }
 
 function cleanupReaderPlayerHost() {
-  restoreReaderPlayerContainer();
   unbindReaderPlayerControlsHover();
   unbindReaderHeaderActionsHover();
   if (state.readingControlsRecoveryTimer) {
@@ -998,11 +1260,12 @@ function cleanupReaderPlayerHost() {
     node.style.removeProperty("--blr-reader-player-width");
   });
   const playerHost = state.readingPlayerHost;
-  if (!playerHost) {
-    return;
+  if (playerHost) {
+    setReaderPlayerControlsVisible(false, playerHost);
+    cleanupReaderPlayerHostNode(playerHost);
   }
-  setReaderPlayerControlsVisible(false, playerHost);
-  cleanupReaderPlayerHostNode(playerHost);
+  // Restore native dimensions last so cleanup cannot erase them again.
+  restoreReaderPlayerContainer();
   state.readingPlayerHost = null;
 }
 
@@ -1048,6 +1311,7 @@ function stopReadingViewSync() {
     video.removeEventListener("timeupdate", video.__blrReadingSyncHandler);
     video.removeEventListener("seeked", video.__blrReadingSyncHandler);
     video.removeEventListener("loadedmetadata", video.__blrReadingSyncHandler);
+    video.removeEventListener("resize", video.__blrReadingSyncHandler);
     delete video.__blrReadingSyncHandler;
   }
   state.readingVideoEventsBound = false;
@@ -1091,6 +1355,7 @@ function bindReadingViewVideo(video = getRuntimeVideoElement()) {
       prev.removeEventListener("timeupdate", prev.__blrReadingSyncHandler);
       prev.removeEventListener("seeked", prev.__blrReadingSyncHandler);
       prev.removeEventListener("loadedmetadata", prev.__blrReadingSyncHandler);
+      prev.removeEventListener("resize", prev.__blrReadingSyncHandler);
       delete prev.__blrReadingSyncHandler;
     }
     state.readingVideoEl = null;
@@ -1107,11 +1372,12 @@ function bindReadingViewVideo(video = getRuntimeVideoElement()) {
     prev.removeEventListener("timeupdate", prev.__blrReadingSyncHandler);
     prev.removeEventListener("seeked", prev.__blrReadingSyncHandler);
     prev.removeEventListener("loadedmetadata", prev.__blrReadingSyncHandler);
+    prev.removeEventListener("resize", prev.__blrReadingSyncHandler);
   }
 
   const syncHandler = (event) => {
     if (state.readingViewOpen) {
-      if (event?.type === "loadedmetadata") {
+      if (event?.type === "loadedmetadata" || event?.type === "resize") {
         layoutReaderPlayerHost();
       }
       if (event?.type === "seeked") {
@@ -1132,6 +1398,7 @@ function bindReadingViewVideo(video = getRuntimeVideoElement()) {
   video.addEventListener("timeupdate", syncHandler);
   video.addEventListener("seeked", syncHandler);
   video.addEventListener("loadedmetadata", syncHandler);
+  video.addEventListener("resize", syncHandler);
   video.__blrReadingSyncHandler = syncHandler;
   state.readingVideoEl = video;
   state.readingPlayerHost = findReaderPlayerHost(video) || state.readingPlayerHost;

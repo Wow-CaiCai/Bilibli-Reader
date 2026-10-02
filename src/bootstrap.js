@@ -48,7 +48,7 @@ const DEFAULT_SETTINGS = {
 };
 const PLAYER_AI_ICON_VARIANT = "badge";
 
-const READER_VERSION = "0.0.8";
+const READER_VERSION = "0.0.9";
 const CACHE_KEY_PREFIX = "bilibli_reader_subtitle_cache_";
 globalThis.__BILIBLI_READER_CONTENT_SCRIPT_LOADED__ = READER_VERSION;
 const state = {
@@ -80,6 +80,8 @@ const state = {
   srt: "",
   txt: "",
   readingViewOpen: false,
+  readingModeTransition: null,
+  readingViewClosing: false,
   readingNativePageMode: false,
   readingAutoScroll: true,
   readingTheme: "light",
@@ -90,7 +92,7 @@ const state = {
   readingContentWidth: "medium",
   readingChapterWidthPx: 220,
   readingTranscriptWidthPx: 440,
-  readingVideoHeightPx: 0,
+  readingTranscriptAutoWidth: false,
   readingChapterVisible: true,
   readingTranscriptVisible: true,
   readingTimestampVisible: true,
@@ -229,13 +231,30 @@ function getReaderPagePaddingPx() {
 function getReaderMainWidthLimit() {
   const pagePadding = getReaderPagePaddingPx();
   if (window.innerWidth > 1180) {
-    const { transcriptWidth } = getEffectiveReaderColumnWidths();
-    const gap = Math.min(24, Math.max(16, window.innerWidth * 0.014));
+    const { transcriptWidth, gap } = getEffectiveReaderColumnWidths();
     const availableWidth = window.innerWidth - pagePadding * 2 - transcriptWidth - gap;
-    const heightLimitedWidth = Math.max(420, (window.innerHeight - 190) * (16 / 9));
-    return Math.max(420, Math.min(availableWidth, heightLimitedWidth));
+    // Fit against the real video ratio and player top in layoutReaderPlayerHost.
+    return Math.max(1, availableWidth);
   }
   return Math.max(320, Math.min(getReaderContentMaxPx(), window.innerWidth - pagePadding * 2));
+}
+
+function getReaderPlayerMaxHeightPx(playerTop) {
+  const isDesktop = window.innerWidth > 1180;
+  const hasChapterRail = isDesktop && state.readingChapterVisible &&
+    normalizeChapters(state.chapters || []).length > 0;
+  // Only visible chapters reserve space below the video.
+  const bottomSpace = hasChapterRail ? 148 : 0;
+  let playerBottomLimit = window.innerHeight - bottomSpace;
+  if (isDesktop && state.readingTranscriptVisible) {
+    const transcriptRect = document.getElementById("blr-reading-inline-host")?.getBoundingClientRect();
+    // Before the transcript mounts, use its desktop CSS bottom inset (24px).
+    const transcriptBottom = transcriptRect?.width > 0 && transcriptRect.height > 0
+      ? transcriptRect.bottom
+      : window.innerHeight - 24;
+    playerBottomLimit = Math.min(playerBottomLimit, transcriptBottom);
+  }
+  return Math.max(1, playerBottomLimit - playerTop);
 }
 
 function normalizeReaderColumnWidth(value, fallback, min, max) {
@@ -243,29 +262,48 @@ function normalizeReaderColumnWidth(value, fallback, min, max) {
   return Number.isFinite(parsed) ? Math.round(Math.min(max, Math.max(min, parsed))) : fallback;
 }
 
-function normalizeReaderVideoHeight(value) {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed <= 0) return 0;
-  return Math.round(Math.min(900, Math.max(240, parsed)));
+function getReaderVideoAspectRatio() {
+  const video = state.readingVideoEl || getRuntimeVideoElement();
+  return Number(video?.videoWidth) > 0 && Number(video?.videoHeight) > 0
+    ? Number(video.videoWidth) / Number(video.videoHeight)
+    : 16 / 9;
 }
 
 function getEffectiveReaderColumnWidths() {
   const pagePadding = getReaderPagePaddingPx();
   const gap = Math.min(24, Math.max(16, window.innerWidth * 0.014));
   const minChapterWidth = 140;
-  const minTranscriptWidth = 280;
+  let minTranscriptWidth = 280;
   const minVideoWidth = 420;
   const chapterWidth = normalizeReaderColumnWidth(state.readingChapterWidthPx, 220, minChapterWidth, 360);
-  let transcriptWidth = normalizeReaderColumnWidth(state.readingTranscriptWidthPx, 440, minTranscriptWidth, 720);
-  const availableForTranscript = Math.max(
+  let maxTranscriptWidth = Math.max(
     minTranscriptWidth,
     window.innerWidth - pagePadding * 2 - gap - minVideoWidth
   );
-  transcriptWidth = Math.min(transcriptWidth, availableForTranscript);
+  if (state.readingViewOpen && window.innerWidth > 1180) {
+    const video = state.readingVideoEl || getRuntimeVideoElement();
+    const playerHost = state.readingPlayerHost || findReaderPlayerHost(video);
+    const playerNode = getReaderPlayerWrapNode(playerHost) || playerHost;
+    const playerTop = playerNode?.getBoundingClientRect?.().top ?? 98;
+    const maxHeight = getReaderPlayerMaxHeightPx(playerTop);
+    const availableWidth = window.innerWidth - pagePadding * 2 - gap;
+    // Give the video its largest complete frame first, then use the remaining
+    // horizontal space for subtitles instead of reserving a fixed-width panel.
+    const videoWidth = Math.min(availableWidth - 280, maxHeight * getReaderVideoAspectRatio());
+    minTranscriptWidth = Math.max(280, Math.ceil(availableWidth - videoWidth));
+    maxTranscriptWidth = Math.max(
+      minTranscriptWidth, Math.floor(availableWidth - Math.min(minVideoWidth, videoWidth))
+    );
+  }
+  const transcriptWidth = state.readingViewOpen && window.innerWidth > 1180 && state.readingTranscriptAutoWidth
+    ? minTranscriptWidth
+    : normalizeReaderColumnWidth(state.readingTranscriptWidthPx, 440, minTranscriptWidth, maxTranscriptWidth);
 
   return {
     chapterWidth: Math.round(chapterWidth),
     transcriptWidth: Math.round(transcriptWidth),
+    minTranscriptWidth,
+    maxTranscriptWidth,
     gap
   };
 }
@@ -273,7 +311,7 @@ function getEffectiveReaderColumnWidths() {
 function applyReaderColumnLayout() {
   const readingView = byId(ids.readingView);
   if (!readingView) return;
-  const { chapterWidth, transcriptWidth, gap } = getEffectiveReaderColumnWidths();
+  const { chapterWidth, transcriptWidth, minTranscriptWidth, maxTranscriptWidth, gap } = getEffectiveReaderColumnWidths();
   const mainWidth = getReaderMainWidthLimit();
   const centerOffset = Math.round(-(transcriptWidth + gap) / 2);
   [document.documentElement, document.body, readingView].forEach((node) => {
@@ -281,17 +319,11 @@ function applyReaderColumnLayout() {
     node.style.setProperty("--blr-reader-transcript-width", `${transcriptWidth}px`);
     node.style.setProperty("--blr-reader-center-offset", `${centerOffset}px`);
     node.style.setProperty("--blr-reader-main-width", `${Math.round(mainWidth)}px`);
-    if (state.readingVideoHeightPx > 0) {
-      node.style.setProperty(
-        "--blr-reader-player-rendered-height",
-        `${Math.round(state.readingVideoHeightPx)}px`
-      );
-    }
   });
-  document
-    .getElementById(ids.readingChapterResizeHandle)
-    ?.setAttribute("aria-valuenow", String(state.readingVideoHeightPx || 0));
-  document.getElementById(ids.readingTranscriptResizeHandle)?.setAttribute("aria-valuenow", String(transcriptWidth));
+  const resizeHandle = document.getElementById(ids.readingTranscriptResizeHandle);
+  resizeHandle?.setAttribute("aria-valuenow", String(transcriptWidth));
+  resizeHandle?.setAttribute("aria-valuemin", String(minTranscriptWidth));
+  resizeHandle?.setAttribute("aria-valuemax", String(maxTranscriptWidth));
 }
 
 function updateReaderChapterRailPosition(rect = null) {
@@ -308,9 +340,6 @@ function updateReaderChapterRailPosition(rect = null) {
     node.style.setProperty("--blr-reader-player-bottom", `${Math.round(playerRect.bottom)}px`);
     node.style.setProperty("--blr-reader-player-width", `${Math.round(playerRect.width)}px`);
   });
-  document
-    .getElementById(ids.readingChapterResizeHandle)
-    ?.setAttribute("aria-valuenow", String(Math.round(playerRect.height)));
 }
 
 function clearNativeReaderFloatingStyles(playerHost = state.readingPlayerHost) {
@@ -476,7 +505,6 @@ const ids = {
   readingStatus: "blr-reading-status",
   readingCloseBtn: "blr-reading-close-btn",
   readingRefreshBtn: "blr-reading-refresh-btn",
-  readingChapterResizeHandle: "blr-reading-chapter-resize-handle",
   readingTranscriptResizeHandle: "blr-reading-transcript-resize-handle",
   readingMeta: "blr-reading-meta",
   readingChapterList: "blr-reading-chapters",
@@ -668,16 +696,9 @@ function onPageReaderEntryClick(event) {
   const button = event.currentTarget;
   button.disabled = true;
   button.classList.add("is-loading");
-  const readerUrl = new URL(location.href);
-  readerUrl.searchParams.set("bilibli_reader", "1");
-  replaceReaderModeUrl(readerUrl.toString());
-  document.documentElement.setAttribute("data-blr-reader-mode", "1");
-  document.body.setAttribute("data-blr-reader-mode", "1");
-  state.playerAiQuickActionSuppressedUntil = Date.now() + 2500;
-  removePlayerAiQuickActionButton();
   ensureUiReady();
 
-  enterReaderMode().catch((error) => {
+  enterReaderMode({ animate: true }).catch((error) => {
     button.disabled = false;
     button.classList.remove("is-loading");
     logWarn("[Bilibili Reader] page entry failed", error);

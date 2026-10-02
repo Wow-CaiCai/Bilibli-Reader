@@ -23,6 +23,9 @@ function scheduleNativeTranscriptPanelSync(delayMs = 120) {
   }
   state.nativeTranscriptSyncTimer = window.setTimeout(() => {
     state.nativeTranscriptSyncTimer = 0;
+    // closeReadingView restores the panel before the exit snapshot. Keep
+    // observer-driven refreshes out of the animation; completion syncs again.
+    if (state.readingModeTransition?.direction === "exit") return;
     ensureNativeTranscriptPanel();
   }, Math.max(0, Number(delayMs) || 0));
 }
@@ -257,6 +260,11 @@ function applyNativeTranscriptTypography(panel = document.getElementById(ids.nat
   if (!panel) {
     return;
   }
+  const typographyChanged = panel.style.getPropertyValue("--blr-native-transcript-font-size") !== `${state.nativeTranscriptFontSize}px` ||
+    panel.style.getPropertyValue("--blr-native-transcript-font-weight") !== String(state.nativeTranscriptFontWeight);
+  const scrollAnchor = typographyChanged ? captureTranscriptScrollAnchor(
+    panel.querySelector(`#${ids.nativeTranscriptList}`), ".blr-native-transcript-segment"
+  ) : null;
   panel.dataset.theme = state.nativeTranscriptTheme;
   const themeButton = panel.querySelector(`#${ids.nativeTranscriptThemeButton}`);
   if (themeButton) {
@@ -281,6 +289,7 @@ function applyNativeTranscriptTypography(panel = document.getElementById(ids.nat
   if (fontWeightSelect) {
     fontWeightSelect.value = String(state.nativeTranscriptFontWeight);
   }
+  restoreTranscriptScrollAnchor(scrollAnchor);
 }
 
 function updateNativeTranscriptTheme(theme) {
@@ -294,6 +303,8 @@ function updateNativeTranscriptTheme(theme) {
 }
 
 function updateNativeTranscriptTypography({ fontSize, fontWeight } = {}) {
+  state.readingModeTransition?.cancel();
+  state.nativeTranscriptManualScrollPauseUntil = Date.now() + 3000;
   state.nativeTranscriptFontSize = normalizeNativeTranscriptFontSize(
     fontSize ?? state.nativeTranscriptFontSize
   );
@@ -356,6 +367,7 @@ function getNativeTranscriptPlaceholderText() {
 }
 
 function renderNativeTranscriptPanel({ force = false } = {}) {
+  if (state.readingModeTransition?.phase === "animating") return;
   const panel = document.getElementById(ids.nativeTranscriptPanel);
   const body = panel?.querySelector(`#${ids.nativeTranscriptBody}`);
   if (!panel || !body || !shouldShowNativeTranscriptPanel()) {
@@ -503,8 +515,13 @@ function bindNativeTranscriptPanelResize() {
   }
   state.nativeTranscriptResizeObserver?.disconnect();
   state.nativeTranscriptResizeObserver = new ResizeObserver(() => {
+    if (state.readingModeTransition?.phase === "animating") return;
+    const scrollAnchor = captureTranscriptScrollAnchor(
+      document.getElementById(ids.nativeTranscriptList), ".blr-native-transcript-segment"
+    );
     syncNativeTranscriptPanelAlignment();
     syncNativeTranscriptPanelHeight();
+    restoreTranscriptScrollAnchor(scrollAnchor);
   });
   state.nativeTranscriptResizeObserver.observe(player);
   state.nativeTranscriptObservedPlayer = player;
@@ -558,6 +575,8 @@ function startNativeTranscriptPlaybackSync() {
 }
 
 function syncNativeTranscriptPlayback(forceScroll = false) {
+  if (state.readingModeTransition &&
+    (state.readingModeTransition.phase === "animating" || !forceScroll)) return;
   const panel = document.getElementById(ids.nativeTranscriptPanel);
   const list = panel?.querySelector(`#${ids.nativeTranscriptList}`);
   if (!panel || !list || !state.nativeTranscriptOpen || state.subtitleBody.length === 0) {
@@ -595,7 +614,8 @@ function scrollNativeTranscriptItemIntoView(node, list, behavior = "smooth") {
   }
   const padding = Math.max(32, Math.min(listRect.height * 0.22, 96));
   const target = list.scrollTop + itemRect.top - listRect.top - padding;
-  state.nativeTranscriptProgrammaticScrollUntil = Date.now() + (behavior === "auto" ? 120 : 700);
+  if (behavior === "auto") behavior = "instant";
+  state.nativeTranscriptProgrammaticScrollUntil = Date.now() + (behavior === "instant" ? 120 : 700);
   list.scrollTo({ top: Math.max(0, Math.round(target)), behavior });
 }
 

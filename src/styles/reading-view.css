@@ -21,6 +21,192 @@
   display: block;
 }
 
+/* Move the player and subtitle panel together while the page dissolves. */
+html[data-blr-reader-transition]::view-transition {
+  pointer-events: none;
+}
+
+html[data-blr-reader-transition="enter"]::view-transition-group(root),
+html[data-blr-reader-transition="enter"]::view-transition-group(blr-reader-player),
+html[data-blr-reader-transition="enter"]::view-transition-group(blr-reader-transcript) {
+  animation-duration: 320ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html[data-blr-reader-transition="enter"]::view-transition-old(root) {
+  animation: blr-reader-fade-out 140ms ease-out both;
+}
+
+html[data-blr-reader-transition="enter"]::view-transition-new(root) {
+  animation: blr-reader-fade-in 240ms ease-out both;
+}
+
+html[data-blr-reader-transition]::view-transition-image-pair(blr-reader-player),
+html[data-blr-reader-transition]::view-transition-image-pair(blr-reader-transcript) {
+  isolation: auto;
+}
+
+html[data-blr-reader-transition="enter"]::view-transition-old(blr-reader-player),
+html[data-blr-reader-transition="enter"]::view-transition-old(blr-reader-transcript) {
+  animation: blr-reader-fade-out 140ms ease-out both;
+}
+
+html[data-blr-reader-transition="enter"]::view-transition-new(blr-reader-player),
+html[data-blr-reader-transition="enter"]::view-transition-new(blr-reader-transcript) {
+  animation: blr-reader-fade-in 180ms ease-out both;
+}
+
+html[data-blr-reader-transition]::view-transition-new(blr-reader-player),
+html[data-blr-reader-transition]::view-transition-new(blr-reader-transcript) {
+  mix-blend-mode: normal;
+  height: 100%;
+  object-fit: fill;
+}
+
+/* Ease into and out of the return movement instead of front-loading it. */
+html[data-blr-reader-transition="exit"]::view-transition-group(root) {
+  animation: none;
+}
+
+html[data-blr-reader-transition="exit"]::view-transition-group(blr-reader-transcript) {
+  animation-duration: 300ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Translate both page templates without stretching either panel's text. The
+   fixed group accommodates both sizes while their original layouts crossfade. */
+html[data-blr-reader-transcript-transition]::view-transition-group(blr-reader-transcript) {
+  width: var(--blr-transcript-width) !important;
+  height: var(--blr-transcript-height) !important;
+  top: 0 !important;
+  left: 0 !important;
+  transform-origin: 0 0 !important;
+  animation-name: blr-reader-transcript-move !important;
+  animation-fill-mode: both !important;
+}
+
+html[data-blr-reader-transcript-transition]::view-transition-old(blr-reader-transcript) {
+  width: var(--blr-transcript-from-width) !important;
+  height: var(--blr-transcript-from-height) !important;
+  object-fit: fill;
+  mix-blend-mode: normal;
+}
+
+html[data-blr-reader-transcript-transition]::view-transition-new(blr-reader-transcript) {
+  width: var(--blr-transcript-to-width) !important;
+  height: var(--blr-transcript-to-height) !important;
+  object-fit: fill;
+}
+
+@keyframes blr-reader-transcript-move {
+  from { transform: translate(var(--blr-transcript-from-x), var(--blr-transcript-from-y)); }
+  to { transform: translate(var(--blr-transcript-to-x), var(--blr-transcript-to-y)); }
+}
+
+/* Use one transform on a fixed-size bitmap. The default shared-element
+   width/height animation can resize the native video surface a second time. */
+html[data-blr-reader-transition="exit"]::view-transition-group(blr-reader-player) {
+  width: var(--blr-exit-player-width) !important;
+  height: var(--blr-exit-player-height) !important;
+  top: 0 !important;
+  left: 0 !important;
+  transform-origin: 0 0 !important;
+  animation: blr-reader-player-return 300ms cubic-bezier(0.4, 0, 0.2, 1) both !important;
+}
+
+html[data-blr-reader-transition="exit"]::view-transition-image-pair(blr-reader-player) {
+  width: 100%;
+  height: 100%;
+  animation: none !important;
+}
+
+@keyframes blr-reader-player-return {
+  from {
+    transform: translate(var(--blr-exit-player-from-x), var(--blr-exit-player-from-y)) scale(1);
+  }
+  to {
+    transform: translate(var(--blr-exit-player-to-x), var(--blr-exit-player-to-y))
+      scale(var(--blr-exit-player-scale-x), var(--blr-exit-player-scale-y));
+  }
+}
+
+html[data-blr-reader-transition="exit"]::view-transition-old(root) {
+  animation: blr-reader-fade-out 180ms ease-in both;
+}
+
+html[data-blr-reader-transition="exit"]::view-transition-new(root) {
+  animation: blr-reader-fade-in 300ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* Move a stable captured frame. The native player's live surface can resize
+   internally during exit and otherwise shrink twice inside the moving group. */
+html[data-blr-reader-transition="exit"]::view-transition-old(blr-reader-player) {
+  animation: none !important;
+  transform: none !important;
+  opacity: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  mix-blend-mode: normal;
+}
+
+html[data-blr-reader-transition="exit"]::view-transition-new(blr-reader-player) {
+  animation: none;
+  opacity: 0;
+}
+
+/* Native layout changes must finish before the transition captures its target.
+   The shared snapshot handles motion; host-page CSS must not add another one. */
+html[data-blr-reader-transition="exit"] :is(
+  .left-container, .scroll-sticky, #playerWrap, .player-wrap, #bilibili-player,
+  .bpx-player-container, .bpx-player-video-area, .bpx-player-primary-area, .bpx-player-inner
+) {
+  transition: none !important;
+  animation: none !important;
+}
+
+html[data-blr-reader-transition="exit"]::view-transition-old(blr-reader-transcript) {
+  animation: blr-reader-fade-out 300ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  mix-blend-mode: normal;
+  height: 100%;
+  object-fit: fill;
+}
+
+html[data-blr-reader-transition="exit"]::view-transition-new(blr-reader-transcript) {
+  animation: blr-reader-fade-in 300ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* Lightweight entrance on browsers without snapshot transitions. */
+html[data-blr-reader-entering="1"] #blr-reading-inline-host,
+html[data-blr-reader-entering="1"] #blr-reading-view[data-blr-reader-ready="1"] .blr-reading-topbar {
+  animation: blr-reader-panel-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes blr-reader-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes blr-reader-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes blr-reader-panel-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-blr-reader-transition]::view-transition-group(*),
+  html[data-blr-reader-transition]::view-transition-old(*),
+  html[data-blr-reader-transition]::view-transition-new(*),
+  html[data-blr-reader-entering="1"] #blr-reading-inline-host,
+  html[data-blr-reader-entering="1"] #blr-reading-view .blr-reading-topbar {
+    animation: none !important;
+  }
+}
+
 #blr-reading-view[data-blr-reader-ready="0"] {
   opacity: 0;
   visibility: hidden;
@@ -155,14 +341,14 @@
 }
 
 .blr-reading-collection-item:hover {
-  border-color: var(--blr-reader-accent, #22c55e);
+  border-color: var(--blr-reader-accent, #00aeec);
   color: var(--blr-reader-text, #0f172a);
 }
 
 .blr-reading-collection-item.is-active {
-  background: var(--blr-reader-accent-soft, #ecfdf5);
-  border-color: var(--blr-reader-accent, #22c55e);
-  color: var(--blr-reader-accent, #16a34a);
+  background: var(--blr-reader-accent-soft, rgba(0, 174, 236, 0.12));
+  border-color: var(--blr-reader-accent, #00aeec);
+  color: var(--blr-reader-accent, #00aeec);
 }
 
 .blr-reading-collection-index {
@@ -263,9 +449,9 @@
 }
 
 .blr-reading-icon-btn.is-active {
-  background: #eff6ff;
-  border-color: #2563eb;
-  color: #2563eb;
+  background: var(--blr-reader-accent-soft);
+  border-color: var(--blr-reader-accent);
+  color: var(--blr-reader-accent);
 }
 
 
@@ -383,7 +569,7 @@
 .blr-reading-chapter-time {
   font-size: var(--blr-reader-transcript-font-size);
   font-weight: 600;
-  color: #16a34a;
+  color: var(--blr-reader-accent, #00aeec);
   padding-top: 2px;
   line-height: 1.4;
 }
@@ -396,7 +582,7 @@
 
 .blr-reading-chapter.is-active .blr-reading-chapter-title {
   text-decoration-line: underline;
-  text-decoration-color: #22c55e;
+  text-decoration-color: var(--blr-reader-accent, #00aeec);
   text-decoration-thickness: 2px;
   text-underline-offset: 3px;
 }
@@ -619,8 +805,8 @@ body[data-blr-reader-mode="1"],
   --blr-reader-border: rgba(15, 23, 42, 0.1);
   --blr-reader-text: #0f172a;
   --blr-reader-muted: #64748b;
-  --blr-reader-accent: #16a34a;
-  --blr-reader-accent-soft: rgba(34, 197, 94, 0.12);
+  --blr-reader-accent: var(--brand_blue, #00aeec);
+  --blr-reader-accent-soft: rgba(0, 174, 236, 0.12);
   --blr-reader-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
   --blr-reader-transcript-font-size: 14px;
   --blr-reader-transcript-font-weight: 500;
@@ -640,8 +826,8 @@ body[data-blr-reader-mode="1"][data-blr-reader-theme="dark"],
   --blr-reader-border: rgba(148, 163, 184, 0.22);
   --blr-reader-text: #e5eefb;
   --blr-reader-muted: #9fb0c8;
-  --blr-reader-accent: #4ade80;
-  --blr-reader-accent-soft: rgba(74, 222, 128, 0.14);
+  --blr-reader-accent: var(--brand_blue, #00aeec);
+  --blr-reader-accent-soft: rgba(0, 174, 236, 0.14);
   --blr-reader-shadow: 0 18px 42px rgba(2, 6, 23, 0.42);
 }
 
@@ -655,8 +841,8 @@ body[data-blr-reader-mode="1"][data-blr-reader-theme="paper"],
   --blr-reader-border: rgba(180, 155, 112, 0.22);
   --blr-reader-text: #3b3124;
   --blr-reader-muted: #756653;
-  --blr-reader-accent: #2f9e44;
-  --blr-reader-accent-soft: rgba(47, 158, 68, 0.12);
+  --blr-reader-accent: var(--brand_blue, #00aeec);
+  --blr-reader-accent-soft: rgba(0, 174, 236, 0.12);
   --blr-reader-shadow: 0 18px 40px rgba(112, 93, 64, 0.12);
 }
 
@@ -1103,6 +1289,8 @@ body[data-blr-reader-mode="1"] #blr-reading-inline-host {
 }
 
 body[data-blr-reader-mode="1"] #blr-reading-inline-host {
+  overflow-anchor: none;
+  scroll-behavior: auto;
   min-height: 100vh;
   margin-top: -1px;
   padding: 0;
@@ -1122,8 +1310,7 @@ body[data-blr-reader-mode="1"] #blr-reading-inline-host {
 
 body[data-blr-reader-mode="1"] #playerWrap,
 body[data-blr-reader-mode="1"] .player-wrap {
-  border: 1px solid var(--blr-reader-border);
-  border-bottom: 0;
+  border: 0;
   border-radius: 0;
   background: var(--blr-reader-surface);
   box-shadow: var(--blr-reader-shadow);
@@ -1148,6 +1335,12 @@ body[data-blr-reader-mode="1"] .player-wrap .bpx-player-inner {
   max-width: 100% !important;
   height: 100% !important;
   max-height: 100% !important;
+}
+
+body[data-blr-reader-mode="1"] .bpx-player-video-wrap video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
 }
 
 body[data-blr-reader-mode="1"] .blr-reading-main {
@@ -1286,7 +1479,7 @@ body[data-blr-reader-mode="1"] [class*="picture-in-picture"] {
 }
 
 .blr-reading-complete-segment:hover {
-  background: var(--blr-reader-accent-soft);
+  background: rgba(0, 174, 236, 0.1);
 }
 
 .blr-reading-complete-segment.is-active {
@@ -1369,8 +1562,6 @@ body[data-blr-reader-mode="1"] [class*="picture-in-picture"] {
 
   body[data-blr-reader-mode="1"] .left-container,
   body[data-blr-reader-mode="1"] .scroll-sticky,
-  body[data-blr-reader-mode="1"] #playerWrap,
-  body[data-blr-reader-mode="1"] .player-wrap,
   body[data-blr-reader-mode="1"] h1.video-title,
   body[data-blr-reader-mode="1"] .video-info-container,
   body[data-blr-reader-mode="1"] #viewbox_report {
@@ -1392,7 +1583,7 @@ body[data-blr-reader-mode="1"] [class*="picture-in-picture"] {
   body[data-blr-reader-mode="1"] #playerWrap,
   body[data-blr-reader-mode="1"] .player-wrap {
     margin-top: 0 !important;
-    border: 1px solid var(--blr-reader-border);
+    border: 0;
     border-radius: 4px;
   }
 
@@ -1595,26 +1786,6 @@ body[data-blr-reader-mode="1"] [class*="picture-in-picture"] {
     box-shadow: 0 0 0 3px var(--blr-reader-accent-soft);
   }
 
-  body[data-blr-reader-mode="1"] .blr-reading-resize-handle-left {
-    display: block !important;
-    left: var(--blr-reader-player-left, var(--blr-reader-page-padding)) !important;
-    right: auto !important;
-    top: calc(var(--blr-reader-player-bottom, 72vh) + 1px) !important;
-    bottom: auto !important;
-    width: var(--blr-reader-player-width, var(--blr-reader-main-width)) !important;
-    height: 10px;
-    cursor: row-resize;
-  }
-
-  body[data-blr-reader-mode="1"] .blr-reading-resize-handle-left::before {
-    top: 4px;
-    right: 0;
-    bottom: auto;
-    left: 0;
-    width: auto;
-    height: 2px;
-  }
-
   body[data-blr-reader-mode="1"] .blr-reading-resize-handle-right {
     right: calc(
       var(--blr-reader-page-padding) + var(--blr-reader-transcript-width) +
@@ -1625,12 +1796,6 @@ body[data-blr-reader-mode="1"] [class*="picture-in-picture"] {
   body[data-blr-reader-resizing="transcript"],
   body[data-blr-reader-resizing="transcript"] * {
     cursor: col-resize !important;
-    user-select: none !important;
-  }
-
-  body[data-blr-reader-resizing="chapter"],
-  body[data-blr-reader-resizing="chapter"] * {
-    cursor: row-resize !important;
     user-select: none !important;
   }
 

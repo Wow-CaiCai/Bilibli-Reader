@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bilibili Reader｜哔哩哔哩阅读模式
 // @namespace    https://github.com/bilibli-reader
-// @version      0.0.8
+// @version      0.0.9
 // @description  将 B 站视频切换为视频、章节与字幕联动的阅读视图
 // @author       Wow-CaiCai
 // @license      MIT
@@ -38,7 +38,7 @@
   const runtimeListeners = [];
   const storageListeners = [];
 
-  GM_addStyle("#viewbox_report.blr-page-reader-entry-host,\n.video-info-container.blr-page-reader-entry-host,\n.video-info-title.blr-page-reader-entry-host {\n  position: relative !important;\n}\n\n#viewbox_report.blr-page-reader-entry-host h1.video-title,\n.video-info-container.blr-page-reader-entry-host h1.video-title {\n  padding-right: 108px !important;\n  box-sizing: border-box;\n}\n\n#blr-page-reader-entry {\n  -webkit-appearance: none;\n  appearance: none;\n  position: absolute;\n  top: auto;\n  right: 2px;\n  bottom: 4px;\n  z-index: 20;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: 6px;\n  min-width: 82px;\n  height: 34px;\n  margin: 0;\n  padding: 0 14px;\n  box-sizing: border-box;\n  border: 1px solid rgba(0, 174, 236, 0.42);\n  border-radius: 9px;\n  background: rgba(255, 255, 255, 0.96);\n  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.08);\n  color: #18191c;\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", sans-serif;\n  font-size: 14px;\n  font-weight: 600;\n  line-height: 1;\n  cursor: pointer;\n  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease,\n    transform 0.16s ease, box-shadow 0.16s ease;\n}\n\n#blr-page-reader-entry svg {\n  width: 17px;\n  height: 17px;\n  flex: 0 0 auto;\n  fill: none;\n  stroke: currentColor;\n  stroke-width: 1.8;\n  stroke-linecap: round;\n  stroke-linejoin: round;\n}\n\n#blr-page-reader-entry:hover {\n  border-color: #00aeec;\n  background: #00aeec;\n  color: #fff;\n  box-shadow: 0 7px 20px rgba(0, 174, 236, 0.22);\n  transform: translateY(-1px);\n}\n\n#blr-page-reader-entry:active {\n  transform: translateY(0);\n}\n\n#blr-page-reader-entry:focus-visible {\n  outline: 2px solid rgba(0, 174, 236, 0.42);\n  outline-offset: 2px;\n}\n\n#blr-page-reader-entry:disabled,\n#blr-page-reader-entry.is-loading {\n  cursor: wait;\n  opacity: 0.68;\n  transform: none;\n}\n\nhtml[data-blr-reader-mode=\"1\"] #blr-page-reader-entry,\nbody[data-blr-reader-mode=\"1\"] #blr-page-reader-entry {\n  display: none !important;\n}\n\n@media (max-width: 760px) {\n  #viewbox_report.blr-page-reader-entry-host h1.video-title,\n  .video-info-container.blr-page-reader-entry-host h1.video-title {\n    padding-right: 0 !important;\n  }\n\n  #blr-page-reader-entry {\n    position: relative;\n    top: auto;\n    right: auto;\n    bottom: auto;\n    margin-top: 8px;\n  }\n}\n\n#blr-native-transcript-panel {\n  --blr-native-transcript-body-height: 439px;\n  --blr-native-transcript-font-size: 14px;\n  --blr-native-transcript-font-weight: 500;\n  --blr-native-transcript-surface: var(--bg1, #fff);\n  --blr-native-transcript-text: var(--text1, #18191c);\n  --blr-native-transcript-border: var(--line_regular, #e3e5e7);\n  --blr-native-transcript-active: rgba(0, 174, 236, 0.12);\n  width: 100%;\n  min-width: 0;\n  position: relative;\n  z-index: 20;\n  margin: 0 0 12px;\n  box-sizing: border-box;\n  isolation: isolate;\n  pointer-events: auto;\n  color: var(--text1, #18191c);\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", sans-serif;\n}\n\n#blr-native-transcript-panel button,\n#blr-native-transcript-panel select,\n#blr-native-transcript-panel .blr-native-transcript-body,\n#blr-native-transcript-panel .blr-native-transcript-list {\n  pointer-events: auto;\n}\n\n.blr-native-transcript-header {\n  width: 100%;\n  height: 44px;\n  display: flex;\n  align-items: center;\n  gap: 4px;\n  margin: 0;\n  padding: 0 6px 0 10px;\n  box-sizing: border-box;\n  border-radius: 6px;\n  background: var(--bg2, #f1f2f3);\n  color: var(--text1, #18191c);\n  font: inherit;\n}\n\n.blr-native-transcript-title-button {\n  -webkit-appearance: none;\n  appearance: none;\n  min-width: 32px;\n  flex: 1 1 auto;\n  align-self: stretch;\n  margin: 0;\n  padding: 0;\n  overflow: hidden;\n  border: 0;\n  background: transparent;\n  color: inherit;\n  font: inherit;\n  font-size: 15px;\n  font-weight: 500;\n  line-height: 1;\n  text-align: left;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  cursor: pointer;\n}\n\n.blr-native-transcript-controls {\n  min-width: 0;\n  display: flex;\n  flex: 0 0 auto;\n  align-items: center;\n  gap: 4px;\n}\n\n.blr-native-transcript-return-button,\n.blr-native-transcript-theme-button {\n  -webkit-appearance: none;\n  appearance: none;\n  width: 26px;\n  height: 26px;\n  display: inline-flex;\n  flex: 0 0 26px;\n  align-items: center;\n  justify-content: center;\n  margin: 0;\n  padding: 0;\n  border: 1px solid var(--line_regular, #e3e5e7);\n  border-radius: 50%;\n  background: var(--bg1, #fff);\n  color: var(--text1, #18191c);\n  cursor: pointer;\n}\n\n.blr-native-transcript-return-button svg,\n.blr-native-transcript-theme-button svg {\n  width: 17px;\n  height: 17px;\n}\n\n.blr-native-transcript-return-button:hover,\n.blr-native-transcript-return-button.is-active,\n.blr-native-transcript-theme-button:hover,\n.blr-native-transcript-theme-button.is-active {\n  border-color: var(--brand_blue, #00aeec);\n  color: var(--brand_blue, #00aeec);\n}\n\n.blr-native-transcript-controls select {\n  -webkit-appearance: none;\n  appearance: none;\n  flex: 0 0 auto;\n  height: 28px;\n  min-width: 0;\n  padding: 0 25px 0 8px;\n  box-sizing: border-box;\n  border: 1px solid var(--line_regular, #e3e5e7);\n  border-radius: 5px;\n  background-color: var(--bg1, #fff);\n  background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m3 4.5 3 3 3-3' fill='none' stroke='%2318191c' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\");\n  background-position: right 7px center;\n  background-repeat: no-repeat;\n  background-size: 12px 12px;\n  color: var(--text1, #18191c);\n  font-size: 12px;\n  outline: none;\n}\n\n.blr-native-transcript-controls select:focus {\n  border-color: var(--brand_blue, #00aeec);\n}\n\n#blr-native-transcript-select {\n  width: 72px;\n}\n\n#blr-native-transcript-font-size {\n  width: 56px;\n}\n\n#blr-native-transcript-font-weight {\n  width: 64px;\n}\n\n.blr-native-transcript-arrow-button {\n  -webkit-appearance: none;\n  appearance: none;\n  width: 28px;\n  height: 28px;\n  display: inline-flex;\n  flex: 0 0 28px;\n  align-items: center;\n  justify-content: center;\n  margin: 0;\n  padding: 0;\n  border: 0;\n  border-radius: 4px;\n  background: transparent;\n  color: inherit;\n  cursor: pointer;\n}\n\n.blr-native-transcript-title-button:focus-visible,\n.blr-native-transcript-return-button:focus-visible,\n.blr-native-transcript-theme-button:focus-visible,\n.blr-native-transcript-arrow-button:focus-visible {\n  outline: 2px solid var(--brand_blue, #00aeec);\n  outline-offset: 1px;\n}\n\n.blr-native-transcript-arrow-button:hover {\n  background: rgba(0, 0, 0, 0.06);\n}\n\n.blr-native-transcript-arrow {\n  width: 16px;\n  height: 16px;\n  flex: 0 0 auto;\n  fill: none;\n  stroke: currentColor;\n  stroke-width: 1.6;\n  stroke-linecap: round;\n  stroke-linejoin: round;\n  transform: rotate(90deg);\n  transition: transform 0.18s ease;\n}\n\n#blr-native-transcript-panel.is-folded .blr-native-transcript-arrow {\n  transform: rotate(0deg);\n}\n\n.blr-native-transcript-empty-notice {\n  position: absolute;\n  top: calc(100% - 4px);\n  left: 50%;\n  z-index: 1;\n  transform: translateX(-50%);\n  padding: 4px 8px;\n  border-radius: 8px;\n  background: var(--bg1, #fff);\n  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);\n  color: #00aeec;\n  font-size: 13px;\n  font-weight: 600;\n  line-height: 20px;\n  white-space: nowrap;\n  pointer-events: none;\n  animation: blr-native-transcript-notice-fade 2.2s ease-out forwards;\n}\n\n@keyframes blr-native-transcript-notice-fade {\n  0% { opacity: 0; }\n  8%, 65% { opacity: 1; }\n  100% { opacity: 0; }\n}\n\n.blr-native-transcript-body {\n  height: var(--blr-native-transcript-body-height);\n  min-height: 0;\n  display: flex;\n  flex-direction: column;\n  margin-top: 12px;\n  overflow: hidden;\n  box-sizing: border-box;\n  border: 1px solid var(--blr-native-transcript-border);\n  border-radius: 6px;\n  background: var(--blr-native-transcript-surface);\n  color: var(--blr-native-transcript-text);\n}\n\n#blr-native-transcript-panel[data-theme=\"dark\"] {\n  --blr-native-transcript-surface: #0f172a;\n  --blr-native-transcript-text: #e5eefb;\n  --blr-native-transcript-border: rgba(148, 163, 184, 0.28);\n  --blr-native-transcript-active: rgba(74, 222, 128, 0.16);\n}\n\n#blr-native-transcript-panel[data-theme=\"paper\"] {\n  --blr-native-transcript-surface: #f4eddc;\n  --blr-native-transcript-text: #3b3124;\n  --blr-native-transcript-border: rgba(180, 155, 112, 0.34);\n  --blr-native-transcript-active: rgba(47, 158, 68, 0.14);\n}\n\n.blr-native-transcript-body[hidden] {\n  display: none !important;\n}\n\n.blr-native-transcript-list {\n  min-height: 0;\n  flex: 1 1 auto;\n  overflow-x: hidden;\n  overflow-y: auto;\n  overscroll-behavior: contain;\n  scrollbar-width: thin;\n  scrollbar-color: rgba(148, 153, 160, 0.72) transparent;\n}\n\n.blr-native-transcript-list::-webkit-scrollbar {\n  width: 6px;\n}\n\n.blr-native-transcript-list::-webkit-scrollbar-track {\n  background: transparent;\n}\n\n.blr-native-transcript-list::-webkit-scrollbar-thumb {\n  border-radius: 999px;\n  background: rgba(148, 153, 160, 0.72);\n}\n\n.blr-native-transcript-complete {\n  padding: 12px 14px 36px;\n  color: var(--blr-native-transcript-text);\n  font-size: var(--blr-native-transcript-font-size);\n  font-weight: var(--blr-native-transcript-font-weight);\n  line-height: 1.8;\n  letter-spacing: 0;\n  text-align: left;\n  word-break: break-word;\n}\n\n.blr-native-transcript-segment {\n  -webkit-appearance: none;\n  appearance: none;\n  display: inline;\n  margin: 0;\n  padding: 1px 0;\n  border: 0;\n  border-radius: 2px;\n  background: transparent;\n  color: inherit;\n  font: inherit;\n  letter-spacing: inherit;\n  text-align: inherit;\n  cursor: pointer;\n  user-select: text;\n  -webkit-user-select: text;\n}\n\n.blr-native-transcript-segment:hover {\n  background: rgba(0, 174, 236, 0.1);\n}\n\n.blr-native-transcript-segment.is-active {\n  background: var(--blr-native-transcript-active);\n  text-decoration-line: underline;\n  text-decoration-color: var(--brand_blue, #00aeec);\n  text-decoration-thickness: 2px;\n  text-underline-offset: 4px;\n}\n\n.blr-native-transcript-segment:focus-visible {\n  outline: 2px solid rgba(0, 174, 236, 0.42);\n  outline-offset: 1px;\n}\n\n.blr-native-transcript-state {\n  min-height: 100%;\n  display: flex;\n  flex: 1 1 auto;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  gap: 12px;\n  padding: 24px;\n  box-sizing: border-box;\n  color: var(--text3, #9499a0);\n  font-size: 13px;\n  text-align: center;\n}\n\n.blr-native-transcript-state button {\n  height: 30px;\n  padding: 0 14px;\n  border: 1px solid var(--brand_blue, #00aeec);\n  border-radius: 5px;\n  background: transparent;\n  color: var(--brand_blue, #00aeec);\n  cursor: pointer;\n}\n\n.blr-native-transcript-state button:hover {\n  background: rgba(0, 174, 236, 0.08);\n}\n\n#blr-panel {\n  position: fixed;\n  right: 16px;\n  top: 72px;\n  width: min(420px, calc(100vw - 24px));\n  height: min(820px, calc(100vh - 88px));\n  z-index: 2147483647;\n  background: #f1f1f1;\n  border: 1px solid #d8d8d8;\n  border-radius: 14px;\n  box-shadow: 0 24px 46px rgba(0, 0, 0, 0.24);\n  padding: 12px;\n  box-sizing: border-box;\n  display: none;\n  flex-direction: column;\n  gap: 8px;\n  font-family: -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"PingFang SC\", \"Helvetica Neue\",\n    Arial, sans-serif;\n}\n\n#blr-panel.open {\n  display: flex;\n}\n\n.blr-header {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 0 0 4px;\n}\n\n.blr-header strong {\n  font-size: 17px;\n  font-weight: 600;\n  letter-spacing: 0.01em;\n  color: #3d3d3d;\n}\n\n.blr-header-actions {\n  display: flex;\n  gap: 6px;\n}\n\n.blr-header button {\n  border: 1px solid #cfcfcf;\n  background: #f8f8f8;\n  border-radius: 10px;\n  padding: 7px 10px;\n  cursor: pointer;\n  color: #4a4a4a;\n}\n\n.blr-status {\n  margin: 0;\n  font-size: 12px;\n  color: #555;\n  background: #e8e8e8;\n  border-radius: 8px;\n  padding: 7px 8px;\n}\n\n.blr-props-head {\n  font-size: 15px;\n  font-weight: 600;\n  color: #4a4a4a;\n  margin-top: 0;\n}\n\n.blr-meta {\n  border: 1px solid #d5d5d5;\n  border-radius: 10px;\n  padding: 8px 10px;\n  background: #f7f7f7;\n  display: grid;\n  gap: 6px;\n  font-size: 13px;\n  color: #3f3f3f;\n}\n\n.blr-meta-item {\n  word-break: break-word;\n}\n\n.blr-label {\n  font-size: 12px;\n  font-weight: 600;\n  color: #4d4d4d;\n  margin-top: 2px;\n}\n\n#blr-subtitle-select {\n  height: 36px;\n  border: 1px solid #cfcfcf;\n  border-radius: 8px;\n  padding: 0 10px;\n  background: #fff;\n  color: #2d2d2d;\n}\n\n.blr-player-ai-wrap {\n  align-items: center;\n  background: rgba(20, 24, 32, 0.68);\n  border: 1px solid rgba(255, 255, 255, 0.18);\n  border-radius: 999px;\n  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);\n  display: inline-flex;\n  flex: 0 0 var(--blr-player-ai-action-hit-size, 28px);\n  height: var(--blr-player-ai-action-hit-size, 28px);\n  justify-content: center;\n  margin: 0;\n  min-width: var(--blr-player-ai-action-hit-size, 28px);\n  opacity: 0;\n  overflow: hidden;\n  pointer-events: none;\n  position: absolute;\n  right: 14px;\n  top: 50%;\n  transform: translate(8px, -50%);\n  transition: opacity 0.18s ease, background-color 0.18s ease, transform 0.18s ease;\n  width: var(--blr-player-ai-action-hit-size, 28px);\n  z-index: 30;\n}\n\n.blr-player-ai-wrap.is-active,\n.blr-player-ai-wrap:hover,\n.blr-player-ai-wrap:focus-within {\n  background: rgba(20, 24, 32, 0.78);\n  opacity: 1;\n  pointer-events: auto;\n  transform: translate(0, -50%);\n}\n\n#blr-player-ai-quick-action {\n  -webkit-appearance: none;\n  appearance: none;\n  align-items: center;\n  align-self: center;\n  background: transparent;\n  border: 0;\n  border-radius: 0;\n  box-sizing: border-box;\n  color: var(--blr-player-ai-action-color, currentColor);\n  display: inline-flex;\n  flex: 0 0 auto;\n  justify-content: center;\n  width: 100%;\n  height: 100%;\n  cursor: pointer;\n  line-height: 0;\n  margin-bottom: 0;\n  margin-top: 0;\n  min-width: 0;\n  overflow: hidden;\n  padding: 0;\n  position: relative;\n  top: 0;\n  vertical-align: top;\n  transition: transform 0.16s ease, color 0.16s ease, opacity 0.16s ease;\n}\n\n#blr-player-ai-quick-action svg {\n  width: var(--blr-player-ai-action-icon-size, 24px);\n  height: var(--blr-player-ai-action-icon-size, 24px);\n  display: block;\n  flex: 0 0 auto;\n  stroke: currentColor;\n  fill: none;\n  stroke-linecap: round;\n  stroke-linejoin: round;\n}\n\n#blr-player-ai-quick-action:hover {\n  color: var(--blr-player-ai-action-hover-color, var(--blr-player-ai-action-color, currentColor));\n}\n\n#blr-player-ai-quick-action:disabled {\n  opacity: 0.62;\n  cursor: wait;\n  transform: none;\n}\n\n.blr-confirm-overlay {\n  align-items: center;\n  background: rgba(17, 24, 39, 0.28);\n  display: flex;\n  inset: 0;\n  justify-content: center;\n  padding: 18px;\n  position: fixed;\n  z-index: 2147483647;\n}\n\n.blr-confirm-dialog {\n  background: #ffffff;\n  border: 1px solid #e5e7eb;\n  border-radius: 16px;\n  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.22);\n  color: #111827;\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;\n  max-width: 360px;\n  padding: 18px;\n  width: calc(100vw - 36px);\n}\n\n.blr-confirm-title {\n  font-size: 15px;\n  font-weight: 700;\n  margin-bottom: 8px;\n}\n\n.blr-confirm-body {\n  color: #4b5563;\n  font-size: 13px;\n  margin-bottom: 8px;\n}\n\n.blr-confirm-path {\n  background: #f7f8fb;\n  border: 1px solid #edf0f4;\n  border-radius: 10px;\n  color: #374151;\n  font-size: 12px;\n  line-height: 1.45;\n  max-height: 96px;\n  overflow: auto;\n  padding: 9px 10px;\n  word-break: break-all;\n}\n\n.blr-confirm-actions {\n  display: flex;\n  gap: 8px;\n  justify-content: flex-end;\n  margin-top: 14px;\n}\n\n.blr-confirm-actions button {\n  border: 1px solid #d9dee7;\n  border-radius: 10px;\n  cursor: pointer;\n  font-size: 13px;\n  height: 34px;\n  padding: 0 14px;\n}\n\n.blr-confirm-cancel {\n  background: #ffffff;\n  color: #374151;\n}\n\n.blr-confirm-primary {\n  background: #111827;\n  border-color: #111827 !important;\n  color: #ffffff;\n}\n\n#blr-preview {\n  width: 100%;\n  flex: 1;\n  min-height: 180px;\n  box-sizing: border-box;\n  border: 1px solid #d0d0d0;\n  border-radius: 10px;\n  padding: 10px;\n  resize: vertical;\n  font-size: 13px;\n  line-height: 1.55;\n  background: #fff;\n  color: #2f2f2f;\n  font-family: \"SF Mono\", \"JetBrains Mono\", \"PingFang SC\", Menlo, Monaco, Consolas, monospace;\n}\n\n.blr-actions {\n  display: grid;\n  grid-template-columns: repeat(2, minmax(0, 1fr));\n  gap: 8px;\n  margin-top: 0;\n}\n\n.blr-actions button {\n  border: 1px solid #cfcfcf;\n  background: #f8f8f8;\n  border-radius: 9px;\n  padding: 8px 8px;\n  cursor: pointer;\n  color: #3d3d3d;\n  font-size: 13px;\n}\n\n#blr-send-btn {\n  grid-column: span 2;\n  border: 1px solid #a88fff;\n  background: linear-gradient(180deg, #9c82ff 0%, #8f75ef 100%);\n  color: #fff;\n  font-weight: 600;\n}\n\n.blr-actions button:disabled {\n  cursor: not-allowed;\n  opacity: 0.55;\n}\n\n.blr-message {\n  margin: 0;\n  font-size: 12px;\n  color: #0f766e;\n  min-height: 18px;\n  padding: 0 2px;\n}\n\n#blr-reading-view {\n  position: fixed;\n  left: 16px;\n  right: 16px;\n  bottom: 16px;\n  height: min(76vh, 860px);\n  z-index: 2147483646;\n  display: none;\n  padding: 20px 22px;\n  box-sizing: border-box;\n  background: #fff;\n  border: 1px solid #e5e7eb;\n  border-radius: 18px;\n  box-shadow: 0 28px 60px rgba(15, 23, 42, 0.16);\n  font-family: -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"PingFang SC\", \"Helvetica Neue\",\n    Arial, sans-serif;\n}\n\n#blr-reading-view.open {\n  display: block;\n}\n\n#blr-reading-view[data-blr-reader-ready=\"0\"] {\n  opacity: 0;\n  visibility: hidden;\n  pointer-events: none;\n}\n\n.blr-reading-layout {\n  min-height: 0;\n  height: 100%;\n  display: grid;\n  grid-template-columns: 240px minmax(0, 1fr);\n  gap: 28px;\n}\n\n.blr-reading-rail {\n  min-height: 0;\n  display: grid;\n  grid-template-rows: auto auto minmax(0, 1fr);\n  gap: 10px;\n  align-content: start;\n}\n\n.blr-reading-stage {\n  min-height: 0;\n  display: grid;\n  grid-template-rows: auto auto minmax(320px, 1fr) minmax(0, 1fr);\n  gap: 14px;\n}\n\n.blr-reading-header {\n  display: flex;\n  align-items: flex-start;\n  justify-content: space-between;\n  gap: 18px;\n}\n\n.blr-reading-header-copy {\n  min-width: 0;\n}\n\n.blr-reading-eyebrow {\n  font-size: 11px;\n  font-weight: 700;\n  letter-spacing: 0.08em;\n  color: #9ca3af;\n  text-transform: uppercase;\n}\n\n.blr-reading-title {\n  display: block;\n  margin: 0;\n  font-size: 16px;\n  line-height: 1.15;\n  color: #0f172a;\n  word-break: break-word;\n}\n\n.blr-reading-topbar,\n.blr-reading-heading-group {\n  min-width: 0;\n}\n\n.blr-reading-page-title {\n  color: var(--blr-reader-text, #0f172a);\n  display: -webkit-box;\n  font-size: 18px;\n  font-weight: 500;\n  line-height: 1.2;\n  overflow: hidden;\n  overflow-wrap: anywhere;\n  -webkit-box-orient: vertical;\n  -webkit-line-clamp: 2;\n}\n\n.blr-reading-episode-title {\n  color: var(--blr-reader-muted, #64748b);\n  display: -webkit-box;\n  font-size: 14px;\n  font-weight: 600;\n  line-height: 1.3;\n  overflow: hidden;\n  overflow-wrap: anywhere;\n  -webkit-box-orient: vertical;\n  -webkit-line-clamp: 2;\n}\n\n.blr-reading-collection-nav {\n  align-items: flex-start;\n  display: flex;\n  gap: 10px;\n  min-width: 0;\n}\n\n.blr-reading-episode-title[hidden],\n.blr-reading-collection-nav[hidden] {\n  display: none !important;\n}\n\n.blr-reading-collection-list {\n  align-content: flex-start;\n  align-items: center;\n  display: flex;\n  flex: 1 1 auto;\n  flex-wrap: wrap;\n  gap: 6px;\n  height: 70px;\n  min-width: 0;\n  overflow-x: hidden;\n  overflow-y: auto;\n  overscroll-behavior-y: contain;\n  scrollbar-width: none;\n}\n\n.blr-reading-collection-list::-webkit-scrollbar {\n  display: none;\n}\n\n.blr-reading-collection-item {\n  align-items: center;\n  background: transparent;\n  border: 1px solid var(--blr-reader-border, #e2e8f0);\n  border-radius: 999px;\n  color: var(--blr-reader-muted, #64748b);\n  cursor: pointer;\n  display: inline-flex;\n  flex: 0 0 auto;\n  gap: 6px;\n  height: 32px;\n  max-width: 260px;\n  padding: 0 10px 0 7px;\n  font-weight: 600;\n}\n\n.blr-reading-collection-item:hover {\n  border-color: var(--blr-reader-accent, #22c55e);\n  color: var(--blr-reader-text, #0f172a);\n}\n\n.blr-reading-collection-item.is-active {\n  background: var(--blr-reader-accent-soft, #ecfdf5);\n  border-color: var(--blr-reader-accent, #22c55e);\n  color: var(--blr-reader-accent, #16a34a);\n}\n\n.blr-reading-collection-index {\n  align-items: center;\n  background: color-mix(in srgb, currentColor 10%, transparent);\n  border-radius: 999px;\n  display: inline-flex;\n  flex: 0 0 auto;\n  font-size: 10px;\n  font-weight: 700;\n  height: 18px;\n  justify-content: center;\n  min-width: 18px;\n  padding: 0 4px;\n}\n\n.blr-reading-collection-item-title {\n  font-size: 12px;\n  font-weight: 600;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.blr-reading-meta,\n.blr-reading-status {\n  font-size: 14px;\n  line-height: 1.5;\n  color: #6b7280;\n}\n\n.blr-reading-meta {\n  margin-top: 8px;\n}\n\n.blr-reading-actions {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex-wrap: wrap;\n  justify-content: flex-end;\n  transition: opacity 0.2s ease;\n}\n\n.blr-reading-actions[data-blr-icon-hidden=\"1\"] {\n  opacity: 0;\n  pointer-events: none;\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .blr-reading-actions {\n    transition: none;\n  }\n}\n\n.blr-reading-actions button {\n  border: 1px solid #e5e7eb;\n  background: #fff;\n  border-radius: 999px;\n  min-height: 36px;\n  padding: 0 14px;\n  font-size: 13px;\n  color: #1f2937;\n  box-sizing: border-box;\n}\n\n.blr-reading-actions button {\n  cursor: pointer;\n}\n\n\n\n\n\n.blr-reading-icon-btn {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 34px;\n  height: 34px;\n  border: 1px solid #e5e7eb;\n  background: #fff;\n  border-radius: 8px;\n  cursor: pointer;\n  padding: 0;\n  color: #1f2937;\n}\n\n.blr-reading-icon-btn svg {\n  width: 18px;\n  height: 18px;\n  flex: 0 0 auto;\n}\n\n.blr-reading-icon-btn:hover {\n  background: #f3f4f6;\n  border-color: #d1d5db;\n}\n\n.blr-reading-icon-btn.is-active {\n  background: #eff6ff;\n  border-color: #2563eb;\n  color: #2563eb;\n}\n\n\n\n\n\n\n\n\n\n\n\n.blr-reading-list,\n.blr-reading-transcript {\n  min-height: 0;\n  overflow: auto;\n}\n\n.blr-reading-list {\n  padding-right: 6px;\n}\n\n.blr-reading-player-shell {\n  min-height: 0;\n  display: flex;\n  justify-content: center;\n  align-items: flex-start;\n  pointer-events: none;\n}\n\n.blr-reading-player-slot {\n  width: min(100%, 960px);\n  aspect-ratio: 16 / 9;\n  max-height: 100%;\n  min-height: 0;\n  overflow: hidden;\n  background: #fff;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  pointer-events: none;\n}\n\n.blr-reading-player-slot > * {\n  width: 100% !important;\n  max-width: 100% !important;\n  height: 100% !important;\n}\n\n.blr-reading-player-slot > video {\n  width: 100% !important;\n  height: 100% !important;\n  display: block;\n  background: #000;\n  object-fit: contain;\n}\n\n.blr-reading-player-slot #bilibili-player,\n.blr-reading-player-slot .bpx-player-container,\n.blr-reading-player-slot .bpx-player-video-area,\n.blr-reading-player-slot .bpx-player-primary-area,\n.blr-reading-player-slot .bpx-player-inner {\n  width: 100% !important;\n  height: 100% !important;\n}\n\n.blr-reading-main {\n  min-height: 0;\n  overflow: hidden;\n  display: flex;\n  justify-content: center;\n  pointer-events: auto;\n}\n\n.blr-reading-transcript {\n  width: min(100%, 960px);\n  height: 100%;\n  max-height: 100%;\n  margin: 0 auto;\n  padding: 6px 8px 12px;\n  overflow-x: hidden;\n  overflow-y: auto;\n  pointer-events: auto;\n}\n\n.blr-reading-chapter {\n  width: 100%;\n  border: 0;\n  background: transparent;\n  border-radius: 14px;\n  text-align: left;\n  cursor: pointer;\n  user-select: text;\n  -webkit-user-select: text;\n}\n\n.blr-reading-chapter {\n  display: grid;\n  gap: 4px;\n  padding: 8px 10px;\n  color: #4b5563;\n}\n\n\n\n.blr-reading-chapter:hover {\n  background: #f9fafb;\n}\n\n.blr-reading-chapter.is-active {\n  background: transparent;\n  box-shadow: none;\n}\n\n.blr-reading-chapter-time {\n  font-size: var(--blr-reader-transcript-font-size);\n  font-weight: 600;\n  color: #16a34a;\n  padding-top: 2px;\n  line-height: 1.4;\n}\n\n.blr-reading-chapter-title {\n  font-size: 13px;\n  line-height: 1.45;\n  color: inherit;\n}\n\n.blr-reading-chapter.is-active .blr-reading-chapter-title {\n  text-decoration-line: underline;\n  text-decoration-color: #22c55e;\n  text-decoration-thickness: 2px;\n  text-underline-offset: 3px;\n}\n\n\n\n.blr-reading-empty {\n  padding: 12px 4px;\n  font-size: 14px;\n  color: #94a3b8;\n}\n\n@media (max-width: 1100px) {\n  #blr-reading-view {\n    left: 12px;\n    right: 12px;\n    bottom: 12px;\n    padding: 18px;\n  }\n\n  .blr-reading-layout {\n    grid-template-columns: 210px minmax(0, 1fr);\n    gap: 20px;\n  }\n\n  .blr-reading-title {\n    font-size: 16px;\n  }\n}\n\n@media (max-width: 760px) {\n  #blr-reading-view {\n    top: 72px;\n    height: auto;\n  }\n\n  .blr-reading-layout {\n    grid-template-columns: 1fr;\n    gap: 18px;\n  }\n\n  .blr-reading-stage {\n    grid-template-rows: auto auto minmax(220px, auto) minmax(0, 1fr);\n  }\n\n  .blr-reading-header {\n    flex-direction: column;\n    align-items: stretch;\n  }\n\n  .blr-reading-actions {\n    justify-content: flex-start;\n  }\n\n  .blr-reading-title {\n    font-size: 16px;\n  }\n\n\n\n\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] {\n  margin: 0 !important;\n  padding: 0 !important;\n  width: 100% !important;\n  min-height: 100% !important;\n  background: #fff !important;\n  overflow-x: hidden !important;\n  overflow-y: auto !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-root {\n  position: absolute;\n  inset: 0;\n  z-index: 2147483646;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-panel {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view {\n  position: absolute;\n  inset: 0;\n  width: auto;\n  max-width: none;\n  height: 100vh;\n  display: none;\n  margin: 0;\n  padding: 0;\n  box-sizing: border-box;\n  border: 0;\n  border-radius: 0;\n  box-shadow: none;\n  background: transparent;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view.open {\n  display: block;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-ready=\"0\"] {\n  opacity: 0;\n  visibility: hidden;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-header-copy,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-status {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #viewbox_report,\nbody[data-blr-reader-mode=\"1\"] .video-info-container,\nbody[data-blr-reader-mode=\"1\"] .video-info-title,\nbody[data-blr-reader-mode=\"1\"] .video-info-title-inner {\n  margin: 0 !important;\n  padding: 0 !important;\n  row-gap: 0 !important;\n  column-gap: 0 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #viewbox_report,\nbody[data-blr-reader-mode=\"1\"] .video-info-container {\n  margin-bottom: 4px !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .left-container,\nbody[data-blr-reader-mode=\"1\"] .scroll-sticky {\n  row-gap: 8px !important;\n  padding-top: 0 !important;\n  overflow: visible !important;\n  transition: none !important;\n  animation: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap,\nbody[data-blr-reader-mode=\"1\"] .player-wrap,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n  transition: none !important;\n  animation: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .video-info-detail,\nbody[data-blr-reader-mode=\"1\"] .video-info-meta,\nbody[data-blr-reader-mode=\"1\"] .video-data {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-follow=\"manual\"] .blr-reading-main,\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-follow=\"manual\"] .blr-reading-rail {\n  border-color: rgba(148, 163, 184, 0.8);\n  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-follow=\"manual\"] .blr-reading-eyebrow::after {\n  content: \"手动浏览中\";\n  display: inline-block;\n  margin-left: 8px;\n  font-size: 11px;\n  font-weight: 500;\n  color: #94a3b8;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reader-player-host {\n  background: #000 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap {\n  position: static !important;\n  top: auto !important;\n  z-index: auto !important;\n  background: transparent !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .player-wrap,\nbody[data-blr-reader-mode=\"1\"] .scroll-sticky {\n  position: static !important;\n  top: auto !important;\n  z-index: auto !important;\n  background: transparent !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] [data-blr-reader-player-reset=\"1\"] {\n  position: static !important;\n  inset: auto !important;\n  width: auto !important;\n  height: auto !important;\n  transform: none !important;\n  margin: 0 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .strip-ad-inner,\nbody[data-blr-reader-mode=\"1\"] .inside-wrp,\nbody[data-blr-reader-mode=\"1\"] .inside-bg,\nbody[data-blr-reader-mode=\"1\"] .hinter-msg,\nbody[data-blr-reader-mode=\"1\"] .slide,\nbody[data-blr-reader-mode=\"1\"] .cover.b-img,\nbody[data-blr-reader-mode=\"1\"] .cover.b-img.sleepy,\nbody[data-blr-reader-mode=\"1\"] .b-img.clickable {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] [data-blr-reader-hidden=\"1\"] {\n  display: none !important;\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"],\n#blr-reading-view {\n  --blr-reader-page-bg: #f4f6f8;\n  --blr-reader-surface: #ffffff;\n  --blr-reader-surface-2: #f7f9fc;\n  --blr-reader-surface-3: #edf2f7;\n  --blr-reader-border: rgba(15, 23, 42, 0.1);\n  --blr-reader-text: #0f172a;\n  --blr-reader-muted: #64748b;\n  --blr-reader-accent: #16a34a;\n  --blr-reader-accent-soft: rgba(34, 197, 94, 0.12);\n  --blr-reader-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);\n  --blr-reader-transcript-font-size: 14px;\n  --blr-reader-transcript-font-weight: 500;\n  --blr-reader-transcript-line-height: 1.5;\n  --blr-reader-letter-spacing: 0em;\n  --blr-reader-content-max: 980px;\n  color: var(--blr-reader-text);\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"dark\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"dark\"],\n#blr-reading-view[data-theme=\"dark\"] {\n  --blr-reader-page-bg: #09111f;\n  --blr-reader-surface: #0f172a;\n  --blr-reader-surface-2: #132038;\n  --blr-reader-surface-3: #1a2a46;\n  --blr-reader-border: rgba(148, 163, 184, 0.22);\n  --blr-reader-text: #e5eefb;\n  --blr-reader-muted: #9fb0c8;\n  --blr-reader-accent: #4ade80;\n  --blr-reader-accent-soft: rgba(74, 222, 128, 0.14);\n  --blr-reader-shadow: 0 18px 42px rgba(2, 6, 23, 0.42);\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"paper\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"paper\"],\n#blr-reading-view[data-theme=\"paper\"] {\n  --blr-reader-page-bg: #f4eddc;\n  --blr-reader-surface: #f4eddc;\n  --blr-reader-surface-2: #f4eddc;\n  --blr-reader-surface-3: #f4eddc;\n  --blr-reader-border: rgba(180, 155, 112, 0.22);\n  --blr-reader-text: #3b3124;\n  --blr-reader-muted: #756653;\n  --blr-reader-accent: #2f9e44;\n  --blr-reader-accent-soft: rgba(47, 158, 68, 0.12);\n  --blr-reader-shadow: 0 18px 40px rgba(112, 93, 64, 0.12);\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"s\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"s\"],\n#blr-reading-view[data-font-scale=\"s\"] {\n  --blr-reader-transcript-font-size: 12.8px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xs\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xs\"],\n#blr-reading-view[data-font-scale=\"xs\"] {\n  --blr-reader-transcript-font-size: 11.6px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"l\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"l\"],\n#blr-reading-view[data-font-scale=\"l\"] {\n  --blr-reader-transcript-font-size: 16.4px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xl\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xl\"],\n#blr-reading-view[data-font-scale=\"xl\"] {\n  --blr-reader-transcript-font-size: 18.8px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"light\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"light\"],\n#blr-reading-view[data-font-weight=\"light\"] {\n  --blr-reader-transcript-font-weight: 300;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"regular\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"regular\"],\n#blr-reading-view[data-font-weight=\"regular\"] {\n  --blr-reader-transcript-font-weight: 400;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"semibold\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"semibold\"],\n#blr-reading-view[data-font-weight=\"semibold\"] {\n  --blr-reader-transcript-font-weight: 600;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"bold\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"bold\"],\n#blr-reading-view[data-font-weight=\"bold\"] {\n  --blr-reader-transcript-font-weight: 700;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tighter\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tighter\"],\n#blr-reading-view[data-letter-spacing=\"tighter\"] {\n  --blr-reader-letter-spacing: -0.072em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tight\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tight\"],\n#blr-reading-view[data-letter-spacing=\"tight\"] {\n  --blr-reader-letter-spacing: -0.036em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"relaxed\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"relaxed\"],\n#blr-reading-view[data-letter-spacing=\"relaxed\"] {\n  --blr-reader-letter-spacing: 0.036em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"loose\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"loose\"],\n#blr-reading-view[data-letter-spacing=\"loose\"] {\n  --blr-reader-letter-spacing: 0.072em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"compact\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"compact\"],\n#blr-reading-view[data-content-width=\"compact\"] {\n  --blr-reader-content-max: 720px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"narrow\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"narrow\"],\n#blr-reading-view[data-content-width=\"narrow\"] {\n  --blr-reader-content-max: 820px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"],\n#blr-reading-view[data-content-width=\"wide\"] {\n  --blr-reader-content-max: 1120px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"full\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"full\"],\n#blr-reading-view[data-content-width=\"full\"] {\n  --blr-reader-content-max: 1280px;\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] #app,\nbody[data-blr-reader-mode=\"1\"] .left-container,\nbody[data-blr-reader-mode=\"1\"] .right-container,\nbody[data-blr-reader-mode=\"1\"] .right-container-inner,\nbody[data-blr-reader-mode=\"1\"] .video-info-container,\nbody[data-blr-reader-mode=\"1\"] .video-info-detail,\nbody[data-blr-reader-mode=\"1\"] .video-sections-content-list,\nbody[data-blr-reader-mode=\"1\"] .video-container-v1,\nbody[data-blr-reader-mode=\"1\"] .video-container-v3 {\n  background: var(--blr-reader-page-bg) !important;\n  color: var(--blr-reader-text);\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] #app {\n  min-height: 100vh !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #app {\n  min-width: 0 !important;\n  width: 100% !important;\n  max-width: none !important;\n}\n\n#blr-reading-view,\n#blr-reading-view .blr-reading-meta,\n#blr-reading-view .blr-reading-status,\n#blr-reading-view .blr-reading-chapter {\n  color: var(--blr-reader-text);\n}\n\n#blr-reading-view .blr-reading-layout {\n  gap: 22px;\n}\n\n#blr-reading-view .blr-reading-stage {\n  display: grid;\n  gap: 16px;\n}\n\n#blr-reading-view .blr-reading-header {\n  align-items: flex-start;\n}\n\n#blr-reading-view .blr-reading-title {\n  font-size: 20px;\n  color: var(--blr-reader-text);\n  margin-top: 10px;\n}\n\n#blr-reading-view .blr-reading-meta,\n#blr-reading-view .blr-reading-status {\n  font-size: 14px;\n  color: var(--blr-reader-muted);\n}\n\n#blr-reading-view .blr-reading-actions {\n  gap: 10px;\n}\n\n#blr-reading-view .blr-reading-actions button {\n  border: 1px solid var(--blr-reader-border);\n  background: var(--blr-reader-surface);\n  color: var(--blr-reader-text);\n  box-shadow: none;\n}\n\n#blr-reading-view .blr-reading-actions button.is-active {\n  background: var(--blr-reader-accent-soft);\n  color: var(--blr-reader-accent);\n}\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n#blr-reading-view .blr-reading-main {\n  justify-content: center;\n  background: transparent;\n}\n\n#blr-reading-view .blr-reading-transcript {\n  width: min(100%, var(--blr-reader-content-max));\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-transcript-visible=\"0\"] #blr-reading-view .blr-reading-main,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-transcript-visible=\"0\"] #blr-reading-view .blr-reading-main,\n#blr-reading-view[data-transcript-visible=\"0\"] .blr-reading-main {\n  display: none !important;\n}\n\n#blr-reading-view[data-transcript-visible=\"0\"] #blr-reading-inline-host {\n  border: none;\n  background: transparent;\n}\n\n\n\n#blr-reading-view .blr-reading-chapter:hover {\n  background: var(--blr-reader-surface-2);\n}\n\n#blr-reading-view .blr-reading-chapter.is-active {\n  background: var(--blr-reader-accent-soft);\n}\n\n#blr-reading-view .blr-reading-chapter-time {\n  color: var(--blr-reader-accent);\n}\n\n\n\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-subtitle-wrap,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-subtitle-panel,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-subtitle-container,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bilibili-player-video-subtitle,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .subtitle-wrap,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host [class*=\"subtitle\"],\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-sending-bar,\nbody[data-blr-reading-active=\"1\"] .bpx-player-sending-bar {\n  display: none !important;\n}\n\nbody[data-blr-reading-active=\"1\"] [data-blr-reader-fading] {\n  visibility: hidden !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view {\n  background: transparent;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-header {\n  left: auto;\n  right: 24px;\n  max-width: min(1100px, calc(100vw - 48px));\n  gap: 14px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-actions {\n  pointer-events: auto;\n  justify-content: flex-end;\n}\n\n\n\n/* Simplified reader layout: player in normal flow, transcript box below with its own scroll. */\nbody[data-blr-reader-mode=\"1\"] .blr-reading-player-shell {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-layout,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-stage {\n  display: block;\n  height: auto;\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] {\n  --blr-reader-page-padding: clamp(16px, 2.8vw, 32px);\n  --blr-reader-layout-gap: clamp(16px, 2vw, 24px);\n  --blr-reader-rail-target-width: clamp(168px, 15vw, 220px);\n  --blr-reader-main-width: min(\n    var(--blr-reader-content-max),\n    calc(100vw - (var(--blr-reader-page-padding) * 2))\n  );\n  --blr-reader-rail-width: min(\n    var(--blr-reader-rail-target-width),\n    max(\n      0px,\n      calc(\n        ((100vw - var(--blr-reader-main-width)) / 2) - var(--blr-reader-page-padding) - var(--blr-reader-layout-gap)\n      )\n    )\n  );\n  --blr-reader-transcript-line-height: 1.404;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"compact\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"compact\"],\n#blr-reading-view[data-line-height=\"compact\"] {\n  --blr-reader-transcript-line-height: 1.32;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"tight\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"tight\"],\n#blr-reading-view[data-line-height=\"tight\"] {\n  --blr-reader-transcript-line-height: 1.404;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"normal\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"normal\"],\n#blr-reading-view[data-line-height=\"normal\"] {\n  --blr-reader-transcript-line-height: 1.5;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"relaxed\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"relaxed\"],\n#blr-reading-view[data-line-height=\"relaxed\"] {\n  --blr-reader-transcript-line-height: 1.596;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"loose\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"loose\"],\n#blr-reading-view[data-line-height=\"loose\"] {\n  --blr-reader-transcript-line-height: 1.692;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-actions {\n  gap: 12px;\n  margin-right: -20px;\n  margin-top: -8px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-header {\n  position: fixed;\n  top: 18px;\n  right: var(--blr-reader-page-padding);\n  left: auto;\n  max-width: calc(100vw - (var(--blr-reader-page-padding) * 2));\n  margin-bottom: 0;\n  z-index: 2147483646;\n  pointer-events: auto;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-topbar {\n  display: grid;\n  gap: clamp(12px, 1.2vw, 20px);\n  grid-template-columns: clamp(300px, 28vw, 520px) minmax(0, 1fr);\n  height: 84px;\n  left: var(--blr-reader-page-padding);\n  min-width: 0;\n  overflow: hidden;\n  pointer-events: auto;\n  position: fixed;\n  right: 174px;\n  top: 6px;\n  z-index: 2147483646;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-heading-group {\n  align-content: center;\n  display: grid;\n  gap: 2px;\n  max-height: 84px;\n  overflow: hidden;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-page-title {\n  font-size: clamp(16px, 1.05vw, 19px);\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-collection-nav {\n  align-self: center;\n  height: 70px;\n  min-width: 0;\n  pointer-events: auto;\n  position: static;\n}\n\n@media (max-width: 1000px) {\n  body[data-blr-reader-mode=\"1\"] .blr-reading-topbar {\n    grid-template-columns: clamp(240px, 34vw, 330px) minmax(0, 1fr);\n  }\n}\n\n@media (max-width: 760px) {\n  body[data-blr-reader-mode=\"1\"] .blr-reading-topbar {\n    grid-template-columns: minmax(190px, 42vw) minmax(0, 1fr);\n    right: 150px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-page-title {\n    font-size: 15px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-episode-title {\n    font-size: 12px;\n  }\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n  position: fixed;\n  display: grid !important;\n  left: var(--blr-reader-page-padding) !important;\n  top: 112px !important;\n  width: var(--blr-reader-rail-width) !important;\n  max-height: calc(100vh - 136px) !important;\n  padding: 12px;\n  box-sizing: border-box;\n  background: var(--blr-reader-surface);\n  border: 1px solid var(--blr-reader-border);\n  border-radius: 14px;\n  box-shadow: var(--blr-reader-shadow);\n  pointer-events: auto;\n  z-index: 2147483646;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-chapter-visibility=\"hide\"] .blr-reading-rail,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-chapter-visibility=\"hide\"] .blr-reading-rail,\n#blr-reading-view[data-chapter-visibility=\"hide\"] .blr-reading-rail,\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-chapter-visibility=\"auto\"][data-blr-reader-has-chapters=\"0\"] .blr-reading-rail,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-chapter-visibility=\"auto\"][data-blr-reader-has-chapters=\"0\"] .blr-reading-rail,\n#blr-reading-view[data-chapter-visibility=\"auto\"][data-has-chapters=\"0\"] .blr-reading-rail {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .left-container,\nbody[data-blr-reader-mode=\"1\"] .scroll-sticky,\nbody[data-blr-reader-mode=\"1\"] #playerWrap,\nbody[data-blr-reader-mode=\"1\"] .player-wrap,\nbody[data-blr-reader-mode=\"1\"] h1.video-title,\nbody[data-blr-reader-mode=\"1\"] .video-info-container,\nbody[data-blr-reader-mode=\"1\"] #viewbox_report,\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n  width: min(\n    var(--blr-reader-main-width),\n    var(--blr-reader-player-rendered-width, var(--blr-reader-main-width))\n  ) !important;\n  max-width: min(\n    var(--blr-reader-main-width),\n    var(--blr-reader-player-rendered-width, var(--blr-reader-main-width))\n  ) !important;\n  margin-left: auto !important;\n  margin-right: auto !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n  min-height: 100vh;\n  margin-top: -1px;\n  padding: 0;\n  border: 1px solid var(--blr-reader-border);\n  border-top: 0;\n  border-radius: 0 0 20px 20px;\n  background: var(--blr-reader-surface-2);\n  box-shadow: var(--blr-reader-shadow);\n  box-sizing: border-box;\n  overflow: auto;\n  height: 100vh;\n  scrollbar-width: thin;\n  scrollbar-color: rgba(100, 116, 139, 0.1) transparent;\n  position: relative;\n  isolation: isolate;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap,\nbody[data-blr-reader-mode=\"1\"] .player-wrap {\n  border: 1px solid var(--blr-reader-border);\n  border-bottom: 0;\n  border-radius: 0;\n  background: var(--blr-reader-surface);\n  box-shadow: var(--blr-reader-shadow);\n  box-sizing: border-box;\n  overflow: visible !important;\n  margin-top: -35px !important;\n  height: var(--blr-reader-player-rendered-height, auto) !important;\n  max-height: var(--blr-reader-player-rendered-height, none) !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap > *,\nbody[data-blr-reader-mode=\"1\"] .player-wrap > *,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-container,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-video-area,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-primary-area,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-inner,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-container,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-video-area,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-primary-area,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-inner {\n  width: 100% !important;\n  max-width: 100% !important;\n  height: 100% !important;\n  max-height: 100% !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-main {\n  overflow: visible;\n  display: block;\n  width: 100%;\n  background: transparent;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-transcript,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-chapter-title,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-empty {\n  color: var(--blr-reader-text) !important;\n}\n\n\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-tail-spacer {\n  width: 100%;\n  min-height: 320px;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-status {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] h1.video-title {\n  display: -webkit-box !important;\n  margin-top: 8px !important;\n  color: transparent !important;\n  font-size: clamp(16px, 1.05vw, 20px) !important;\n  line-height: 1.2 !important;\n  padding: 0 !important;\n  height: auto !important;\n  max-height: 48px !important;\n  overflow: hidden !important;\n  overflow-wrap: anywhere !important;\n  pointer-events: none !important;\n  user-select: none !important;\n  visibility: hidden !important;\n  -webkit-box-orient: vertical !important;\n  -webkit-line-clamp: 2 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar {\n  width: 6px;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar-track {\n  background: transparent;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar-thumb {\n  background: rgba(100, 116, 139, 0.1);\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar-thumb:hover {\n  background: rgba(100, 116, 139, 0.16);\n}\n\n@media (max-width: 1320px) {\n  html[data-blr-reader-mode=\"1\"],\n  body[data-blr-reader-mode=\"1\"] {\n    --blr-reader-layout-gap: clamp(12px, 1.4vw, 16px);\n    --blr-reader-rail-target-width: clamp(144px, 12vw, 168px);\n  }\n}\n\n@media (max-width: 1320px) {\n  html[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"] .blr-reading-rail,\n  body[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"] .blr-reading-rail,\n  #blr-reading-view[data-content-width=\"wide\"] .blr-reading-rail {\n    display: none !important;\n  }\n}\n\n@media (max-width: 1180px) {\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n    display: none !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .left-container,\n  body[data-blr-reader-mode=\"1\"] .scroll-sticky,\n  body[data-blr-reader-mode=\"1\"] #playerWrap,\n  body[data-blr-reader-mode=\"1\"] .player-wrap,\n  body[data-blr-reader-mode=\"1\"] h1.video-title,\n  body[data-blr-reader-mode=\"1\"] .video-info-container,\n  body[data-blr-reader-mode=\"1\"] #viewbox_report,\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n    margin-left: auto !important;\n    margin-right: auto !important;\n  }\n}\n\nbody[data-blr-reader-mode=\"1\"] .bpx-player-mini-warp,\nbody[data-blr-reader-mode=\"1\"] .bpx-player-mini-close,\nbody[data-blr-reader-mode=\"1\"] .bpx-player-ending-panel,\nbody[data-blr-reader-mode=\"1\"] .bpx-player-ending-related,\nbody[data-blr-reader-mode=\"1\"] .ad-report,\nbody[data-blr-reader-mode=\"1\"] [class*=\"ad-report\"],\nbody[data-blr-reader-mode=\"1\"] [class*=\"mini-player\"],\nbody[data-blr-reader-mode=\"1\"] [class*=\"picture-in-picture\"] {\n  display: none !important;\n}\n\n\n\n\n\n.blr-reading-complete {\n  padding: 12px 10px 20px;\n  font-size: var(--blr-reader-transcript-font-size);\n  font-weight: var(--blr-reader-transcript-font-weight);\n  line-height: var(--blr-reader-transcript-line-height);\n  letter-spacing: var(--blr-reader-letter-spacing);\n  color: var(--blr-reader-text);\n  text-align: left;\n}\n\n.blr-reading-complete-segment {\n  display: inline;\n  margin: 0;\n  padding: 1px 0;\n  border: 0;\n  border-radius: 2px;\n  background: transparent;\n  color: inherit;\n  font: inherit;\n  letter-spacing: inherit;\n  text-align: inherit;\n  cursor: pointer;\n  user-select: text;\n  -webkit-user-select: text;\n}\n\n.blr-reading-complete-segment:hover {\n  background: var(--blr-reader-accent-soft);\n}\n\n.blr-reading-complete-segment.is-active {\n  background: var(--blr-reader-accent-soft);\n  box-shadow: 0 0 0 2px var(--blr-reader-accent-soft);\n  -webkit-box-decoration-break: clone;\n  box-decoration-break: clone;\n  text-decoration-line: underline;\n  text-decoration-color: var(--blr-reader-accent);\n  text-decoration-thickness: 2px;\n  text-underline-offset: 4px;\n}\n\n/* Desktop reader: title/player with chapters below | transcript. */\n@media (min-width: 1181px) {\n  html[data-blr-reader-mode=\"1\"],\n  body[data-blr-reader-mode=\"1\"] {\n    --blr-reader-three-column-gap: clamp(16px, 1.4vw, 24px);\n    --blr-reader-three-column-half-gap: clamp(8px, 0.7vw, 12px);\n    --blr-reader-rail-width: clamp(176px, 13vw, 220px);\n    --blr-reader-transcript-width: clamp(320px, 24vw, 440px);\n    --blr-reader-center-offset: clamp(-110px, -5.5vw, -72px);\n    --blr-reader-main-width: max(\n      420px,\n      calc(\n        100vw - (var(--blr-reader-page-padding) * 2) - var(--blr-reader-transcript-width) -\n          var(--blr-reader-three-column-gap)\n      )\n    );\n    overflow: hidden !important;\n  }\n\n  /* Watch Later centers its own player column; align it with the reader's fixed transcript. */\n  body[data-blr-reader-mode=\"1\"] #app.playlist-app #mirror-vdcon {\n    box-sizing: border-box;\n    justify-content: flex-start !important;\n    padding-left: var(--blr-reader-page-padding) !important;\n    padding-right: var(--blr-reader-page-padding) !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #app.playlist-app .playlist-container--left {\n    flex: 0 0 var(--blr-reader-main-width) !important;\n    min-width: 0 !important;\n    width: var(--blr-reader-main-width) !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n    left: var(--blr-reader-player-left, var(--blr-reader-page-padding)) !important;\n    top: calc(var(--blr-reader-player-bottom, 72vh) + 12px) !important;\n    bottom: auto !important;\n    width: var(--blr-reader-player-width, var(--blr-reader-main-width)) !important;\n    height: min(112px, calc(100vh - var(--blr-reader-player-bottom, 72vh) - 36px)) !important;\n    min-height: 72px;\n    max-height: none !important;\n    grid-template-rows: auto minmax(0, 1fr);\n    gap: 6px;\n    padding: 10px 12px;\n    border-radius: 10px;\n    overflow: hidden;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail .blr-reading-list {\n    display: flex;\n    align-items: stretch;\n    gap: 8px;\n    min-width: 0;\n    padding: 0 0 4px;\n    overflow-x: auto;\n    overflow-y: hidden;\n    scrollbar-width: thin;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail .blr-reading-chapter {\n    flex: 0 0 auto;\n    width: auto;\n    min-width: 120px;\n    max-width: 190px;\n    padding: 6px 10px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .left-container,\n  body[data-blr-reader-mode=\"1\"] .scroll-sticky,\n  body[data-blr-reader-mode=\"1\"] #playerWrap,\n  body[data-blr-reader-mode=\"1\"] .player-wrap,\n  body[data-blr-reader-mode=\"1\"] h1.video-title,\n  body[data-blr-reader-mode=\"1\"] .video-info-container,\n  body[data-blr-reader-mode=\"1\"] #viewbox_report {\n    width: var(--blr-reader-main-width) !important;\n    max-width: var(--blr-reader-main-width) !important;\n    margin-left: auto !important;\n    margin-right: auto !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .left-container {\n    transform: translateX(var(--blr-reader-center-offset)) !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] h1.video-title {\n    margin-top: 28px !important;\n    margin-bottom: 14px !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #playerWrap,\n  body[data-blr-reader-mode=\"1\"] .player-wrap {\n    margin-top: 0 !important;\n    border: 1px solid var(--blr-reader-border);\n    border-radius: 4px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n    position: fixed !important;\n    top: var(--blr-reader-player-top, 98px) !important;\n    right: var(--blr-reader-page-padding) !important;\n    bottom: 24px !important;\n    left: auto !important;\n    width: var(--blr-reader-transcript-width) !important;\n    max-width: var(--blr-reader-transcript-width) !important;\n    min-height: 0 !important;\n    height: auto !important;\n    margin: 0 !important;\n    padding: 0 !important;\n    border: 1px solid var(--blr-reader-border) !important;\n    border-radius: 0 !important;\n    background: var(--blr-reader-surface-2) !important;\n    box-shadow: var(--blr-reader-shadow) !important;\n    overflow-y: auto !important;\n    scroll-padding-top: 46px;\n    z-index: 2147483645;\n  }\n\n  html[data-blr-reader-mode=\"1\"][data-blr-reader-transcript-visible=\"0\"]\n    #blr-reading-inline-host,\n  body[data-blr-reader-mode=\"1\"][data-blr-reader-transcript-visible=\"0\"]\n    #blr-reading-inline-host {\n    display: none !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-transcript-heading {\n    position: sticky;\n    top: 0;\n    display: flex;\n    align-items: center;\n    height: 38px;\n    margin: 0;\n    justify-content: space-between;\n    gap: 6px;\n    padding: 0 6px 0 10px;\n    box-sizing: border-box;\n    color: var(--blr-reader-muted);\n    background: var(--blr-reader-surface-2);\n    border-bottom: 1px solid var(--blr-reader-border);\n    font-size: 12px;\n    font-weight: 700;\n    letter-spacing: 0.08em;\n    z-index: 3;\n    pointer-events: auto;\n    user-select: none;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-heading-title {\n    min-width: 24px;\n    flex: 1 1 auto;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-heading-controls {\n    display: flex;\n    flex: 0 0 auto;\n    align-items: center;\n    gap: 4px;\n    letter-spacing: 0;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-tool-button {\n    -webkit-appearance: none;\n    appearance: none;\n    width: 26px;\n    height: 26px;\n    display: inline-flex;\n    flex: 0 0 26px;\n    align-items: center;\n    justify-content: center;\n    margin: 0;\n    padding: 0;\n    border: 1px solid var(--blr-reader-border);\n    border-radius: 50%;\n    background: var(--blr-reader-surface);\n    color: var(--blr-reader-text);\n    cursor: pointer;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-tool-button svg {\n    width: 17px;\n    height: 17px;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-tool-button:hover,\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-tool-button.is-active {\n    border-color: var(--blr-reader-accent);\n    color: var(--blr-reader-accent);\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-heading-controls\n    select {\n    -webkit-appearance: none;\n    appearance: none;\n    height: 26px;\n    flex: 0 0 auto;\n    padding: 0 23px 0 7px;\n    box-sizing: border-box;\n    border: 1px solid var(--blr-reader-border);\n    border-radius: 5px;\n    background-color: var(--blr-reader-surface);\n    background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m3 4.5 3 3 3-3' fill='none' stroke='%2364748b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\");\n    background-position: right 6px center;\n    background-repeat: no-repeat;\n    background-size: 12px 12px;\n    color: var(--blr-reader-text);\n    font-size: 12px;\n    font-weight: 500;\n    line-height: 1;\n    outline: none;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-heading-controls\n    select:focus {\n    border-color: var(--blr-reader-accent);\n  }\n\n  #blr-reading-transcript-language {\n    width: 72px;\n  }\n\n  #blr-reading-transcript-font-size {\n    width: 56px;\n  }\n\n  #blr-reading-transcript-font-weight {\n    width: 64px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-main,\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-transcript {\n    width: 100% !important;\n    max-width: none !important;\n    height: auto !important;\n    margin: 0 !important;\n    box-sizing: border-box;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-transcript {\n    padding: 8px 10px 24px;\n    overflow: visible;\n  }\n\n\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-tail-spacer {\n    min-height: 45vh;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle {\n    position: fixed;\n    top: var(--blr-reader-player-top, 88px);\n    bottom: 24px;\n    width: 14px;\n    z-index: 2147483646;\n    cursor: col-resize;\n    pointer-events: auto;\n    touch-action: none;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle::before {\n    content: \"\";\n    position: absolute;\n    top: 0;\n    bottom: 0;\n    left: 6px;\n    width: 2px;\n    border-radius: 999px;\n    background: transparent;\n    transition: background 0.16s ease, box-shadow 0.16s ease;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle:hover::before,\n  body[data-blr-reader-resizing] .blr-reading-resize-handle::before {\n    background: var(--blr-reader-accent);\n    box-shadow: 0 0 0 3px var(--blr-reader-accent-soft);\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle-left {\n    display: block !important;\n    left: var(--blr-reader-player-left, var(--blr-reader-page-padding)) !important;\n    right: auto !important;\n    top: calc(var(--blr-reader-player-bottom, 72vh) + 1px) !important;\n    bottom: auto !important;\n    width: var(--blr-reader-player-width, var(--blr-reader-main-width)) !important;\n    height: 10px;\n    cursor: row-resize;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle-left::before {\n    top: 4px;\n    right: 0;\n    bottom: auto;\n    left: 0;\n    width: auto;\n    height: 2px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle-right {\n    right: calc(\n      var(--blr-reader-page-padding) + var(--blr-reader-transcript-width) +\n        var(--blr-reader-three-column-half-gap) - 7px\n    );\n  }\n\n  body[data-blr-reader-resizing=\"transcript\"],\n  body[data-blr-reader-resizing=\"transcript\"] * {\n    cursor: col-resize !important;\n    user-select: none !important;\n  }\n\n  body[data-blr-reader-resizing=\"chapter\"],\n  body[data-blr-reader-resizing=\"chapter\"] * {\n    cursor: row-resize !important;\n    user-select: none !important;\n  }\n\n  body[data-blr-reader-transcript-visible=\"0\"] .blr-reading-resize-handle-right {\n    display: none !important;\n  }\n}\n\n@media (max-width: 1180px) {\n  .blr-reading-resize-handle {\n    display: none !important;\n  }\n}\n\n/* Timestamp-free transcript rows must not retain the desktop time column. */\n");
+  GM_addStyle("#viewbox_report.blr-page-reader-entry-host,\n.video-info-container.blr-page-reader-entry-host,\n.video-info-title.blr-page-reader-entry-host {\n  position: relative !important;\n}\n\n#viewbox_report.blr-page-reader-entry-host h1.video-title,\n.video-info-container.blr-page-reader-entry-host h1.video-title {\n  padding-right: 108px !important;\n  box-sizing: border-box;\n}\n\n#blr-page-reader-entry {\n  -webkit-appearance: none;\n  appearance: none;\n  position: absolute;\n  top: auto;\n  right: 2px;\n  bottom: 4px;\n  z-index: 20;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: 6px;\n  min-width: 82px;\n  height: 34px;\n  margin: 0;\n  padding: 0 14px;\n  box-sizing: border-box;\n  border: 1px solid rgba(0, 174, 236, 0.42);\n  border-radius: 9px;\n  background: rgba(255, 255, 255, 0.96);\n  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.08);\n  color: #18191c;\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", sans-serif;\n  font-size: 14px;\n  font-weight: 600;\n  line-height: 1;\n  cursor: pointer;\n  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease,\n    transform 0.16s ease, box-shadow 0.16s ease;\n}\n\n#blr-page-reader-entry svg {\n  width: 17px;\n  height: 17px;\n  flex: 0 0 auto;\n  fill: none;\n  stroke: currentColor;\n  stroke-width: 1.8;\n  stroke-linecap: round;\n  stroke-linejoin: round;\n}\n\n#blr-page-reader-entry:hover {\n  border-color: #00aeec;\n  background: #00aeec;\n  color: #fff;\n  box-shadow: 0 7px 20px rgba(0, 174, 236, 0.22);\n  transform: translateY(-1px);\n}\n\n#blr-page-reader-entry:active {\n  transform: translateY(0);\n}\n\n#blr-page-reader-entry:focus-visible {\n  outline: 2px solid rgba(0, 174, 236, 0.42);\n  outline-offset: 2px;\n}\n\n#blr-page-reader-entry:disabled,\n#blr-page-reader-entry.is-loading {\n  cursor: wait;\n  opacity: 0.68;\n  transform: none;\n}\n\nhtml[data-blr-reader-mode=\"1\"] #blr-page-reader-entry,\nbody[data-blr-reader-mode=\"1\"] #blr-page-reader-entry {\n  display: none !important;\n}\n\n@media (max-width: 760px) {\n  #viewbox_report.blr-page-reader-entry-host h1.video-title,\n  .video-info-container.blr-page-reader-entry-host h1.video-title {\n    padding-right: 0 !important;\n  }\n\n  #blr-page-reader-entry {\n    position: relative;\n    top: auto;\n    right: auto;\n    bottom: auto;\n    margin-top: 8px;\n  }\n}\n\n#blr-native-transcript-panel {\n  --blr-native-transcript-body-height: 439px;\n  --blr-native-transcript-font-size: 14px;\n  --blr-native-transcript-font-weight: 500;\n  --blr-native-transcript-surface: var(--bg1, #fff);\n  --blr-native-transcript-text: var(--text1, #18191c);\n  --blr-native-transcript-border: var(--line_regular, #e3e5e7);\n  --blr-native-transcript-active: rgba(0, 174, 236, 0.12);\n  width: 100%;\n  min-width: 0;\n  position: relative;\n  z-index: 20;\n  margin: 0 0 12px;\n  box-sizing: border-box;\n  isolation: isolate;\n  pointer-events: auto;\n  color: var(--text1, #18191c);\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", sans-serif;\n}\n\n#blr-native-transcript-panel button,\n#blr-native-transcript-panel select,\n#blr-native-transcript-panel .blr-native-transcript-body,\n#blr-native-transcript-panel .blr-native-transcript-list {\n  pointer-events: auto;\n}\n\n.blr-native-transcript-header {\n  width: 100%;\n  height: 44px;\n  display: flex;\n  align-items: center;\n  gap: 4px;\n  margin: 0;\n  padding: 0 6px 0 10px;\n  box-sizing: border-box;\n  border-radius: 6px;\n  background: var(--bg2, #f1f2f3);\n  color: var(--text1, #18191c);\n  font: inherit;\n}\n\n.blr-native-transcript-title-button {\n  -webkit-appearance: none;\n  appearance: none;\n  min-width: 32px;\n  flex: 1 1 auto;\n  align-self: stretch;\n  margin: 0;\n  padding: 0;\n  overflow: hidden;\n  border: 0;\n  background: transparent;\n  color: inherit;\n  font: inherit;\n  font-size: 15px;\n  font-weight: 500;\n  line-height: 1;\n  text-align: left;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  cursor: pointer;\n}\n\n.blr-native-transcript-controls {\n  min-width: 0;\n  display: flex;\n  flex: 0 0 auto;\n  align-items: center;\n  gap: 4px;\n}\n\n.blr-native-transcript-return-button,\n.blr-native-transcript-theme-button {\n  -webkit-appearance: none;\n  appearance: none;\n  width: 26px;\n  height: 26px;\n  display: inline-flex;\n  flex: 0 0 26px;\n  align-items: center;\n  justify-content: center;\n  margin: 0;\n  padding: 0;\n  border: 1px solid var(--line_regular, #e3e5e7);\n  border-radius: 50%;\n  background: var(--bg1, #fff);\n  color: var(--text1, #18191c);\n  cursor: pointer;\n}\n\n.blr-native-transcript-return-button svg,\n.blr-native-transcript-theme-button svg {\n  width: 17px;\n  height: 17px;\n}\n\n.blr-native-transcript-return-button:hover,\n.blr-native-transcript-return-button.is-active,\n.blr-native-transcript-theme-button:hover,\n.blr-native-transcript-theme-button.is-active {\n  border-color: var(--brand_blue, #00aeec);\n  color: var(--brand_blue, #00aeec);\n}\n\n.blr-native-transcript-controls select {\n  -webkit-appearance: none;\n  appearance: none;\n  flex: 0 0 auto;\n  height: 28px;\n  min-width: 0;\n  padding: 0 25px 0 8px;\n  box-sizing: border-box;\n  border: 1px solid var(--line_regular, #e3e5e7);\n  border-radius: 5px;\n  background-color: var(--bg1, #fff);\n  background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m3 4.5 3 3 3-3' fill='none' stroke='%2318191c' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\");\n  background-position: right 7px center;\n  background-repeat: no-repeat;\n  background-size: 12px 12px;\n  color: var(--text1, #18191c);\n  font-size: 12px;\n  outline: none;\n}\n\n.blr-native-transcript-controls select:focus {\n  border-color: var(--brand_blue, #00aeec);\n}\n\n#blr-native-transcript-select {\n  width: 72px;\n}\n\n#blr-native-transcript-font-size {\n  width: 56px;\n}\n\n#blr-native-transcript-font-weight {\n  width: 64px;\n}\n\n.blr-native-transcript-arrow-button {\n  -webkit-appearance: none;\n  appearance: none;\n  width: 28px;\n  height: 28px;\n  display: inline-flex;\n  flex: 0 0 28px;\n  align-items: center;\n  justify-content: center;\n  margin: 0;\n  padding: 0;\n  border: 0;\n  border-radius: 4px;\n  background: transparent;\n  color: inherit;\n  cursor: pointer;\n}\n\n.blr-native-transcript-title-button:focus-visible,\n.blr-native-transcript-return-button:focus-visible,\n.blr-native-transcript-theme-button:focus-visible,\n.blr-native-transcript-arrow-button:focus-visible {\n  outline: 2px solid var(--brand_blue, #00aeec);\n  outline-offset: 1px;\n}\n\n.blr-native-transcript-arrow-button:hover {\n  background: rgba(0, 0, 0, 0.06);\n}\n\n.blr-native-transcript-arrow {\n  width: 16px;\n  height: 16px;\n  flex: 0 0 auto;\n  fill: none;\n  stroke: currentColor;\n  stroke-width: 1.6;\n  stroke-linecap: round;\n  stroke-linejoin: round;\n  transform: rotate(90deg);\n  transition: transform 0.18s ease;\n}\n\n#blr-native-transcript-panel.is-folded .blr-native-transcript-arrow {\n  transform: rotate(0deg);\n}\n\n.blr-native-transcript-empty-notice {\n  position: absolute;\n  top: calc(100% - 4px);\n  left: 50%;\n  z-index: 1;\n  transform: translateX(-50%);\n  padding: 4px 8px;\n  border-radius: 8px;\n  background: var(--bg1, #fff);\n  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);\n  color: #00aeec;\n  font-size: 13px;\n  font-weight: 600;\n  line-height: 20px;\n  white-space: nowrap;\n  pointer-events: none;\n  animation: blr-native-transcript-notice-fade 2.2s ease-out forwards;\n}\n\n@keyframes blr-native-transcript-notice-fade {\n  0% { opacity: 0; }\n  8%, 65% { opacity: 1; }\n  100% { opacity: 0; }\n}\n\n.blr-native-transcript-body {\n  height: var(--blr-native-transcript-body-height);\n  min-height: 0;\n  display: flex;\n  flex-direction: column;\n  margin-top: 12px;\n  overflow: hidden;\n  box-sizing: border-box;\n  border: 1px solid var(--blr-native-transcript-border);\n  border-radius: 6px;\n  background: var(--blr-native-transcript-surface);\n  color: var(--blr-native-transcript-text);\n}\n\n#blr-native-transcript-panel[data-theme=\"dark\"] {\n  --blr-native-transcript-surface: #0f172a;\n  --blr-native-transcript-text: #e5eefb;\n  --blr-native-transcript-border: rgba(148, 163, 184, 0.28);\n  --blr-native-transcript-active: rgba(0, 174, 236, 0.16);\n}\n\n#blr-native-transcript-panel[data-theme=\"paper\"] {\n  --blr-native-transcript-surface: #f4eddc;\n  --blr-native-transcript-text: #3b3124;\n  --blr-native-transcript-border: rgba(180, 155, 112, 0.34);\n  --blr-native-transcript-active: rgba(0, 174, 236, 0.14);\n}\n\n.blr-native-transcript-body[hidden] {\n  display: none !important;\n}\n\n.blr-native-transcript-list {\n  overflow-anchor: none;\n  scroll-behavior: auto;\n  min-height: 0;\n  flex: 1 1 auto;\n  overflow-x: hidden;\n  overflow-y: auto;\n  overscroll-behavior: contain;\n  scrollbar-width: thin;\n  scrollbar-color: rgba(148, 153, 160, 0.72) transparent;\n}\n\n.blr-native-transcript-list::-webkit-scrollbar {\n  width: 6px;\n}\n\n.blr-native-transcript-list::-webkit-scrollbar-track {\n  background: transparent;\n}\n\n.blr-native-transcript-list::-webkit-scrollbar-thumb {\n  border-radius: 999px;\n  background: rgba(148, 153, 160, 0.72);\n}\n\n.blr-native-transcript-complete {\n  padding: 12px 14px 36px;\n  color: var(--blr-native-transcript-text);\n  font-size: var(--blr-native-transcript-font-size);\n  font-weight: var(--blr-native-transcript-font-weight);\n  line-height: 1.8;\n  letter-spacing: 0;\n  text-align: left;\n  word-break: break-word;\n}\n\n.blr-native-transcript-segment {\n  -webkit-appearance: none;\n  appearance: none;\n  display: inline;\n  margin: 0;\n  padding: 1px 0;\n  border: 0;\n  border-radius: 2px;\n  background: transparent;\n  color: inherit;\n  font: inherit;\n  letter-spacing: inherit;\n  text-align: inherit;\n  cursor: pointer;\n  user-select: text;\n  -webkit-user-select: text;\n}\n\n.blr-native-transcript-segment:hover {\n  background: rgba(0, 174, 236, 0.1);\n}\n\n.blr-native-transcript-segment.is-active {\n  background: var(--blr-native-transcript-active);\n  text-decoration-line: underline;\n  text-decoration-color: var(--brand_blue, #00aeec);\n  text-decoration-thickness: 2px;\n  text-underline-offset: 4px;\n}\n\n.blr-native-transcript-segment:focus-visible {\n  outline: 2px solid rgba(0, 174, 236, 0.42);\n  outline-offset: 1px;\n}\n\n.blr-native-transcript-state {\n  min-height: 100%;\n  display: flex;\n  flex: 1 1 auto;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  gap: 12px;\n  padding: 24px;\n  box-sizing: border-box;\n  color: var(--text3, #9499a0);\n  font-size: 13px;\n  text-align: center;\n}\n\n.blr-native-transcript-state button {\n  height: 30px;\n  padding: 0 14px;\n  border: 1px solid var(--brand_blue, #00aeec);\n  border-radius: 5px;\n  background: transparent;\n  color: var(--brand_blue, #00aeec);\n  cursor: pointer;\n}\n\n.blr-native-transcript-state button:hover {\n  background: rgba(0, 174, 236, 0.08);\n}\n\n#blr-panel {\n  position: fixed;\n  right: 16px;\n  top: 72px;\n  width: min(420px, calc(100vw - 24px));\n  height: min(820px, calc(100vh - 88px));\n  z-index: 2147483647;\n  background: #f1f1f1;\n  border: 1px solid #d8d8d8;\n  border-radius: 14px;\n  box-shadow: 0 24px 46px rgba(0, 0, 0, 0.24);\n  padding: 12px;\n  box-sizing: border-box;\n  display: none;\n  flex-direction: column;\n  gap: 8px;\n  font-family: -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"PingFang SC\", \"Helvetica Neue\",\n    Arial, sans-serif;\n}\n\n#blr-panel.open {\n  display: flex;\n}\n\n.blr-header {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 0 0 4px;\n}\n\n.blr-header strong {\n  font-size: 17px;\n  font-weight: 600;\n  letter-spacing: 0.01em;\n  color: #3d3d3d;\n}\n\n.blr-header-actions {\n  display: flex;\n  gap: 6px;\n}\n\n.blr-header button {\n  border: 1px solid #cfcfcf;\n  background: #f8f8f8;\n  border-radius: 10px;\n  padding: 7px 10px;\n  cursor: pointer;\n  color: #4a4a4a;\n}\n\n.blr-status {\n  margin: 0;\n  font-size: 12px;\n  color: #555;\n  background: #e8e8e8;\n  border-radius: 8px;\n  padding: 7px 8px;\n}\n\n.blr-props-head {\n  font-size: 15px;\n  font-weight: 600;\n  color: #4a4a4a;\n  margin-top: 0;\n}\n\n.blr-meta {\n  border: 1px solid #d5d5d5;\n  border-radius: 10px;\n  padding: 8px 10px;\n  background: #f7f7f7;\n  display: grid;\n  gap: 6px;\n  font-size: 13px;\n  color: #3f3f3f;\n}\n\n.blr-meta-item {\n  word-break: break-word;\n}\n\n.blr-label {\n  font-size: 12px;\n  font-weight: 600;\n  color: #4d4d4d;\n  margin-top: 2px;\n}\n\n#blr-subtitle-select {\n  height: 36px;\n  border: 1px solid #cfcfcf;\n  border-radius: 8px;\n  padding: 0 10px;\n  background: #fff;\n  color: #2d2d2d;\n}\n\n.blr-player-ai-wrap {\n  align-items: center;\n  background: rgba(20, 24, 32, 0.68);\n  border: 1px solid rgba(255, 255, 255, 0.18);\n  border-radius: 999px;\n  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);\n  display: inline-flex;\n  flex: 0 0 var(--blr-player-ai-action-hit-size, 28px);\n  height: var(--blr-player-ai-action-hit-size, 28px);\n  justify-content: center;\n  margin: 0;\n  min-width: var(--blr-player-ai-action-hit-size, 28px);\n  opacity: 0;\n  overflow: hidden;\n  pointer-events: none;\n  position: absolute;\n  right: 14px;\n  top: 50%;\n  transform: translate(8px, -50%);\n  transition: opacity 0.18s ease, background-color 0.18s ease, transform 0.18s ease;\n  width: var(--blr-player-ai-action-hit-size, 28px);\n  z-index: 30;\n}\n\n.blr-player-ai-wrap.is-active,\n.blr-player-ai-wrap:hover,\n.blr-player-ai-wrap:focus-within {\n  background: rgba(20, 24, 32, 0.78);\n  opacity: 1;\n  pointer-events: auto;\n  transform: translate(0, -50%);\n}\n\n#blr-player-ai-quick-action {\n  -webkit-appearance: none;\n  appearance: none;\n  align-items: center;\n  align-self: center;\n  background: transparent;\n  border: 0;\n  border-radius: 0;\n  box-sizing: border-box;\n  color: var(--blr-player-ai-action-color, currentColor);\n  display: inline-flex;\n  flex: 0 0 auto;\n  justify-content: center;\n  width: 100%;\n  height: 100%;\n  cursor: pointer;\n  line-height: 0;\n  margin-bottom: 0;\n  margin-top: 0;\n  min-width: 0;\n  overflow: hidden;\n  padding: 0;\n  position: relative;\n  top: 0;\n  vertical-align: top;\n  transition: transform 0.16s ease, color 0.16s ease, opacity 0.16s ease;\n}\n\n#blr-player-ai-quick-action svg {\n  width: var(--blr-player-ai-action-icon-size, 24px);\n  height: var(--blr-player-ai-action-icon-size, 24px);\n  display: block;\n  flex: 0 0 auto;\n  stroke: currentColor;\n  fill: none;\n  stroke-linecap: round;\n  stroke-linejoin: round;\n}\n\n#blr-player-ai-quick-action:hover {\n  color: var(--blr-player-ai-action-hover-color, var(--blr-player-ai-action-color, currentColor));\n}\n\n#blr-player-ai-quick-action:disabled {\n  opacity: 0.62;\n  cursor: wait;\n  transform: none;\n}\n\n.blr-confirm-overlay {\n  align-items: center;\n  background: rgba(17, 24, 39, 0.28);\n  display: flex;\n  inset: 0;\n  justify-content: center;\n  padding: 18px;\n  position: fixed;\n  z-index: 2147483647;\n}\n\n.blr-confirm-dialog {\n  background: #ffffff;\n  border: 1px solid #e5e7eb;\n  border-radius: 16px;\n  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.22);\n  color: #111827;\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;\n  max-width: 360px;\n  padding: 18px;\n  width: calc(100vw - 36px);\n}\n\n.blr-confirm-title {\n  font-size: 15px;\n  font-weight: 700;\n  margin-bottom: 8px;\n}\n\n.blr-confirm-body {\n  color: #4b5563;\n  font-size: 13px;\n  margin-bottom: 8px;\n}\n\n.blr-confirm-path {\n  background: #f7f8fb;\n  border: 1px solid #edf0f4;\n  border-radius: 10px;\n  color: #374151;\n  font-size: 12px;\n  line-height: 1.45;\n  max-height: 96px;\n  overflow: auto;\n  padding: 9px 10px;\n  word-break: break-all;\n}\n\n.blr-confirm-actions {\n  display: flex;\n  gap: 8px;\n  justify-content: flex-end;\n  margin-top: 14px;\n}\n\n.blr-confirm-actions button {\n  border: 1px solid #d9dee7;\n  border-radius: 10px;\n  cursor: pointer;\n  font-size: 13px;\n  height: 34px;\n  padding: 0 14px;\n}\n\n.blr-confirm-cancel {\n  background: #ffffff;\n  color: #374151;\n}\n\n.blr-confirm-primary {\n  background: #111827;\n  border-color: #111827 !important;\n  color: #ffffff;\n}\n\n#blr-preview {\n  width: 100%;\n  flex: 1;\n  min-height: 180px;\n  box-sizing: border-box;\n  border: 1px solid #d0d0d0;\n  border-radius: 10px;\n  padding: 10px;\n  resize: vertical;\n  font-size: 13px;\n  line-height: 1.55;\n  background: #fff;\n  color: #2f2f2f;\n  font-family: \"SF Mono\", \"JetBrains Mono\", \"PingFang SC\", Menlo, Monaco, Consolas, monospace;\n}\n\n.blr-actions {\n  display: grid;\n  grid-template-columns: repeat(2, minmax(0, 1fr));\n  gap: 8px;\n  margin-top: 0;\n}\n\n.blr-actions button {\n  border: 1px solid #cfcfcf;\n  background: #f8f8f8;\n  border-radius: 9px;\n  padding: 8px 8px;\n  cursor: pointer;\n  color: #3d3d3d;\n  font-size: 13px;\n}\n\n#blr-send-btn {\n  grid-column: span 2;\n  border: 1px solid #a88fff;\n  background: linear-gradient(180deg, #9c82ff 0%, #8f75ef 100%);\n  color: #fff;\n  font-weight: 600;\n}\n\n.blr-actions button:disabled {\n  cursor: not-allowed;\n  opacity: 0.55;\n}\n\n.blr-message {\n  margin: 0;\n  font-size: 12px;\n  color: #0f766e;\n  min-height: 18px;\n  padding: 0 2px;\n}\n\n#blr-reading-view {\n  position: fixed;\n  left: 16px;\n  right: 16px;\n  bottom: 16px;\n  height: min(76vh, 860px);\n  z-index: 2147483646;\n  display: none;\n  padding: 20px 22px;\n  box-sizing: border-box;\n  background: #fff;\n  border: 1px solid #e5e7eb;\n  border-radius: 18px;\n  box-shadow: 0 28px 60px rgba(15, 23, 42, 0.16);\n  font-family: -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"PingFang SC\", \"Helvetica Neue\",\n    Arial, sans-serif;\n}\n\n#blr-reading-view.open {\n  display: block;\n}\n\n/* Move the player and subtitle panel together while the page dissolves. */\nhtml[data-blr-reader-transition]::view-transition {\n  pointer-events: none;\n}\n\nhtml[data-blr-reader-transition=\"enter\"]::view-transition-group(root),\nhtml[data-blr-reader-transition=\"enter\"]::view-transition-group(blr-reader-player),\nhtml[data-blr-reader-transition=\"enter\"]::view-transition-group(blr-reader-transcript) {\n  animation-duration: 320ms;\n  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);\n}\n\nhtml[data-blr-reader-transition=\"enter\"]::view-transition-old(root) {\n  animation: blr-reader-fade-out 140ms ease-out both;\n}\n\nhtml[data-blr-reader-transition=\"enter\"]::view-transition-new(root) {\n  animation: blr-reader-fade-in 240ms ease-out both;\n}\n\nhtml[data-blr-reader-transition]::view-transition-image-pair(blr-reader-player),\nhtml[data-blr-reader-transition]::view-transition-image-pair(blr-reader-transcript) {\n  isolation: auto;\n}\n\nhtml[data-blr-reader-transition=\"enter\"]::view-transition-old(blr-reader-player),\nhtml[data-blr-reader-transition=\"enter\"]::view-transition-old(blr-reader-transcript) {\n  animation: blr-reader-fade-out 140ms ease-out both;\n}\n\nhtml[data-blr-reader-transition=\"enter\"]::view-transition-new(blr-reader-player),\nhtml[data-blr-reader-transition=\"enter\"]::view-transition-new(blr-reader-transcript) {\n  animation: blr-reader-fade-in 180ms ease-out both;\n}\n\nhtml[data-blr-reader-transition]::view-transition-new(blr-reader-player),\nhtml[data-blr-reader-transition]::view-transition-new(blr-reader-transcript) {\n  mix-blend-mode: normal;\n  height: 100%;\n  object-fit: fill;\n}\n\n/* Ease into and out of the return movement instead of front-loading it. */\nhtml[data-blr-reader-transition=\"exit\"]::view-transition-group(root) {\n  animation: none;\n}\n\nhtml[data-blr-reader-transition=\"exit\"]::view-transition-group(blr-reader-transcript) {\n  animation-duration: 300ms;\n  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n}\n\n/* Translate both page templates without stretching either panel's text. The\n   fixed group accommodates both sizes while their original layouts crossfade. */\nhtml[data-blr-reader-transcript-transition]::view-transition-group(blr-reader-transcript) {\n  width: var(--blr-transcript-width) !important;\n  height: var(--blr-transcript-height) !important;\n  top: 0 !important;\n  left: 0 !important;\n  transform-origin: 0 0 !important;\n  animation-name: blr-reader-transcript-move !important;\n  animation-fill-mode: both !important;\n}\n\nhtml[data-blr-reader-transcript-transition]::view-transition-old(blr-reader-transcript) {\n  width: var(--blr-transcript-from-width) !important;\n  height: var(--blr-transcript-from-height) !important;\n  object-fit: fill;\n  mix-blend-mode: normal;\n}\n\nhtml[data-blr-reader-transcript-transition]::view-transition-new(blr-reader-transcript) {\n  width: var(--blr-transcript-to-width) !important;\n  height: var(--blr-transcript-to-height) !important;\n  object-fit: fill;\n}\n\n@keyframes blr-reader-transcript-move {\n  from { transform: translate(var(--blr-transcript-from-x), var(--blr-transcript-from-y)); }\n  to { transform: translate(var(--blr-transcript-to-x), var(--blr-transcript-to-y)); }\n}\n\n/* Use one transform on a fixed-size bitmap. The default shared-element\n   width/height animation can resize the native video surface a second time. */\nhtml[data-blr-reader-transition=\"exit\"]::view-transition-group(blr-reader-player) {\n  width: var(--blr-exit-player-width) !important;\n  height: var(--blr-exit-player-height) !important;\n  top: 0 !important;\n  left: 0 !important;\n  transform-origin: 0 0 !important;\n  animation: blr-reader-player-return 300ms cubic-bezier(0.4, 0, 0.2, 1) both !important;\n}\n\nhtml[data-blr-reader-transition=\"exit\"]::view-transition-image-pair(blr-reader-player) {\n  width: 100%;\n  height: 100%;\n  animation: none !important;\n}\n\n@keyframes blr-reader-player-return {\n  from {\n    transform: translate(var(--blr-exit-player-from-x), var(--blr-exit-player-from-y)) scale(1);\n  }\n  to {\n    transform: translate(var(--blr-exit-player-to-x), var(--blr-exit-player-to-y))\n      scale(var(--blr-exit-player-scale-x), var(--blr-exit-player-scale-y));\n  }\n}\n\nhtml[data-blr-reader-transition=\"exit\"]::view-transition-old(root) {\n  animation: blr-reader-fade-out 180ms ease-in both;\n}\n\nhtml[data-blr-reader-transition=\"exit\"]::view-transition-new(root) {\n  animation: blr-reader-fade-in 300ms cubic-bezier(0.4, 0, 0.2, 1) both;\n}\n\n/* Move a stable captured frame. The native player's live surface can resize\n   internally during exit and otherwise shrink twice inside the moving group. */\nhtml[data-blr-reader-transition=\"exit\"]::view-transition-old(blr-reader-player) {\n  animation: none !important;\n  transform: none !important;\n  opacity: 1;\n  width: 100%;\n  height: 100%;\n  object-fit: fill;\n  mix-blend-mode: normal;\n}\n\nhtml[data-blr-reader-transition=\"exit\"]::view-transition-new(blr-reader-player) {\n  animation: none;\n  opacity: 0;\n}\n\n/* Native layout changes must finish before the transition captures its target.\n   The shared snapshot handles motion; host-page CSS must not add another one. */\nhtml[data-blr-reader-transition=\"exit\"] :is(\n  .left-container, .scroll-sticky, #playerWrap, .player-wrap, #bilibili-player,\n  .bpx-player-container, .bpx-player-video-area, .bpx-player-primary-area, .bpx-player-inner\n) {\n  transition: none !important;\n  animation: none !important;\n}\n\nhtml[data-blr-reader-transition=\"exit\"]::view-transition-old(blr-reader-transcript) {\n  animation: blr-reader-fade-out 300ms cubic-bezier(0.4, 0, 0.2, 1) both;\n  mix-blend-mode: normal;\n  height: 100%;\n  object-fit: fill;\n}\n\nhtml[data-blr-reader-transition=\"exit\"]::view-transition-new(blr-reader-transcript) {\n  animation: blr-reader-fade-in 300ms cubic-bezier(0.4, 0, 0.2, 1) both;\n}\n\n/* Lightweight entrance on browsers without snapshot transitions. */\nhtml[data-blr-reader-entering=\"1\"] #blr-reading-inline-host,\nhtml[data-blr-reader-entering=\"1\"] #blr-reading-view[data-blr-reader-ready=\"1\"] .blr-reading-topbar {\n  animation: blr-reader-panel-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;\n}\n\n@keyframes blr-reader-fade-in {\n  from { opacity: 0; }\n  to { opacity: 1; }\n}\n\n@keyframes blr-reader-fade-out {\n  from { opacity: 1; }\n  to { opacity: 0; }\n}\n\n@keyframes blr-reader-panel-in {\n  from { opacity: 0; transform: translateY(8px); }\n  to { opacity: 1; transform: translateY(0); }\n}\n\n@media (prefers-reduced-motion: reduce) {\n  html[data-blr-reader-transition]::view-transition-group(*),\n  html[data-blr-reader-transition]::view-transition-old(*),\n  html[data-blr-reader-transition]::view-transition-new(*),\n  html[data-blr-reader-entering=\"1\"] #blr-reading-inline-host,\n  html[data-blr-reader-entering=\"1\"] #blr-reading-view .blr-reading-topbar {\n    animation: none !important;\n  }\n}\n\n#blr-reading-view[data-blr-reader-ready=\"0\"] {\n  opacity: 0;\n  visibility: hidden;\n  pointer-events: none;\n}\n\n.blr-reading-layout {\n  min-height: 0;\n  height: 100%;\n  display: grid;\n  grid-template-columns: 240px minmax(0, 1fr);\n  gap: 28px;\n}\n\n.blr-reading-rail {\n  min-height: 0;\n  display: grid;\n  grid-template-rows: auto auto minmax(0, 1fr);\n  gap: 10px;\n  align-content: start;\n}\n\n.blr-reading-stage {\n  min-height: 0;\n  display: grid;\n  grid-template-rows: auto auto minmax(320px, 1fr) minmax(0, 1fr);\n  gap: 14px;\n}\n\n.blr-reading-header {\n  display: flex;\n  align-items: flex-start;\n  justify-content: space-between;\n  gap: 18px;\n}\n\n.blr-reading-header-copy {\n  min-width: 0;\n}\n\n.blr-reading-eyebrow {\n  font-size: 11px;\n  font-weight: 700;\n  letter-spacing: 0.08em;\n  color: #9ca3af;\n  text-transform: uppercase;\n}\n\n.blr-reading-title {\n  display: block;\n  margin: 0;\n  font-size: 16px;\n  line-height: 1.15;\n  color: #0f172a;\n  word-break: break-word;\n}\n\n.blr-reading-topbar,\n.blr-reading-heading-group {\n  min-width: 0;\n}\n\n.blr-reading-page-title {\n  color: var(--blr-reader-text, #0f172a);\n  display: -webkit-box;\n  font-size: 18px;\n  font-weight: 500;\n  line-height: 1.2;\n  overflow: hidden;\n  overflow-wrap: anywhere;\n  -webkit-box-orient: vertical;\n  -webkit-line-clamp: 2;\n}\n\n.blr-reading-episode-title {\n  color: var(--blr-reader-muted, #64748b);\n  display: -webkit-box;\n  font-size: 14px;\n  font-weight: 600;\n  line-height: 1.3;\n  overflow: hidden;\n  overflow-wrap: anywhere;\n  -webkit-box-orient: vertical;\n  -webkit-line-clamp: 2;\n}\n\n.blr-reading-collection-nav {\n  align-items: flex-start;\n  display: flex;\n  gap: 10px;\n  min-width: 0;\n}\n\n.blr-reading-episode-title[hidden],\n.blr-reading-collection-nav[hidden] {\n  display: none !important;\n}\n\n.blr-reading-collection-list {\n  align-content: flex-start;\n  align-items: center;\n  display: flex;\n  flex: 1 1 auto;\n  flex-wrap: wrap;\n  gap: 6px;\n  height: 70px;\n  min-width: 0;\n  overflow-x: hidden;\n  overflow-y: auto;\n  overscroll-behavior-y: contain;\n  scrollbar-width: none;\n}\n\n.blr-reading-collection-list::-webkit-scrollbar {\n  display: none;\n}\n\n.blr-reading-collection-item {\n  align-items: center;\n  background: transparent;\n  border: 1px solid var(--blr-reader-border, #e2e8f0);\n  border-radius: 999px;\n  color: var(--blr-reader-muted, #64748b);\n  cursor: pointer;\n  display: inline-flex;\n  flex: 0 0 auto;\n  gap: 6px;\n  height: 32px;\n  max-width: 260px;\n  padding: 0 10px 0 7px;\n  font-weight: 600;\n}\n\n.blr-reading-collection-item:hover {\n  border-color: var(--blr-reader-accent, #00aeec);\n  color: var(--blr-reader-text, #0f172a);\n}\n\n.blr-reading-collection-item.is-active {\n  background: var(--blr-reader-accent-soft, rgba(0, 174, 236, 0.12));\n  border-color: var(--blr-reader-accent, #00aeec);\n  color: var(--blr-reader-accent, #00aeec);\n}\n\n.blr-reading-collection-index {\n  align-items: center;\n  background: color-mix(in srgb, currentColor 10%, transparent);\n  border-radius: 999px;\n  display: inline-flex;\n  flex: 0 0 auto;\n  font-size: 10px;\n  font-weight: 700;\n  height: 18px;\n  justify-content: center;\n  min-width: 18px;\n  padding: 0 4px;\n}\n\n.blr-reading-collection-item-title {\n  font-size: 12px;\n  font-weight: 600;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.blr-reading-meta,\n.blr-reading-status {\n  font-size: 14px;\n  line-height: 1.5;\n  color: #6b7280;\n}\n\n.blr-reading-meta {\n  margin-top: 8px;\n}\n\n.blr-reading-actions {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex-wrap: wrap;\n  justify-content: flex-end;\n  transition: opacity 0.2s ease;\n}\n\n.blr-reading-actions[data-blr-icon-hidden=\"1\"] {\n  opacity: 0;\n  pointer-events: none;\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .blr-reading-actions {\n    transition: none;\n  }\n}\n\n.blr-reading-actions button {\n  border: 1px solid #e5e7eb;\n  background: #fff;\n  border-radius: 999px;\n  min-height: 36px;\n  padding: 0 14px;\n  font-size: 13px;\n  color: #1f2937;\n  box-sizing: border-box;\n}\n\n.blr-reading-actions button {\n  cursor: pointer;\n}\n\n\n\n\n\n.blr-reading-icon-btn {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 34px;\n  height: 34px;\n  border: 1px solid #e5e7eb;\n  background: #fff;\n  border-radius: 8px;\n  cursor: pointer;\n  padding: 0;\n  color: #1f2937;\n}\n\n.blr-reading-icon-btn svg {\n  width: 18px;\n  height: 18px;\n  flex: 0 0 auto;\n}\n\n.blr-reading-icon-btn:hover {\n  background: #f3f4f6;\n  border-color: #d1d5db;\n}\n\n.blr-reading-icon-btn.is-active {\n  background: var(--blr-reader-accent-soft);\n  border-color: var(--blr-reader-accent);\n  color: var(--blr-reader-accent);\n}\n\n\n\n\n\n\n\n\n\n\n\n.blr-reading-list,\n.blr-reading-transcript {\n  min-height: 0;\n  overflow: auto;\n}\n\n.blr-reading-list {\n  padding-right: 6px;\n}\n\n.blr-reading-player-shell {\n  min-height: 0;\n  display: flex;\n  justify-content: center;\n  align-items: flex-start;\n  pointer-events: none;\n}\n\n.blr-reading-player-slot {\n  width: min(100%, 960px);\n  aspect-ratio: 16 / 9;\n  max-height: 100%;\n  min-height: 0;\n  overflow: hidden;\n  background: #fff;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  pointer-events: none;\n}\n\n.blr-reading-player-slot > * {\n  width: 100% !important;\n  max-width: 100% !important;\n  height: 100% !important;\n}\n\n.blr-reading-player-slot > video {\n  width: 100% !important;\n  height: 100% !important;\n  display: block;\n  background: #000;\n  object-fit: contain;\n}\n\n.blr-reading-player-slot #bilibili-player,\n.blr-reading-player-slot .bpx-player-container,\n.blr-reading-player-slot .bpx-player-video-area,\n.blr-reading-player-slot .bpx-player-primary-area,\n.blr-reading-player-slot .bpx-player-inner {\n  width: 100% !important;\n  height: 100% !important;\n}\n\n.blr-reading-main {\n  min-height: 0;\n  overflow: hidden;\n  display: flex;\n  justify-content: center;\n  pointer-events: auto;\n}\n\n.blr-reading-transcript {\n  width: min(100%, 960px);\n  height: 100%;\n  max-height: 100%;\n  margin: 0 auto;\n  padding: 6px 8px 12px;\n  overflow-x: hidden;\n  overflow-y: auto;\n  pointer-events: auto;\n}\n\n.blr-reading-chapter {\n  width: 100%;\n  border: 0;\n  background: transparent;\n  border-radius: 14px;\n  text-align: left;\n  cursor: pointer;\n  user-select: text;\n  -webkit-user-select: text;\n}\n\n.blr-reading-chapter {\n  display: grid;\n  gap: 4px;\n  padding: 8px 10px;\n  color: #4b5563;\n}\n\n\n\n.blr-reading-chapter:hover {\n  background: #f9fafb;\n}\n\n.blr-reading-chapter.is-active {\n  background: transparent;\n  box-shadow: none;\n}\n\n.blr-reading-chapter-time {\n  font-size: var(--blr-reader-transcript-font-size);\n  font-weight: 600;\n  color: var(--blr-reader-accent, #00aeec);\n  padding-top: 2px;\n  line-height: 1.4;\n}\n\n.blr-reading-chapter-title {\n  font-size: 13px;\n  line-height: 1.45;\n  color: inherit;\n}\n\n.blr-reading-chapter.is-active .blr-reading-chapter-title {\n  text-decoration-line: underline;\n  text-decoration-color: var(--blr-reader-accent, #00aeec);\n  text-decoration-thickness: 2px;\n  text-underline-offset: 3px;\n}\n\n\n\n.blr-reading-empty {\n  padding: 12px 4px;\n  font-size: 14px;\n  color: #94a3b8;\n}\n\n@media (max-width: 1100px) {\n  #blr-reading-view {\n    left: 12px;\n    right: 12px;\n    bottom: 12px;\n    padding: 18px;\n  }\n\n  .blr-reading-layout {\n    grid-template-columns: 210px minmax(0, 1fr);\n    gap: 20px;\n  }\n\n  .blr-reading-title {\n    font-size: 16px;\n  }\n}\n\n@media (max-width: 760px) {\n  #blr-reading-view {\n    top: 72px;\n    height: auto;\n  }\n\n  .blr-reading-layout {\n    grid-template-columns: 1fr;\n    gap: 18px;\n  }\n\n  .blr-reading-stage {\n    grid-template-rows: auto auto minmax(220px, auto) minmax(0, 1fr);\n  }\n\n  .blr-reading-header {\n    flex-direction: column;\n    align-items: stretch;\n  }\n\n  .blr-reading-actions {\n    justify-content: flex-start;\n  }\n\n  .blr-reading-title {\n    font-size: 16px;\n  }\n\n\n\n\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] {\n  margin: 0 !important;\n  padding: 0 !important;\n  width: 100% !important;\n  min-height: 100% !important;\n  background: #fff !important;\n  overflow-x: hidden !important;\n  overflow-y: auto !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-root {\n  position: absolute;\n  inset: 0;\n  z-index: 2147483646;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-panel {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view {\n  position: absolute;\n  inset: 0;\n  width: auto;\n  max-width: none;\n  height: 100vh;\n  display: none;\n  margin: 0;\n  padding: 0;\n  box-sizing: border-box;\n  border: 0;\n  border-radius: 0;\n  box-shadow: none;\n  background: transparent;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view.open {\n  display: block;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-ready=\"0\"] {\n  opacity: 0;\n  visibility: hidden;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-header-copy,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-status {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #viewbox_report,\nbody[data-blr-reader-mode=\"1\"] .video-info-container,\nbody[data-blr-reader-mode=\"1\"] .video-info-title,\nbody[data-blr-reader-mode=\"1\"] .video-info-title-inner {\n  margin: 0 !important;\n  padding: 0 !important;\n  row-gap: 0 !important;\n  column-gap: 0 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #viewbox_report,\nbody[data-blr-reader-mode=\"1\"] .video-info-container {\n  margin-bottom: 4px !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .left-container,\nbody[data-blr-reader-mode=\"1\"] .scroll-sticky {\n  row-gap: 8px !important;\n  padding-top: 0 !important;\n  overflow: visible !important;\n  transition: none !important;\n  animation: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap,\nbody[data-blr-reader-mode=\"1\"] .player-wrap,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n  transition: none !important;\n  animation: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .video-info-detail,\nbody[data-blr-reader-mode=\"1\"] .video-info-meta,\nbody[data-blr-reader-mode=\"1\"] .video-data {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-follow=\"manual\"] .blr-reading-main,\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-follow=\"manual\"] .blr-reading-rail {\n  border-color: rgba(148, 163, 184, 0.8);\n  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-follow=\"manual\"] .blr-reading-eyebrow::after {\n  content: \"手动浏览中\";\n  display: inline-block;\n  margin-left: 8px;\n  font-size: 11px;\n  font-weight: 500;\n  color: #94a3b8;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reader-player-host {\n  background: #000 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap {\n  position: static !important;\n  top: auto !important;\n  z-index: auto !important;\n  background: transparent !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .player-wrap,\nbody[data-blr-reader-mode=\"1\"] .scroll-sticky {\n  position: static !important;\n  top: auto !important;\n  z-index: auto !important;\n  background: transparent !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] [data-blr-reader-player-reset=\"1\"] {\n  position: static !important;\n  inset: auto !important;\n  width: auto !important;\n  height: auto !important;\n  transform: none !important;\n  margin: 0 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .strip-ad-inner,\nbody[data-blr-reader-mode=\"1\"] .inside-wrp,\nbody[data-blr-reader-mode=\"1\"] .inside-bg,\nbody[data-blr-reader-mode=\"1\"] .hinter-msg,\nbody[data-blr-reader-mode=\"1\"] .slide,\nbody[data-blr-reader-mode=\"1\"] .cover.b-img,\nbody[data-blr-reader-mode=\"1\"] .cover.b-img.sleepy,\nbody[data-blr-reader-mode=\"1\"] .b-img.clickable {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] [data-blr-reader-hidden=\"1\"] {\n  display: none !important;\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"],\n#blr-reading-view {\n  --blr-reader-page-bg: #f4f6f8;\n  --blr-reader-surface: #ffffff;\n  --blr-reader-surface-2: #f7f9fc;\n  --blr-reader-surface-3: #edf2f7;\n  --blr-reader-border: rgba(15, 23, 42, 0.1);\n  --blr-reader-text: #0f172a;\n  --blr-reader-muted: #64748b;\n  --blr-reader-accent: var(--brand_blue, #00aeec);\n  --blr-reader-accent-soft: rgba(0, 174, 236, 0.12);\n  --blr-reader-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);\n  --blr-reader-transcript-font-size: 14px;\n  --blr-reader-transcript-font-weight: 500;\n  --blr-reader-transcript-line-height: 1.5;\n  --blr-reader-letter-spacing: 0em;\n  --blr-reader-content-max: 980px;\n  color: var(--blr-reader-text);\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"dark\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"dark\"],\n#blr-reading-view[data-theme=\"dark\"] {\n  --blr-reader-page-bg: #09111f;\n  --blr-reader-surface: #0f172a;\n  --blr-reader-surface-2: #132038;\n  --blr-reader-surface-3: #1a2a46;\n  --blr-reader-border: rgba(148, 163, 184, 0.22);\n  --blr-reader-text: #e5eefb;\n  --blr-reader-muted: #9fb0c8;\n  --blr-reader-accent: var(--brand_blue, #00aeec);\n  --blr-reader-accent-soft: rgba(0, 174, 236, 0.14);\n  --blr-reader-shadow: 0 18px 42px rgba(2, 6, 23, 0.42);\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"paper\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"paper\"],\n#blr-reading-view[data-theme=\"paper\"] {\n  --blr-reader-page-bg: #f4eddc;\n  --blr-reader-surface: #f4eddc;\n  --blr-reader-surface-2: #f4eddc;\n  --blr-reader-surface-3: #f4eddc;\n  --blr-reader-border: rgba(180, 155, 112, 0.22);\n  --blr-reader-text: #3b3124;\n  --blr-reader-muted: #756653;\n  --blr-reader-accent: var(--brand_blue, #00aeec);\n  --blr-reader-accent-soft: rgba(0, 174, 236, 0.12);\n  --blr-reader-shadow: 0 18px 40px rgba(112, 93, 64, 0.12);\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"s\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"s\"],\n#blr-reading-view[data-font-scale=\"s\"] {\n  --blr-reader-transcript-font-size: 12.8px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xs\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xs\"],\n#blr-reading-view[data-font-scale=\"xs\"] {\n  --blr-reader-transcript-font-size: 11.6px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"l\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"l\"],\n#blr-reading-view[data-font-scale=\"l\"] {\n  --blr-reader-transcript-font-size: 16.4px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xl\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xl\"],\n#blr-reading-view[data-font-scale=\"xl\"] {\n  --blr-reader-transcript-font-size: 18.8px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"light\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"light\"],\n#blr-reading-view[data-font-weight=\"light\"] {\n  --blr-reader-transcript-font-weight: 300;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"regular\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"regular\"],\n#blr-reading-view[data-font-weight=\"regular\"] {\n  --blr-reader-transcript-font-weight: 400;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"semibold\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"semibold\"],\n#blr-reading-view[data-font-weight=\"semibold\"] {\n  --blr-reader-transcript-font-weight: 600;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"bold\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"bold\"],\n#blr-reading-view[data-font-weight=\"bold\"] {\n  --blr-reader-transcript-font-weight: 700;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tighter\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tighter\"],\n#blr-reading-view[data-letter-spacing=\"tighter\"] {\n  --blr-reader-letter-spacing: -0.072em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tight\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tight\"],\n#blr-reading-view[data-letter-spacing=\"tight\"] {\n  --blr-reader-letter-spacing: -0.036em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"relaxed\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"relaxed\"],\n#blr-reading-view[data-letter-spacing=\"relaxed\"] {\n  --blr-reader-letter-spacing: 0.036em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"loose\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"loose\"],\n#blr-reading-view[data-letter-spacing=\"loose\"] {\n  --blr-reader-letter-spacing: 0.072em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"compact\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"compact\"],\n#blr-reading-view[data-content-width=\"compact\"] {\n  --blr-reader-content-max: 720px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"narrow\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"narrow\"],\n#blr-reading-view[data-content-width=\"narrow\"] {\n  --blr-reader-content-max: 820px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"],\n#blr-reading-view[data-content-width=\"wide\"] {\n  --blr-reader-content-max: 1120px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"full\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"full\"],\n#blr-reading-view[data-content-width=\"full\"] {\n  --blr-reader-content-max: 1280px;\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] #app,\nbody[data-blr-reader-mode=\"1\"] .left-container,\nbody[data-blr-reader-mode=\"1\"] .right-container,\nbody[data-blr-reader-mode=\"1\"] .right-container-inner,\nbody[data-blr-reader-mode=\"1\"] .video-info-container,\nbody[data-blr-reader-mode=\"1\"] .video-info-detail,\nbody[data-blr-reader-mode=\"1\"] .video-sections-content-list,\nbody[data-blr-reader-mode=\"1\"] .video-container-v1,\nbody[data-blr-reader-mode=\"1\"] .video-container-v3 {\n  background: var(--blr-reader-page-bg) !important;\n  color: var(--blr-reader-text);\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] #app {\n  min-height: 100vh !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #app {\n  min-width: 0 !important;\n  width: 100% !important;\n  max-width: none !important;\n}\n\n#blr-reading-view,\n#blr-reading-view .blr-reading-meta,\n#blr-reading-view .blr-reading-status,\n#blr-reading-view .blr-reading-chapter {\n  color: var(--blr-reader-text);\n}\n\n#blr-reading-view .blr-reading-layout {\n  gap: 22px;\n}\n\n#blr-reading-view .blr-reading-stage {\n  display: grid;\n  gap: 16px;\n}\n\n#blr-reading-view .blr-reading-header {\n  align-items: flex-start;\n}\n\n#blr-reading-view .blr-reading-title {\n  font-size: 20px;\n  color: var(--blr-reader-text);\n  margin-top: 10px;\n}\n\n#blr-reading-view .blr-reading-meta,\n#blr-reading-view .blr-reading-status {\n  font-size: 14px;\n  color: var(--blr-reader-muted);\n}\n\n#blr-reading-view .blr-reading-actions {\n  gap: 10px;\n}\n\n#blr-reading-view .blr-reading-actions button {\n  border: 1px solid var(--blr-reader-border);\n  background: var(--blr-reader-surface);\n  color: var(--blr-reader-text);\n  box-shadow: none;\n}\n\n#blr-reading-view .blr-reading-actions button.is-active {\n  background: var(--blr-reader-accent-soft);\n  color: var(--blr-reader-accent);\n}\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n#blr-reading-view .blr-reading-main {\n  justify-content: center;\n  background: transparent;\n}\n\n#blr-reading-view .blr-reading-transcript {\n  width: min(100%, var(--blr-reader-content-max));\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-transcript-visible=\"0\"] #blr-reading-view .blr-reading-main,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-transcript-visible=\"0\"] #blr-reading-view .blr-reading-main,\n#blr-reading-view[data-transcript-visible=\"0\"] .blr-reading-main {\n  display: none !important;\n}\n\n#blr-reading-view[data-transcript-visible=\"0\"] #blr-reading-inline-host {\n  border: none;\n  background: transparent;\n}\n\n\n\n#blr-reading-view .blr-reading-chapter:hover {\n  background: var(--blr-reader-surface-2);\n}\n\n#blr-reading-view .blr-reading-chapter.is-active {\n  background: var(--blr-reader-accent-soft);\n}\n\n#blr-reading-view .blr-reading-chapter-time {\n  color: var(--blr-reader-accent);\n}\n\n\n\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-subtitle-wrap,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-subtitle-panel,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-subtitle-container,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bilibili-player-video-subtitle,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .subtitle-wrap,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host [class*=\"subtitle\"],\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-sending-bar,\nbody[data-blr-reading-active=\"1\"] .bpx-player-sending-bar {\n  display: none !important;\n}\n\nbody[data-blr-reading-active=\"1\"] [data-blr-reader-fading] {\n  visibility: hidden !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view {\n  background: transparent;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-header {\n  left: auto;\n  right: 24px;\n  max-width: min(1100px, calc(100vw - 48px));\n  gap: 14px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-actions {\n  pointer-events: auto;\n  justify-content: flex-end;\n}\n\n\n\n/* Simplified reader layout: player in normal flow, transcript box below with its own scroll. */\nbody[data-blr-reader-mode=\"1\"] .blr-reading-player-shell {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-layout,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-stage {\n  display: block;\n  height: auto;\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] {\n  --blr-reader-page-padding: clamp(16px, 2.8vw, 32px);\n  --blr-reader-layout-gap: clamp(16px, 2vw, 24px);\n  --blr-reader-rail-target-width: clamp(168px, 15vw, 220px);\n  --blr-reader-main-width: min(\n    var(--blr-reader-content-max),\n    calc(100vw - (var(--blr-reader-page-padding) * 2))\n  );\n  --blr-reader-rail-width: min(\n    var(--blr-reader-rail-target-width),\n    max(\n      0px,\n      calc(\n        ((100vw - var(--blr-reader-main-width)) / 2) - var(--blr-reader-page-padding) - var(--blr-reader-layout-gap)\n      )\n    )\n  );\n  --blr-reader-transcript-line-height: 1.404;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"compact\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"compact\"],\n#blr-reading-view[data-line-height=\"compact\"] {\n  --blr-reader-transcript-line-height: 1.32;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"tight\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"tight\"],\n#blr-reading-view[data-line-height=\"tight\"] {\n  --blr-reader-transcript-line-height: 1.404;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"normal\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"normal\"],\n#blr-reading-view[data-line-height=\"normal\"] {\n  --blr-reader-transcript-line-height: 1.5;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"relaxed\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"relaxed\"],\n#blr-reading-view[data-line-height=\"relaxed\"] {\n  --blr-reader-transcript-line-height: 1.596;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"loose\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"loose\"],\n#blr-reading-view[data-line-height=\"loose\"] {\n  --blr-reader-transcript-line-height: 1.692;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-actions {\n  gap: 12px;\n  margin-right: -20px;\n  margin-top: -8px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-header {\n  position: fixed;\n  top: 18px;\n  right: var(--blr-reader-page-padding);\n  left: auto;\n  max-width: calc(100vw - (var(--blr-reader-page-padding) * 2));\n  margin-bottom: 0;\n  z-index: 2147483646;\n  pointer-events: auto;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-topbar {\n  display: grid;\n  gap: clamp(12px, 1.2vw, 20px);\n  grid-template-columns: clamp(300px, 28vw, 520px) minmax(0, 1fr);\n  height: 84px;\n  left: var(--blr-reader-page-padding);\n  min-width: 0;\n  overflow: hidden;\n  pointer-events: auto;\n  position: fixed;\n  right: 174px;\n  top: 6px;\n  z-index: 2147483646;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-heading-group {\n  align-content: center;\n  display: grid;\n  gap: 2px;\n  max-height: 84px;\n  overflow: hidden;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-page-title {\n  font-size: clamp(16px, 1.05vw, 19px);\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-collection-nav {\n  align-self: center;\n  height: 70px;\n  min-width: 0;\n  pointer-events: auto;\n  position: static;\n}\n\n@media (max-width: 1000px) {\n  body[data-blr-reader-mode=\"1\"] .blr-reading-topbar {\n    grid-template-columns: clamp(240px, 34vw, 330px) minmax(0, 1fr);\n  }\n}\n\n@media (max-width: 760px) {\n  body[data-blr-reader-mode=\"1\"] .blr-reading-topbar {\n    grid-template-columns: minmax(190px, 42vw) minmax(0, 1fr);\n    right: 150px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-page-title {\n    font-size: 15px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-episode-title {\n    font-size: 12px;\n  }\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n  position: fixed;\n  display: grid !important;\n  left: var(--blr-reader-page-padding) !important;\n  top: 112px !important;\n  width: var(--blr-reader-rail-width) !important;\n  max-height: calc(100vh - 136px) !important;\n  padding: 12px;\n  box-sizing: border-box;\n  background: var(--blr-reader-surface);\n  border: 1px solid var(--blr-reader-border);\n  border-radius: 14px;\n  box-shadow: var(--blr-reader-shadow);\n  pointer-events: auto;\n  z-index: 2147483646;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-chapter-visibility=\"hide\"] .blr-reading-rail,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-chapter-visibility=\"hide\"] .blr-reading-rail,\n#blr-reading-view[data-chapter-visibility=\"hide\"] .blr-reading-rail,\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-chapter-visibility=\"auto\"][data-blr-reader-has-chapters=\"0\"] .blr-reading-rail,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-chapter-visibility=\"auto\"][data-blr-reader-has-chapters=\"0\"] .blr-reading-rail,\n#blr-reading-view[data-chapter-visibility=\"auto\"][data-has-chapters=\"0\"] .blr-reading-rail {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .left-container,\nbody[data-blr-reader-mode=\"1\"] .scroll-sticky,\nbody[data-blr-reader-mode=\"1\"] #playerWrap,\nbody[data-blr-reader-mode=\"1\"] .player-wrap,\nbody[data-blr-reader-mode=\"1\"] h1.video-title,\nbody[data-blr-reader-mode=\"1\"] .video-info-container,\nbody[data-blr-reader-mode=\"1\"] #viewbox_report,\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n  width: min(\n    var(--blr-reader-main-width),\n    var(--blr-reader-player-rendered-width, var(--blr-reader-main-width))\n  ) !important;\n  max-width: min(\n    var(--blr-reader-main-width),\n    var(--blr-reader-player-rendered-width, var(--blr-reader-main-width))\n  ) !important;\n  margin-left: auto !important;\n  margin-right: auto !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n  overflow-anchor: none;\n  scroll-behavior: auto;\n  min-height: 100vh;\n  margin-top: -1px;\n  padding: 0;\n  border: 1px solid var(--blr-reader-border);\n  border-top: 0;\n  border-radius: 0 0 20px 20px;\n  background: var(--blr-reader-surface-2);\n  box-shadow: var(--blr-reader-shadow);\n  box-sizing: border-box;\n  overflow: auto;\n  height: 100vh;\n  scrollbar-width: thin;\n  scrollbar-color: rgba(100, 116, 139, 0.1) transparent;\n  position: relative;\n  isolation: isolate;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap,\nbody[data-blr-reader-mode=\"1\"] .player-wrap {\n  border: 0;\n  border-radius: 0;\n  background: var(--blr-reader-surface);\n  box-shadow: var(--blr-reader-shadow);\n  box-sizing: border-box;\n  overflow: visible !important;\n  margin-top: -35px !important;\n  height: var(--blr-reader-player-rendered-height, auto) !important;\n  max-height: var(--blr-reader-player-rendered-height, none) !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap > *,\nbody[data-blr-reader-mode=\"1\"] .player-wrap > *,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-container,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-video-area,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-primary-area,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-inner,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-container,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-video-area,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-primary-area,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-inner {\n  width: 100% !important;\n  max-width: 100% !important;\n  height: 100% !important;\n  max-height: 100% !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .bpx-player-video-wrap video {\n  width: 100% !important;\n  height: 100% !important;\n  object-fit: contain !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-main {\n  overflow: visible;\n  display: block;\n  width: 100%;\n  background: transparent;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-transcript,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-chapter-title,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-empty {\n  color: var(--blr-reader-text) !important;\n}\n\n\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-tail-spacer {\n  width: 100%;\n  min-height: 320px;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-status {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] h1.video-title {\n  display: -webkit-box !important;\n  margin-top: 8px !important;\n  color: transparent !important;\n  font-size: clamp(16px, 1.05vw, 20px) !important;\n  line-height: 1.2 !important;\n  padding: 0 !important;\n  height: auto !important;\n  max-height: 48px !important;\n  overflow: hidden !important;\n  overflow-wrap: anywhere !important;\n  pointer-events: none !important;\n  user-select: none !important;\n  visibility: hidden !important;\n  -webkit-box-orient: vertical !important;\n  -webkit-line-clamp: 2 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar {\n  width: 6px;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar-track {\n  background: transparent;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar-thumb {\n  background: rgba(100, 116, 139, 0.1);\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar-thumb:hover {\n  background: rgba(100, 116, 139, 0.16);\n}\n\n@media (max-width: 1320px) {\n  html[data-blr-reader-mode=\"1\"],\n  body[data-blr-reader-mode=\"1\"] {\n    --blr-reader-layout-gap: clamp(12px, 1.4vw, 16px);\n    --blr-reader-rail-target-width: clamp(144px, 12vw, 168px);\n  }\n}\n\n@media (max-width: 1320px) {\n  html[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"] .blr-reading-rail,\n  body[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"] .blr-reading-rail,\n  #blr-reading-view[data-content-width=\"wide\"] .blr-reading-rail {\n    display: none !important;\n  }\n}\n\n@media (max-width: 1180px) {\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n    display: none !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .left-container,\n  body[data-blr-reader-mode=\"1\"] .scroll-sticky,\n  body[data-blr-reader-mode=\"1\"] #playerWrap,\n  body[data-blr-reader-mode=\"1\"] .player-wrap,\n  body[data-blr-reader-mode=\"1\"] h1.video-title,\n  body[data-blr-reader-mode=\"1\"] .video-info-container,\n  body[data-blr-reader-mode=\"1\"] #viewbox_report,\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n    margin-left: auto !important;\n    margin-right: auto !important;\n  }\n}\n\nbody[data-blr-reader-mode=\"1\"] .bpx-player-mini-warp,\nbody[data-blr-reader-mode=\"1\"] .bpx-player-mini-close,\nbody[data-blr-reader-mode=\"1\"] .bpx-player-ending-panel,\nbody[data-blr-reader-mode=\"1\"] .bpx-player-ending-related,\nbody[data-blr-reader-mode=\"1\"] .ad-report,\nbody[data-blr-reader-mode=\"1\"] [class*=\"ad-report\"],\nbody[data-blr-reader-mode=\"1\"] [class*=\"mini-player\"],\nbody[data-blr-reader-mode=\"1\"] [class*=\"picture-in-picture\"] {\n  display: none !important;\n}\n\n\n\n\n\n.blr-reading-complete {\n  padding: 12px 10px 20px;\n  font-size: var(--blr-reader-transcript-font-size);\n  font-weight: var(--blr-reader-transcript-font-weight);\n  line-height: var(--blr-reader-transcript-line-height);\n  letter-spacing: var(--blr-reader-letter-spacing);\n  color: var(--blr-reader-text);\n  text-align: left;\n}\n\n.blr-reading-complete-segment {\n  display: inline;\n  margin: 0;\n  padding: 1px 0;\n  border: 0;\n  border-radius: 2px;\n  background: transparent;\n  color: inherit;\n  font: inherit;\n  letter-spacing: inherit;\n  text-align: inherit;\n  cursor: pointer;\n  user-select: text;\n  -webkit-user-select: text;\n}\n\n.blr-reading-complete-segment:hover {\n  background: rgba(0, 174, 236, 0.1);\n}\n\n.blr-reading-complete-segment.is-active {\n  background: var(--blr-reader-accent-soft);\n  box-shadow: 0 0 0 2px var(--blr-reader-accent-soft);\n  -webkit-box-decoration-break: clone;\n  box-decoration-break: clone;\n  text-decoration-line: underline;\n  text-decoration-color: var(--blr-reader-accent);\n  text-decoration-thickness: 2px;\n  text-underline-offset: 4px;\n}\n\n/* Desktop reader: title/player with chapters below | transcript. */\n@media (min-width: 1181px) {\n  html[data-blr-reader-mode=\"1\"],\n  body[data-blr-reader-mode=\"1\"] {\n    --blr-reader-three-column-gap: clamp(16px, 1.4vw, 24px);\n    --blr-reader-three-column-half-gap: clamp(8px, 0.7vw, 12px);\n    --blr-reader-rail-width: clamp(176px, 13vw, 220px);\n    --blr-reader-transcript-width: clamp(320px, 24vw, 440px);\n    --blr-reader-center-offset: clamp(-110px, -5.5vw, -72px);\n    --blr-reader-main-width: max(\n      420px,\n      calc(\n        100vw - (var(--blr-reader-page-padding) * 2) - var(--blr-reader-transcript-width) -\n          var(--blr-reader-three-column-gap)\n      )\n    );\n    overflow: hidden !important;\n  }\n\n  /* Watch Later centers its own player column; align it with the reader's fixed transcript. */\n  body[data-blr-reader-mode=\"1\"] #app.playlist-app #mirror-vdcon {\n    box-sizing: border-box;\n    justify-content: flex-start !important;\n    padding-left: var(--blr-reader-page-padding) !important;\n    padding-right: var(--blr-reader-page-padding) !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #app.playlist-app .playlist-container--left {\n    flex: 0 0 var(--blr-reader-main-width) !important;\n    min-width: 0 !important;\n    width: var(--blr-reader-main-width) !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n    left: var(--blr-reader-player-left, var(--blr-reader-page-padding)) !important;\n    top: calc(var(--blr-reader-player-bottom, 72vh) + 12px) !important;\n    bottom: auto !important;\n    width: var(--blr-reader-player-width, var(--blr-reader-main-width)) !important;\n    height: min(112px, calc(100vh - var(--blr-reader-player-bottom, 72vh) - 36px)) !important;\n    min-height: 72px;\n    max-height: none !important;\n    grid-template-rows: auto minmax(0, 1fr);\n    gap: 6px;\n    padding: 10px 12px;\n    border-radius: 10px;\n    overflow: hidden;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail .blr-reading-list {\n    display: flex;\n    align-items: stretch;\n    gap: 8px;\n    min-width: 0;\n    padding: 0 0 4px;\n    overflow-x: auto;\n    overflow-y: hidden;\n    scrollbar-width: thin;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail .blr-reading-chapter {\n    flex: 0 0 auto;\n    width: auto;\n    min-width: 120px;\n    max-width: 190px;\n    padding: 6px 10px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .left-container,\n  body[data-blr-reader-mode=\"1\"] .scroll-sticky,\n  body[data-blr-reader-mode=\"1\"] h1.video-title,\n  body[data-blr-reader-mode=\"1\"] .video-info-container,\n  body[data-blr-reader-mode=\"1\"] #viewbox_report {\n    width: var(--blr-reader-main-width) !important;\n    max-width: var(--blr-reader-main-width) !important;\n    margin-left: auto !important;\n    margin-right: auto !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .left-container {\n    transform: translateX(var(--blr-reader-center-offset)) !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] h1.video-title {\n    margin-top: 28px !important;\n    margin-bottom: 14px !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #playerWrap,\n  body[data-blr-reader-mode=\"1\"] .player-wrap {\n    margin-top: 0 !important;\n    border: 0;\n    border-radius: 4px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n    position: fixed !important;\n    top: var(--blr-reader-player-top, 98px) !important;\n    right: var(--blr-reader-page-padding) !important;\n    bottom: 24px !important;\n    left: auto !important;\n    width: var(--blr-reader-transcript-width) !important;\n    max-width: var(--blr-reader-transcript-width) !important;\n    min-height: 0 !important;\n    height: auto !important;\n    margin: 0 !important;\n    padding: 0 !important;\n    border: 1px solid var(--blr-reader-border) !important;\n    border-radius: 0 !important;\n    background: var(--blr-reader-surface-2) !important;\n    box-shadow: var(--blr-reader-shadow) !important;\n    overflow-y: auto !important;\n    scroll-padding-top: 46px;\n    z-index: 2147483645;\n  }\n\n  html[data-blr-reader-mode=\"1\"][data-blr-reader-transcript-visible=\"0\"]\n    #blr-reading-inline-host,\n  body[data-blr-reader-mode=\"1\"][data-blr-reader-transcript-visible=\"0\"]\n    #blr-reading-inline-host {\n    display: none !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-transcript-heading {\n    position: sticky;\n    top: 0;\n    display: flex;\n    align-items: center;\n    height: 38px;\n    margin: 0;\n    justify-content: space-between;\n    gap: 6px;\n    padding: 0 6px 0 10px;\n    box-sizing: border-box;\n    color: var(--blr-reader-muted);\n    background: var(--blr-reader-surface-2);\n    border-bottom: 1px solid var(--blr-reader-border);\n    font-size: 12px;\n    font-weight: 700;\n    letter-spacing: 0.08em;\n    z-index: 3;\n    pointer-events: auto;\n    user-select: none;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-heading-title {\n    min-width: 24px;\n    flex: 1 1 auto;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-heading-controls {\n    display: flex;\n    flex: 0 0 auto;\n    align-items: center;\n    gap: 4px;\n    letter-spacing: 0;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-tool-button {\n    -webkit-appearance: none;\n    appearance: none;\n    width: 26px;\n    height: 26px;\n    display: inline-flex;\n    flex: 0 0 26px;\n    align-items: center;\n    justify-content: center;\n    margin: 0;\n    padding: 0;\n    border: 1px solid var(--blr-reader-border);\n    border-radius: 50%;\n    background: var(--blr-reader-surface);\n    color: var(--blr-reader-text);\n    cursor: pointer;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-tool-button svg {\n    width: 17px;\n    height: 17px;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-tool-button:hover,\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-tool-button.is-active {\n    border-color: var(--blr-reader-accent);\n    color: var(--blr-reader-accent);\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-heading-controls\n    select {\n    -webkit-appearance: none;\n    appearance: none;\n    height: 26px;\n    flex: 0 0 auto;\n    padding: 0 23px 0 7px;\n    box-sizing: border-box;\n    border: 1px solid var(--blr-reader-border);\n    border-radius: 5px;\n    background-color: var(--blr-reader-surface);\n    background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m3 4.5 3 3 3-3' fill='none' stroke='%2364748b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\");\n    background-position: right 6px center;\n    background-repeat: no-repeat;\n    background-size: 12px 12px;\n    color: var(--blr-reader-text);\n    font-size: 12px;\n    font-weight: 500;\n    line-height: 1;\n    outline: none;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-heading-controls\n    select:focus {\n    border-color: var(--blr-reader-accent);\n  }\n\n  #blr-reading-transcript-language {\n    width: 72px;\n  }\n\n  #blr-reading-transcript-font-size {\n    width: 56px;\n  }\n\n  #blr-reading-transcript-font-weight {\n    width: 64px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-main,\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-transcript {\n    width: 100% !important;\n    max-width: none !important;\n    height: auto !important;\n    margin: 0 !important;\n    box-sizing: border-box;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-transcript {\n    padding: 8px 10px 24px;\n    overflow: visible;\n  }\n\n\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-tail-spacer {\n    min-height: 45vh;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle {\n    position: fixed;\n    top: var(--blr-reader-player-top, 88px);\n    bottom: 24px;\n    width: 14px;\n    z-index: 2147483646;\n    cursor: col-resize;\n    pointer-events: auto;\n    touch-action: none;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle::before {\n    content: \"\";\n    position: absolute;\n    top: 0;\n    bottom: 0;\n    left: 6px;\n    width: 2px;\n    border-radius: 999px;\n    background: transparent;\n    transition: background 0.16s ease, box-shadow 0.16s ease;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle:hover::before,\n  body[data-blr-reader-resizing] .blr-reading-resize-handle::before {\n    background: var(--blr-reader-accent);\n    box-shadow: 0 0 0 3px var(--blr-reader-accent-soft);\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle-right {\n    right: calc(\n      var(--blr-reader-page-padding) + var(--blr-reader-transcript-width) +\n        var(--blr-reader-three-column-half-gap) - 7px\n    );\n  }\n\n  body[data-blr-reader-resizing=\"transcript\"],\n  body[data-blr-reader-resizing=\"transcript\"] * {\n    cursor: col-resize !important;\n    user-select: none !important;\n  }\n\n  body[data-blr-reader-transcript-visible=\"0\"] .blr-reading-resize-handle-right {\n    display: none !important;\n  }\n}\n\n@media (max-width: 1180px) {\n  .blr-reading-resize-handle {\n    display: none !important;\n  }\n}\n\n/* Timestamp-free transcript rows must not retain the desktop time column. */\n");
 
   const chrome = {
     runtime: {
@@ -293,7 +293,7 @@ const DEFAULT_SETTINGS = {
 };
 const PLAYER_AI_ICON_VARIANT = "badge";
 
-const READER_VERSION = "0.0.8";
+const READER_VERSION = "0.0.9";
 const CACHE_KEY_PREFIX = "bilibli_reader_subtitle_cache_";
 globalThis.__BILIBLI_READER_CONTENT_SCRIPT_LOADED__ = READER_VERSION;
 const state = {
@@ -325,6 +325,8 @@ const state = {
   srt: "",
   txt: "",
   readingViewOpen: false,
+  readingModeTransition: null,
+  readingViewClosing: false,
   readingNativePageMode: false,
   readingAutoScroll: true,
   readingTheme: "light",
@@ -335,7 +337,7 @@ const state = {
   readingContentWidth: "medium",
   readingChapterWidthPx: 220,
   readingTranscriptWidthPx: 440,
-  readingVideoHeightPx: 0,
+  readingTranscriptAutoWidth: false,
   readingChapterVisible: true,
   readingTranscriptVisible: true,
   readingTimestampVisible: true,
@@ -474,13 +476,30 @@ function getReaderPagePaddingPx() {
 function getReaderMainWidthLimit() {
   const pagePadding = getReaderPagePaddingPx();
   if (window.innerWidth > 1180) {
-    const { transcriptWidth } = getEffectiveReaderColumnWidths();
-    const gap = Math.min(24, Math.max(16, window.innerWidth * 0.014));
+    const { transcriptWidth, gap } = getEffectiveReaderColumnWidths();
     const availableWidth = window.innerWidth - pagePadding * 2 - transcriptWidth - gap;
-    const heightLimitedWidth = Math.max(420, (window.innerHeight - 190) * (16 / 9));
-    return Math.max(420, Math.min(availableWidth, heightLimitedWidth));
+    // Fit against the real video ratio and player top in layoutReaderPlayerHost.
+    return Math.max(1, availableWidth);
   }
   return Math.max(320, Math.min(getReaderContentMaxPx(), window.innerWidth - pagePadding * 2));
+}
+
+function getReaderPlayerMaxHeightPx(playerTop) {
+  const isDesktop = window.innerWidth > 1180;
+  const hasChapterRail = isDesktop && state.readingChapterVisible &&
+    normalizeChapters(state.chapters || []).length > 0;
+  // Only visible chapters reserve space below the video.
+  const bottomSpace = hasChapterRail ? 148 : 0;
+  let playerBottomLimit = window.innerHeight - bottomSpace;
+  if (isDesktop && state.readingTranscriptVisible) {
+    const transcriptRect = document.getElementById("blr-reading-inline-host")?.getBoundingClientRect();
+    // Before the transcript mounts, use its desktop CSS bottom inset (24px).
+    const transcriptBottom = transcriptRect?.width > 0 && transcriptRect.height > 0
+      ? transcriptRect.bottom
+      : window.innerHeight - 24;
+    playerBottomLimit = Math.min(playerBottomLimit, transcriptBottom);
+  }
+  return Math.max(1, playerBottomLimit - playerTop);
 }
 
 function normalizeReaderColumnWidth(value, fallback, min, max) {
@@ -488,29 +507,48 @@ function normalizeReaderColumnWidth(value, fallback, min, max) {
   return Number.isFinite(parsed) ? Math.round(Math.min(max, Math.max(min, parsed))) : fallback;
 }
 
-function normalizeReaderVideoHeight(value) {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed <= 0) return 0;
-  return Math.round(Math.min(900, Math.max(240, parsed)));
+function getReaderVideoAspectRatio() {
+  const video = state.readingVideoEl || getRuntimeVideoElement();
+  return Number(video?.videoWidth) > 0 && Number(video?.videoHeight) > 0
+    ? Number(video.videoWidth) / Number(video.videoHeight)
+    : 16 / 9;
 }
 
 function getEffectiveReaderColumnWidths() {
   const pagePadding = getReaderPagePaddingPx();
   const gap = Math.min(24, Math.max(16, window.innerWidth * 0.014));
   const minChapterWidth = 140;
-  const minTranscriptWidth = 280;
+  let minTranscriptWidth = 280;
   const minVideoWidth = 420;
   const chapterWidth = normalizeReaderColumnWidth(state.readingChapterWidthPx, 220, minChapterWidth, 360);
-  let transcriptWidth = normalizeReaderColumnWidth(state.readingTranscriptWidthPx, 440, minTranscriptWidth, 720);
-  const availableForTranscript = Math.max(
+  let maxTranscriptWidth = Math.max(
     minTranscriptWidth,
     window.innerWidth - pagePadding * 2 - gap - minVideoWidth
   );
-  transcriptWidth = Math.min(transcriptWidth, availableForTranscript);
+  if (state.readingViewOpen && window.innerWidth > 1180) {
+    const video = state.readingVideoEl || getRuntimeVideoElement();
+    const playerHost = state.readingPlayerHost || findReaderPlayerHost(video);
+    const playerNode = getReaderPlayerWrapNode(playerHost) || playerHost;
+    const playerTop = playerNode?.getBoundingClientRect?.().top ?? 98;
+    const maxHeight = getReaderPlayerMaxHeightPx(playerTop);
+    const availableWidth = window.innerWidth - pagePadding * 2 - gap;
+    // Give the video its largest complete frame first, then use the remaining
+    // horizontal space for subtitles instead of reserving a fixed-width panel.
+    const videoWidth = Math.min(availableWidth - 280, maxHeight * getReaderVideoAspectRatio());
+    minTranscriptWidth = Math.max(280, Math.ceil(availableWidth - videoWidth));
+    maxTranscriptWidth = Math.max(
+      minTranscriptWidth, Math.floor(availableWidth - Math.min(minVideoWidth, videoWidth))
+    );
+  }
+  const transcriptWidth = state.readingViewOpen && window.innerWidth > 1180 && state.readingTranscriptAutoWidth
+    ? minTranscriptWidth
+    : normalizeReaderColumnWidth(state.readingTranscriptWidthPx, 440, minTranscriptWidth, maxTranscriptWidth);
 
   return {
     chapterWidth: Math.round(chapterWidth),
     transcriptWidth: Math.round(transcriptWidth),
+    minTranscriptWidth,
+    maxTranscriptWidth,
     gap
   };
 }
@@ -518,7 +556,7 @@ function getEffectiveReaderColumnWidths() {
 function applyReaderColumnLayout() {
   const readingView = byId(ids.readingView);
   if (!readingView) return;
-  const { chapterWidth, transcriptWidth, gap } = getEffectiveReaderColumnWidths();
+  const { chapterWidth, transcriptWidth, minTranscriptWidth, maxTranscriptWidth, gap } = getEffectiveReaderColumnWidths();
   const mainWidth = getReaderMainWidthLimit();
   const centerOffset = Math.round(-(transcriptWidth + gap) / 2);
   [document.documentElement, document.body, readingView].forEach((node) => {
@@ -526,17 +564,11 @@ function applyReaderColumnLayout() {
     node.style.setProperty("--blr-reader-transcript-width", `${transcriptWidth}px`);
     node.style.setProperty("--blr-reader-center-offset", `${centerOffset}px`);
     node.style.setProperty("--blr-reader-main-width", `${Math.round(mainWidth)}px`);
-    if (state.readingVideoHeightPx > 0) {
-      node.style.setProperty(
-        "--blr-reader-player-rendered-height",
-        `${Math.round(state.readingVideoHeightPx)}px`
-      );
-    }
   });
-  document
-    .getElementById(ids.readingChapterResizeHandle)
-    ?.setAttribute("aria-valuenow", String(state.readingVideoHeightPx || 0));
-  document.getElementById(ids.readingTranscriptResizeHandle)?.setAttribute("aria-valuenow", String(transcriptWidth));
+  const resizeHandle = document.getElementById(ids.readingTranscriptResizeHandle);
+  resizeHandle?.setAttribute("aria-valuenow", String(transcriptWidth));
+  resizeHandle?.setAttribute("aria-valuemin", String(minTranscriptWidth));
+  resizeHandle?.setAttribute("aria-valuemax", String(maxTranscriptWidth));
 }
 
 function updateReaderChapterRailPosition(rect = null) {
@@ -553,9 +585,6 @@ function updateReaderChapterRailPosition(rect = null) {
     node.style.setProperty("--blr-reader-player-bottom", `${Math.round(playerRect.bottom)}px`);
     node.style.setProperty("--blr-reader-player-width", `${Math.round(playerRect.width)}px`);
   });
-  document
-    .getElementById(ids.readingChapterResizeHandle)
-    ?.setAttribute("aria-valuenow", String(Math.round(playerRect.height)));
 }
 
 function clearNativeReaderFloatingStyles(playerHost = state.readingPlayerHost) {
@@ -721,7 +750,6 @@ const ids = {
   readingStatus: "blr-reading-status",
   readingCloseBtn: "blr-reading-close-btn",
   readingRefreshBtn: "blr-reading-refresh-btn",
-  readingChapterResizeHandle: "blr-reading-chapter-resize-handle",
   readingTranscriptResizeHandle: "blr-reading-transcript-resize-handle",
   readingMeta: "blr-reading-meta",
   readingChapterList: "blr-reading-chapters",
@@ -913,16 +941,9 @@ function onPageReaderEntryClick(event) {
   const button = event.currentTarget;
   button.disabled = true;
   button.classList.add("is-loading");
-  const readerUrl = new URL(location.href);
-  readerUrl.searchParams.set("bilibli_reader", "1");
-  replaceReaderModeUrl(readerUrl.toString());
-  document.documentElement.setAttribute("data-blr-reader-mode", "1");
-  document.body.setAttribute("data-blr-reader-mode", "1");
-  state.playerAiQuickActionSuppressedUntil = Date.now() + 2500;
-  removePlayerAiQuickActionButton();
   ensureUiReady();
 
-  enterReaderMode().catch((error) => {
+  enterReaderMode({ animate: true }).catch((error) => {
     button.disabled = false;
     button.classList.remove("is-loading");
     logWarn("[Bilibili Reader] page entry failed", error);
@@ -954,6 +975,9 @@ function scheduleNativeTranscriptPanelSync(delayMs = 120) {
   }
   state.nativeTranscriptSyncTimer = window.setTimeout(() => {
     state.nativeTranscriptSyncTimer = 0;
+    // closeReadingView restores the panel before the exit snapshot. Keep
+    // observer-driven refreshes out of the animation; completion syncs again.
+    if (state.readingModeTransition?.direction === "exit") return;
     ensureNativeTranscriptPanel();
   }, Math.max(0, Number(delayMs) || 0));
 }
@@ -1188,6 +1212,11 @@ function applyNativeTranscriptTypography(panel = document.getElementById(ids.nat
   if (!panel) {
     return;
   }
+  const typographyChanged = panel.style.getPropertyValue("--blr-native-transcript-font-size") !== `${state.nativeTranscriptFontSize}px` ||
+    panel.style.getPropertyValue("--blr-native-transcript-font-weight") !== String(state.nativeTranscriptFontWeight);
+  const scrollAnchor = typographyChanged ? captureTranscriptScrollAnchor(
+    panel.querySelector(`#${ids.nativeTranscriptList}`), ".blr-native-transcript-segment"
+  ) : null;
   panel.dataset.theme = state.nativeTranscriptTheme;
   const themeButton = panel.querySelector(`#${ids.nativeTranscriptThemeButton}`);
   if (themeButton) {
@@ -1212,6 +1241,7 @@ function applyNativeTranscriptTypography(panel = document.getElementById(ids.nat
   if (fontWeightSelect) {
     fontWeightSelect.value = String(state.nativeTranscriptFontWeight);
   }
+  restoreTranscriptScrollAnchor(scrollAnchor);
 }
 
 function updateNativeTranscriptTheme(theme) {
@@ -1225,6 +1255,8 @@ function updateNativeTranscriptTheme(theme) {
 }
 
 function updateNativeTranscriptTypography({ fontSize, fontWeight } = {}) {
+  state.readingModeTransition?.cancel();
+  state.nativeTranscriptManualScrollPauseUntil = Date.now() + 3000;
   state.nativeTranscriptFontSize = normalizeNativeTranscriptFontSize(
     fontSize ?? state.nativeTranscriptFontSize
   );
@@ -1287,6 +1319,7 @@ function getNativeTranscriptPlaceholderText() {
 }
 
 function renderNativeTranscriptPanel({ force = false } = {}) {
+  if (state.readingModeTransition?.phase === "animating") return;
   const panel = document.getElementById(ids.nativeTranscriptPanel);
   const body = panel?.querySelector(`#${ids.nativeTranscriptBody}`);
   if (!panel || !body || !shouldShowNativeTranscriptPanel()) {
@@ -1434,8 +1467,13 @@ function bindNativeTranscriptPanelResize() {
   }
   state.nativeTranscriptResizeObserver?.disconnect();
   state.nativeTranscriptResizeObserver = new ResizeObserver(() => {
+    if (state.readingModeTransition?.phase === "animating") return;
+    const scrollAnchor = captureTranscriptScrollAnchor(
+      document.getElementById(ids.nativeTranscriptList), ".blr-native-transcript-segment"
+    );
     syncNativeTranscriptPanelAlignment();
     syncNativeTranscriptPanelHeight();
+    restoreTranscriptScrollAnchor(scrollAnchor);
   });
   state.nativeTranscriptResizeObserver.observe(player);
   state.nativeTranscriptObservedPlayer = player;
@@ -1489,6 +1527,8 @@ function startNativeTranscriptPlaybackSync() {
 }
 
 function syncNativeTranscriptPlayback(forceScroll = false) {
+  if (state.readingModeTransition &&
+    (state.readingModeTransition.phase === "animating" || !forceScroll)) return;
   const panel = document.getElementById(ids.nativeTranscriptPanel);
   const list = panel?.querySelector(`#${ids.nativeTranscriptList}`);
   if (!panel || !list || !state.nativeTranscriptOpen || state.subtitleBody.length === 0) {
@@ -1526,7 +1566,8 @@ function scrollNativeTranscriptItemIntoView(node, list, behavior = "smooth") {
   }
   const padding = Math.max(32, Math.min(listRect.height * 0.22, 96));
   const target = list.scrollTop + itemRect.top - listRect.top - padding;
-  state.nativeTranscriptProgrammaticScrollUntil = Date.now() + (behavior === "auto" ? 120 : 700);
+  if (behavior === "auto") behavior = "instant";
+  state.nativeTranscriptProgrammaticScrollUntil = Date.now() + (behavior === "instant" ? 120 : 700);
   list.scrollTo({ top: Math.max(0, Math.round(target)), behavior });
 }
 
@@ -1847,12 +1888,20 @@ function bindSettingsWatcher() {
     }
 
     getSettings()
-      .then((settings) => {
+      .then(async (settings) => {
+        const transition = state.readingModeTransition;
+        if (transition) {
+          // Storage echoes must not reflow the live target during its motion.
+          await transition.finished.catch(() => {});
+          settings = await getSettings();
+        }
+        const scrollAnchor = captureTranscriptScrollAnchor(
+          document.getElementById("blr-reading-inline-host"), ".blr-reading-complete-segment"
+        );
         const activeLayout = state.readingViewOpen
           ? {
               chapterWidth: state.readingChapterWidthPx,
-              transcriptWidth: state.readingTranscriptWidthPx,
-              videoHeight: state.readingVideoHeightPx
+              transcriptWidth: state.readingTranscriptWidthPx
             }
           : null;
         state.settings = settings;
@@ -1864,15 +1913,14 @@ function bindSettingsWatcher() {
         if (activeLayout) {
           state.readingChapterWidthPx = activeLayout.chapterWidth;
           state.readingTranscriptWidthPx = activeLayout.transcriptWidth;
-          state.readingVideoHeightPx = activeLayout.videoHeight;
           state.settings = {
             ...state.settings,
             readerChapterWidthPx: activeLayout.chapterWidth,
-            readerTranscriptWidthPx: activeLayout.transcriptWidth,
-            readerVideoHeightPx: activeLayout.videoHeight
+            readerTranscriptWidthPx: activeLayout.transcriptWidth
           };
         }
         applyReadingViewPresentation();
+        restoreTranscriptScrollAnchor(scrollAnchor);
         schedulePlayerAiQuickActionSync();
       })
       .catch((error) => {
@@ -1953,8 +2001,7 @@ function buildUiHtml() {
           </section>
         </section>
       </div>
-      <div id="${ids.readingChapterResizeHandle}" class="blr-reading-resize-handle blr-reading-resize-handle-left" role="separator" aria-label="上下拖动调整视频高度" aria-orientation="horizontal" aria-valuemin="240" aria-valuemax="900"></div>
-      <div id="${ids.readingTranscriptResizeHandle}" class="blr-reading-resize-handle blr-reading-resize-handle-right" role="separator" aria-label="调整视频和字幕宽度" aria-orientation="vertical" aria-valuemin="280" aria-valuemax="720"></div>
+      <div id="${ids.readingTranscriptResizeHandle}" class="blr-reading-resize-handle blr-reading-resize-handle-right" role="separator" aria-label="调整视频、章节和字幕宽度" aria-orientation="vertical" aria-valuemin="280" aria-valuemax="720"></div>
     </section>
   `;
 }
@@ -1982,13 +2029,11 @@ function bindUiEvents() {
   sendBtn.addEventListener("click", sendToObsidian);
   settingsBtn.addEventListener("click", requestOpenOptions);
   readingCloseBtn.addEventListener("click", () => {
-    if (isReaderMode()) {
-      replaceReaderModeUrl(stripReaderModeUrl(location.href));
-    }
-    closeReadingView();
+    exitReaderMode().catch((error) => {
+      logWarn("[Bilibili Reader] reader exit failed", error);
+    });
   });
-  bindReaderResizeHandle(byId(ids.readingChapterResizeHandle), "chapter");
-  bindReaderResizeHandle(byId(ids.readingTranscriptResizeHandle), "transcript");
+  bindReaderResizeHandle(byId(ids.readingTranscriptResizeHandle));
 
   const handleReaderManualScroll = () => {
     if (Date.now() <= state.readingProgrammaticScrollUntil) {
@@ -2971,15 +3016,262 @@ function cleanupReaderFloatingArtifacts(playerHost = state.readingPlayerHost) {
   }
 }
 
-async function enterReaderMode() {
+async function enterReaderMode({ animate = false } = {}) {
+  state.readingModeTransition?.cancel();
+  const open = () => {
+    const readerUrl = new URL(location.href);
+    readerUrl.searchParams.set("bilibli_reader", "1");
+    replaceReaderModeUrl(readerUrl.toString());
+    document.documentElement.setAttribute("data-blr-reader-mode", "1");
+    document.body.setAttribute("data-blr-reader-mode", "1");
+    state.playerAiQuickActionSuppressedUntil = Date.now() + 2500;
+    removePlayerAiQuickActionButton();
+    return prepareReaderMode();
+  };
+  if (!animate || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    return open();
+  }
+  return transitionReaderMode(open, "enter");
+}
+
+async function exitReaderMode() {
+  if (!state.readingViewOpen || state.readingViewClosing) return;
+  state.readingViewClosing = true;
+  state.readingModeTransition?.cancel();
+  document.documentElement.removeAttribute("data-blr-reader-entering");
+  const close = () => {
+    replaceReaderModeUrl(stripReaderModeUrl(location.href));
+    closeReadingView();
+  };
+  try {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      close();
+    } else {
+      await transitionReaderMode(close, "exit");
+    }
+  } catch (error) {
+    close();
+    throw error;
+  } finally {
+    state.readingViewClosing = false;
+  }
+}
+
+async function transitionReaderMode(update, direction) {
+  const root = document.documentElement;
+  const playerHost = findReaderPlayerHost(getRuntimeVideoElement());
+  // Capture the layout box, not the native player's independently resized
+  // inner surface. Both snapshots must use the same coordinate system.
+  const player = playerHost && (getReaderPlayerWrapNode(playerHost) || playerHost);
+  const rect = player?.getBoundingClientRect();
+  // Stop any in-flight smooth scroll before capturing either template.
+  stopTranscriptScroll(document.getElementById("blr-reading-inline-host"));
+  stopTranscriptScroll(document.getElementById(ids.nativeTranscriptList));
+  // Only capture a player already on screen. Direct reader links and pages
+  // still loading use the normal mounting/retry path.
+  if (
+    !document.startViewTransition || !rect || rect.width <= 0 || rect.height <= 0 ||
+    rect.bottom <= 0 || rect.top >= window.innerHeight || document.hidden
+  ) {
+    if (direction === "exit") {
+      const nodes = [
+        document.getElementById("blr-reading-inline-host"),
+        document.querySelector(".blr-reading-topbar")
+      ];
+      await Promise.all(nodes.filter((node) => node?.animate).map((node) => {
+        const animation = node.animate(
+          [{ opacity: 1, transform: "translateY(0)" }, { opacity: 0, transform: "translateY(6px)" }],
+          { duration: 150, easing: "ease-in", fill: "forwards" }
+        );
+        return animation.finished.catch(() => {}).finally(() => animation.cancel());
+      }));
+      return update();
+    }
+    root.setAttribute("data-blr-reader-entering", "1");
+    try {
+      await update();
+    } finally {
+      window.setTimeout(() => root.removeAttribute("data-blr-reader-entering"), 320);
+    }
+    return;
+  }
+
+  const namedNodes = new Map();
+  const transitionStyles = new Map();
+  const setTransitionStyle = (name, value) => {
+    if (!transitionStyles.has(name)) {
+      transitionStyles.set(name, {
+        value: root.style.getPropertyValue(name),
+        priority: root.style.getPropertyPriority(name)
+      });
+    }
+    root.style.setProperty(name, value);
+  };
+  if (direction === "exit") {
+    setTransitionStyle("--blr-exit-player-width", `${rect.width}px`);
+    setTransitionStyle("--blr-exit-player-height", `${rect.height}px`);
+    setTransitionStyle("--blr-exit-player-from-x", `${rect.left}px`);
+    setTransitionStyle("--blr-exit-player-from-y", `${rect.top}px`);
+  }
+  const nameNode = (node, name) => {
+    if (!node || namedNodes.has(node)) return;
+    namedNodes.set(node, {
+      value: node.style.getPropertyValue("view-transition-name"),
+      priority: node.style.getPropertyPriority("view-transition-name")
+    });
+    node.style.setProperty("view-transition-name", name);
+  };
+  nameNode(player, "blr-reader-player");
+  const sourceTranscript = document.getElementById(
+    direction === "enter" ? ids.nativeTranscriptPanel : "blr-reading-inline-host"
+  );
+  const sourceScrollAnchor = captureTranscriptScrollAnchor(
+    direction === "enter" ? document.getElementById(ids.nativeTranscriptList) : sourceTranscript,
+    direction === "enter" ? ".blr-native-transcript-segment" : ".blr-reading-complete-segment"
+  );
+  const sourceFollowPauseUntil = direction === "enter"
+    ? state.nativeTranscriptManualScrollPauseUntil : state.readingManualScrollPauseUntil;
+  const transcriptRect = sourceTranscript?.getBoundingClientRect();
+  if (transcriptRect?.width > 0 && transcriptRect.height > 0) {
+    nameNode(sourceTranscript, "blr-reader-transcript");
+  }
+  root.setAttribute("data-blr-reader-transition", direction);
+  let cancelled = false;
+  let cleanedUp = false;
+  let transition;
+  let timeout;
+  const cleanup = () => {
+    if (cleanedUp) return;
+    cleanedUp = true;
+    window.clearTimeout(timeout);
+    window.removeEventListener("resize", cancel);
+    const pendingReadingRender = state.readingModeTransition?.cancel === cancel &&
+      state.readingModeTransition.pendingReadingRender;
+    namedNodes.forEach(({ value, priority }, node) => {
+      if (value) node.style.setProperty("view-transition-name", value, priority);
+      else node.style.removeProperty("view-transition-name");
+    });
+    transitionStyles.forEach(({ value, priority }, name) => {
+      if (value) root.style.setProperty(name, value, priority);
+      else root.style.removeProperty(name);
+    });
+    root.removeAttribute("data-blr-reader-transition");
+    root.removeAttribute("data-blr-reader-transcript-transition");
+    if (state.readingModeTransition?.cancel === cancel) state.readingModeTransition = null;
+    if (pendingReadingRender && state.readingViewOpen) {
+      renderReadingView();
+      syncReadingViewPlayback(true);
+    }
+    if (direction === "exit" && !state.readingViewOpen) {
+      clearReaderPageFocus();
+      scheduleNativeTranscriptPanelSync(0);
+      schedulePlayerAiQuickActionSync(0);
+      cleanupReaderFloatingArtifacts();
+    }
+  };
+  const cancel = () => {
+    cancelled = true;
+    transition?.skipTransition();
+    cleanup();
+  };
+  try {
+    transition = document.startViewTransition(async () => {
+      if (cancelled) return;
+      await update();
+      if (cancelled || (direction === "enter" && !state.readingViewOpen)) return;
+      // The mounting code can replace the original player on watch-later pages.
+      const nextHost = direction === "enter"
+        ? state.readingPlayerHost
+        : findReaderPlayerHost(getRuntimeVideoElement());
+      const nextPlayer = nextHost && (getReaderPlayerWrapNode(nextHost) || nextHost);
+      if (nextPlayer !== player) {
+        player.style.removeProperty("view-transition-name");
+        nameNode(nextPlayer, "blr-reader-player");
+      }
+      if (direction === "exit") {
+        const target = nextPlayer?.getBoundingClientRect();
+        if (!target || target.width <= 0 || target.height <= 0) {
+          transition.skipTransition();
+          return;
+        }
+        // Keep the captured bitmap's size constant. Only the group's transform
+        // moves/scales it; the browser must not also interpolate its width.
+        setTransitionStyle("--blr-exit-player-to-x", `${target.left}px`);
+        setTransitionStyle("--blr-exit-player-to-y", `${target.top}px`);
+        setTransitionStyle("--blr-exit-player-scale-x", String(target.width / rect.width));
+        setTransitionStyle("--blr-exit-player-scale-y", String(target.height / rect.height));
+      }
+      // Match the subtitle panels in both directions. The native panel must
+      // already exist in the new snapshot instead of appearing after exit.
+      sourceTranscript?.style.removeProperty("view-transition-name");
+      const targetTranscript = document.getElementById(
+        direction === "enter" ? "blr-reading-inline-host" : ids.nativeTranscriptPanel
+      );
+      const targetScrollContainer = direction === "enter"
+        ? targetTranscript : document.getElementById(ids.nativeTranscriptList);
+      stopTranscriptScroll(targetScrollContainer);
+      transferTranscriptScrollAnchor(sourceScrollAnchor, targetScrollContainer,
+        direction === "enter" ? "data-index" : "data-native-transcript-index");
+      if (direction === "enter") {
+        state.readingManualScrollPauseUntil = Math.max(state.readingManualScrollPauseUntil, sourceFollowPauseUntil);
+        updateReaderFollowState();
+      } else {
+        state.nativeTranscriptManualScrollPauseUntil = Math.max(state.nativeTranscriptManualScrollPauseUntil, sourceFollowPauseUntil);
+      }
+      nameNode(targetTranscript, "blr-reader-transcript");
+      const targetTranscriptRect = targetTranscript?.getBoundingClientRect();
+      if (
+        transcriptRect?.width > 0 && transcriptRect.height > 0 &&
+        targetTranscriptRect?.width > 0 && targetTranscriptRect.height > 0
+      ) {
+        // Translate the two real templates along the same path. Each keeps its
+        // own dimensions and typography; only their opacity changes en route.
+        [
+          ["from-x", transcriptRect.left], ["from-y", transcriptRect.top],
+          ["to-x", targetTranscriptRect.left], ["to-y", targetTranscriptRect.top],
+          ["from-width", transcriptRect.width], ["from-height", transcriptRect.height],
+          ["to-width", targetTranscriptRect.width], ["to-height", targetTranscriptRect.height],
+          ["width", Math.max(transcriptRect.width, targetTranscriptRect.width)],
+          ["height", Math.max(transcriptRect.height, targetTranscriptRect.height)]
+        ].forEach(([name, value]) => setTransitionStyle(`--blr-transcript-${name}`, `${value}px`));
+        root.setAttribute("data-blr-reader-transcript-transition", "1");
+      }
+    });
+  } catch {
+    cleanup();
+    return update();
+  }
+  state.readingModeTransition = { cancel, direction, phase: "updating", finished: transition.finished };
+  window.addEventListener("resize", cancel, { once: true });
+  // A slow player must not leave the old page frozen behind a snapshot.
+  timeout = window.setTimeout(() => transition.skipTransition(), 900);
+  transition.ready.then(() => {
+    window.clearTimeout(timeout);
+    if (state.readingModeTransition?.cancel === cancel) {
+      state.readingModeTransition.phase = "animating";
+    }
+  }, () => {});
+  transition.finished.then(cleanup, cleanup);
+  // Skipped animations still perform the update; never mount a second time.
+  await transition.updateCallbackDone;
+  if (direction === "exit") {
+    // Keep exit guards active until all snapshots have finished animating.
+    await transition.finished.catch(() => {});
+  }
+}
+
+async function prepareReaderMode() {
   const readingView = byId(ids.readingView);
   state.readingViewOpen = true;
   state.readingNativePageMode = true;
   document.body.setAttribute("data-blr-reading-active", "1");
   hydrateReaderStateFromSettings(state.settings);
+  // Each entry gives the video its largest fitted size before allocating subtitles.
+  state.readingTranscriptAutoWidth = true;
   applyReadingViewPresentation();
   alignReaderViewportToPlayer();
   await sleep(0);
+  if (!state.readingViewOpen || !isReaderMode()) return;
   openReaderViewShell(readingView);
   applyReaderPageFocus();
   renderReadingView();
@@ -2990,9 +3282,11 @@ async function enterReaderMode() {
   }
 
   await sleep(0);
+  if (!state.readingViewOpen || !isReaderMode()) return;
 
   // Try to mount player, with more retries for slower pages (like watch later)
   const mounted = await ensureReaderPlayerMounted({ retries: 50, delayMs: 150, forceLayout: true });
+  if (!state.readingViewOpen || !isReaderMode()) return;
   const mountedPlayerHost = state.readingPlayerHost || earlyPlayerHost;
   if (mountedPlayerHost) {
     mountedPlayerHost.removeAttribute("data-blr-reader-fading");
@@ -3109,6 +3403,7 @@ function settleReaderModePresentation() {
 
 async function ensureReaderPlayerMounted({ retries = 1, delayMs = 100, forceLayout = false } = {}) {
   for (let attempt = 0; attempt < retries; attempt += 1) {
+    if (!state.readingViewOpen || !isReaderMode()) return false;
     const video = getRuntimeVideoElement();
     const playerHost = findReaderPlayerHost(video);
     if (video && playerHost) {
@@ -3216,6 +3511,10 @@ function findReaderPlayerHost(video) {
 }
 
 function closeReadingView() {
+  const deferCleanup = state.readingModeTransition?.direction === "exit";
+  document.querySelectorAll("[data-blr-reader-fading]").forEach((node) => {
+    node.removeAttribute("data-blr-reader-fading");
+  });
   cleanupReaderFloatingArtifacts();
   state.readingViewOpen = false;
   state.readingNativePageMode = false;
@@ -3278,21 +3577,23 @@ function closeReadingView() {
   stopReadingViewSync();
   unbindReaderLayout();
   cleanupReaderPlayerHost();
-  clearReaderPageFocus();
-  const sendingBar = document.querySelector(".bpx-player-sending-bar");
-  if (sendingBar) {
-    sendingBar.setAttribute("data-blr-reader-hide-sending-bar", "1");
-    sendingBar.style.setProperty("display", "none", "important");
-    window.setTimeout(() => {
-      sendingBar.style.removeProperty("display");
-      sendingBar.removeAttribute("data-blr-reader-hide-sending-bar");
-    }, 200);
+  if (!deferCleanup) clearReaderPageFocus();
+  // Restore and populate the normal-page subtitles before the new snapshot.
+  // Observer-driven refreshes stay deferred while the snapshots animate.
+  ensureNativeTranscriptPanel();
+  // Restore the sending bar together with the native layout. Hiding it for
+  // 200ms changed the player's height in the middle of the exit transition.
+  if (!deferCleanup) {
+    window.setTimeout(() => cleanupReaderFloatingArtifacts(), 40);
+    window.setTimeout(() => cleanupReaderFloatingArtifacts(), 220);
   }
-  window.setTimeout(() => cleanupReaderFloatingArtifacts(), 40);
-  window.setTimeout(() => cleanupReaderFloatingArtifacts(), 220);
 }
 
 function renderReadingView() {
+  if (state.readingModeTransition?.phase === "animating") {
+    state.readingModeTransition.pendingReadingRender = true;
+    return;
+  }
   const titleNode = document.querySelector(".blr-reading-title");
   const pageTitleNode = byId(ids.readingPageTitle);
   const metaNode = byId(ids.readingMeta);
@@ -3369,6 +3670,9 @@ function renderReadingView() {
   updateReaderChapterPresence(hasChapters);
   applyReadingViewPresentation();
   updateReadingTranscriptTailSpacer();
+  // Position newly rendered text before the transition captures the reader.
+  // A smooth initial scroll continues after the entrance animation finishes.
+  state.readingNextScrollBehavior = "auto";
   state.readingActiveSubtitleIndex = -1;
   state.readingActiveChapterIndex = -1;
 }
@@ -3475,7 +3779,6 @@ function hydrateReaderStateFromSettings(settings = state.settings) {
   state.readingContentWidth = normalizeReaderContentWidth(settings?.readerContentWidth);
   state.readingChapterWidthPx = normalizeReaderColumnWidth(settings?.readerChapterWidthPx, 220, 140, 360);
   state.readingTranscriptWidthPx = normalizeReaderColumnWidth(settings?.readerTranscriptWidthPx, 440, 280, 720);
-  state.readingVideoHeightPx = normalizeReaderVideoHeight(settings?.readerVideoHeightPx);
   // The retired settings panel could persist hidden sections. Keep both visible now that
   // the only reader controls live in the transcript header.
   state.readingChapterVisible = true;
@@ -3546,48 +3849,48 @@ function updateReaderChapterPresence(hasChapters) {
   document.body.dataset.blrReaderHasChapters = value;
 }
 
-function bindReaderResizeHandle(node, side) {
+function bindReaderResizeHandle(node) {
   if (!node || node.dataset.blrBound === "1") return;
 
   node.addEventListener("pointerdown", (event) => {
-    if (event.button !== 0 || window.innerWidth <= 1180) return;
+    if (event.button !== 0 || window.innerWidth <= 1180 || state.readingModeTransition) return;
     event.preventDefault();
     node.setPointerCapture?.(event.pointerId);
-    document.body.dataset.blrReaderResizing = side;
-    const playerRect = getReaderPlayerWrapNode()?.getBoundingClientRect?.();
+    document.body.dataset.blrReaderResizing = "transcript";
+    noteManualReaderInteraction();
+    const scrollAnchor = captureTranscriptScrollAnchor(
+      document.getElementById("blr-reading-inline-host"), ".blr-reading-complete-segment"
+    );
 
     const move = (moveEvent) => {
-      const pagePadding = getReaderPagePaddingPx();
-      const halfGap = Math.min(24, Math.max(16, window.innerWidth * 0.014)) / 2;
-      if (side === "chapter") {
-        if (!playerRect) return;
-        const maxHeight = Math.max(240, window.innerHeight - playerRect.top - 148);
-        state.readingVideoHeightPx = Math.round(
-          Math.min(maxHeight, Math.max(240, moveEvent.clientY - playerRect.top))
-        );
-      } else {
-        state.readingTranscriptWidthPx = normalizeReaderColumnWidth(
-          window.innerWidth - pagePadding - moveEvent.clientX - halfGap,
-          state.readingTranscriptWidthPx,
-          280,
-          720
-        );
+      if (!state.readingViewOpen || !isReaderMode()) {
+        stop();
+        return;
       }
+      const pagePadding = getReaderPagePaddingPx();
+      const { gap, minTranscriptWidth, maxTranscriptWidth } = getEffectiveReaderColumnWidths();
+      state.readingTranscriptAutoWidth = false;
+      state.readingTranscriptWidthPx = normalizeReaderColumnWidth(
+        window.innerWidth - pagePadding - moveEvent.clientX - gap / 2,
+        state.readingTranscriptWidthPx,
+        minTranscriptWidth,
+        maxTranscriptWidth
+      );
       applyReaderColumnLayout();
       layoutReaderPlayerHost();
+      restoreTranscriptScrollAnchor(scrollAnchor);
     };
 
     const stop = () => {
-      node.releasePointerCapture?.(event.pointerId);
+      if (node.hasPointerCapture?.(event.pointerId)) node.releasePointerCapture(event.pointerId);
       document.body.removeAttribute("data-blr-reader-resizing");
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", stop);
       window.removeEventListener("pointercancel", stop);
+      noteManualReaderInteraction();
       state.settings = {
         ...state.settings,
-        readerChapterWidthPx: state.readingChapterWidthPx,
-        readerTranscriptWidthPx: state.readingTranscriptWidthPx,
-        readerVideoHeightPx: state.readingVideoHeightPx
+        readerTranscriptWidthPx: state.readingTranscriptWidthPx
       };
       persistReaderSettings();
     };
@@ -3600,6 +3903,12 @@ function bindReaderResizeHandle(node, side) {
 }
 
 function updateReaderPreferences(next, { persist = true } = {}) {
+  state.readingModeTransition?.cancel();
+  noteManualReaderInteraction();
+  const scrollAnchor = captureTranscriptScrollAnchor(
+    document.getElementById("blr-reading-inline-host") || byId(ids.readingTranscriptList),
+    ".blr-reading-complete-segment"
+  );
   state.readingTheme = normalizeReaderTheme(next.readerTheme ?? state.readingTheme);
   state.readingFontScale = normalizeReaderFontScale(next.readerFontScale ?? state.readingFontScale);
   state.readingFontWeight = normalizeReaderFontWeight(next.readerFontWeight ?? state.readingFontWeight);
@@ -3628,6 +3937,8 @@ function updateReaderPreferences(next, { persist = true } = {}) {
     readerTimestampVisible: state.readingTimestampVisible
   };
   applyReadingViewPresentation();
+  updateReadingTranscriptTailSpacer();
+  restoreTranscriptScrollAnchor(scrollAnchor);
   if (persist) {
     persistReaderSettings();
   }
@@ -3850,6 +4161,8 @@ function layoutReaderPlayerHost() {
     return;
   }
 
+  const aspectRatio = getReaderVideoAspectRatio();
+
   if (state.readingNativePageMode) {
     const rect = playerHost.getBoundingClientRect();
     if (!(rect.width > 0) || !(rect.height > 0)) {
@@ -3859,18 +4172,17 @@ function layoutReaderPlayerHost() {
     const widthLimit = getReaderMainWidthLimit();
     const wrapRect = getReaderPlayerWrapNode(playerHost)?.getBoundingClientRect?.();
     const layoutTop = Number.isFinite(wrapRect?.top) ? wrapRect.top : rect.top;
-    const maxHeight = Math.max(240, window.innerHeight - layoutTop - 148);
-    let renderedWidth = widthLimit;
-    let renderedHeight = maxHeight;
-    if (state.readingVideoHeightPx > 0) {
-      renderedHeight = Math.min(maxHeight, Math.max(240, state.readingVideoHeightPx));
-    }
+    const maxHeight = getReaderPlayerMaxHeightPx(layoutTop);
+    // Fit the whole video, then size the player to that same aspect ratio.
+    // Filling the width and height independently creates letterbox bars.
+    const renderedWidth = Math.min(widthLimit, maxHeight * aspectRatio);
+    const renderedHeight = renderedWidth / aspectRatio;
 
     clearNativeReaderFloatingStyles(playerHost);
     cleanupReaderPlayerHostNode(playerHost);
     [document.documentElement, document.body, readingView].forEach((node) => {
-      node.style.setProperty("--blr-reader-player-rendered-width", `${Math.round(renderedWidth)}px`);
-      node.style.setProperty("--blr-reader-player-rendered-height", `${Math.round(renderedHeight)}px`);
+      node.style.setProperty("--blr-reader-player-rendered-width", `${renderedWidth}px`);
+      node.style.setProperty("--blr-reader-player-rendered-height", `${renderedHeight}px`);
     });
     updateReaderChapterRailPosition();
     updateReadingTranscriptTailSpacer();
@@ -3890,24 +4202,20 @@ function layoutReaderPlayerHost() {
     return;
   }
 
-  const video = state.readingVideoEl;
-  const aspectRatio =
-    Number(video?.videoWidth) > 0 && Number(video?.videoHeight) > 0
-      ? Number(video.videoWidth) / Number(video.videoHeight)
-      : 16 / 9;
-  const targetHeight = rect.height;
-  const targetWidth = Math.min(rect.width, targetHeight * aspectRatio);
+  const maxHeight = Math.min(rect.height, getReaderPlayerMaxHeightPx(rect.top));
+  const targetWidth = Math.min(rect.width, maxHeight * aspectRatio);
+  const targetHeight = targetWidth / aspectRatio;
   const left = rect.left + (rect.width - targetWidth) / 2;
 
   [document.documentElement, document.body, readingView].forEach((node) => {
-    node.style.setProperty("--blr-reader-player-rendered-width", `${Math.round(targetWidth)}px`);
-    node.style.setProperty("--blr-reader-player-rendered-height", `${Math.round(targetHeight)}px`);
+    node.style.setProperty("--blr-reader-player-rendered-width", `${targetWidth}px`);
+    node.style.setProperty("--blr-reader-player-rendered-height", `${targetHeight}px`);
   });
   playerHost.style.setProperty("position", "fixed", "important");
   playerHost.style.setProperty("left", `${Math.round(left)}px`, "important");
   playerHost.style.setProperty("top", `${Math.round(rect.top)}px`, "important");
-  playerHost.style.setProperty("width", `${Math.round(targetWidth)}px`, "important");
-  playerHost.style.setProperty("height", `${Math.round(targetHeight)}px`, "important");
+  playerHost.style.setProperty("width", `${targetWidth}px`, "important");
+  playerHost.style.setProperty("height", `${targetHeight}px`, "important");
   playerHost.style.setProperty("margin", "0", "important");
   playerHost.style.setProperty("z-index", "2147483647", "important");
   playerHost.style.setProperty("max-width", "none", "important");
@@ -3942,7 +4250,6 @@ function cleanupReaderPlayerHostNode(playerHost) {
 }
 
 function cleanupReaderPlayerHost() {
-  restoreReaderPlayerContainer();
   unbindReaderPlayerControlsHover();
   unbindReaderHeaderActionsHover();
   if (state.readingControlsRecoveryTimer) {
@@ -3960,11 +4267,12 @@ function cleanupReaderPlayerHost() {
     node.style.removeProperty("--blr-reader-player-width");
   });
   const playerHost = state.readingPlayerHost;
-  if (!playerHost) {
-    return;
+  if (playerHost) {
+    setReaderPlayerControlsVisible(false, playerHost);
+    cleanupReaderPlayerHostNode(playerHost);
   }
-  setReaderPlayerControlsVisible(false, playerHost);
-  cleanupReaderPlayerHostNode(playerHost);
+  // Restore native dimensions last so cleanup cannot erase them again.
+  restoreReaderPlayerContainer();
   state.readingPlayerHost = null;
 }
 
@@ -4010,6 +4318,7 @@ function stopReadingViewSync() {
     video.removeEventListener("timeupdate", video.__blrReadingSyncHandler);
     video.removeEventListener("seeked", video.__blrReadingSyncHandler);
     video.removeEventListener("loadedmetadata", video.__blrReadingSyncHandler);
+    video.removeEventListener("resize", video.__blrReadingSyncHandler);
     delete video.__blrReadingSyncHandler;
   }
   state.readingVideoEventsBound = false;
@@ -4053,6 +4362,7 @@ function bindReadingViewVideo(video = getRuntimeVideoElement()) {
       prev.removeEventListener("timeupdate", prev.__blrReadingSyncHandler);
       prev.removeEventListener("seeked", prev.__blrReadingSyncHandler);
       prev.removeEventListener("loadedmetadata", prev.__blrReadingSyncHandler);
+      prev.removeEventListener("resize", prev.__blrReadingSyncHandler);
       delete prev.__blrReadingSyncHandler;
     }
     state.readingVideoEl = null;
@@ -4069,11 +4379,12 @@ function bindReadingViewVideo(video = getRuntimeVideoElement()) {
     prev.removeEventListener("timeupdate", prev.__blrReadingSyncHandler);
     prev.removeEventListener("seeked", prev.__blrReadingSyncHandler);
     prev.removeEventListener("loadedmetadata", prev.__blrReadingSyncHandler);
+    prev.removeEventListener("resize", prev.__blrReadingSyncHandler);
   }
 
   const syncHandler = (event) => {
     if (state.readingViewOpen) {
-      if (event?.type === "loadedmetadata") {
+      if (event?.type === "loadedmetadata" || event?.type === "resize") {
         layoutReaderPlayerHost();
       }
       if (event?.type === "seeked") {
@@ -4094,6 +4405,7 @@ function bindReadingViewVideo(video = getRuntimeVideoElement()) {
   video.addEventListener("timeupdate", syncHandler);
   video.addEventListener("seeked", syncHandler);
   video.addEventListener("loadedmetadata", syncHandler);
+  video.addEventListener("resize", syncHandler);
   video.__blrReadingSyncHandler = syncHandler;
   state.readingVideoEl = video;
   state.readingPlayerHost = findReaderPlayerHost(video) || state.readingPlayerHost;
@@ -4896,6 +5208,7 @@ function schedulePlayerAiQuickActionSync(delayMs = 120) {
 }
 
 function syncPlayerAiQuickActionButton() {
+  if (state.readingModeTransition?.direction === "exit") return;
   const existing = document.getElementById("blr-player-ai-quick-action");
   const existingWrap = existing?.closest(".blr-player-ai-wrap");
   if (!state.settings?.enablePlayerAiQuickAction || state.readingViewOpen || isReaderMode()) {
@@ -5280,8 +5593,55 @@ function alignReaderViewportToPlayer() {
   });
 }
 
+function stopTranscriptScroll(container) {
+  if (!container) return;
+  const until = Date.now() + 120;
+  state.readingProgrammaticScrollUntil = Math.max(state.readingProgrammaticScrollUntil, until);
+  state.nativeTranscriptProgrammaticScrollUntil = Math.max(state.nativeTranscriptProgrammaticScrollUntil, until);
+  container.scrollTo({ top: container.scrollTop, left: container.scrollLeft, behavior: "instant" });
+}
+
+function captureTranscriptScrollAnchor(container, selector) {
+  if (!container?.isConnected) return null;
+  stopTranscriptScroll(container);
+  const bounds = container.getBoundingClientRect();
+  const headingHeight = container.querySelector(".blr-reading-transcript-heading")?.getBoundingClientRect().height || 0;
+  const node = Array.from(container.querySelectorAll(selector)).find((item) => {
+    const rect = item.getBoundingClientRect();
+    return rect.bottom > bounds.top + headingHeight && rect.top < bounds.bottom;
+  });
+  return {
+    container, node, headingHeight,
+    offset: node ? node.getBoundingClientRect().top - bounds.top : 0,
+    scrollTop: container.scrollTop
+  };
+}
+
+function transferTranscriptScrollAnchor(anchor, container, indexAttribute) {
+  if (!anchor?.node || !container) return;
+  const index = Number(anchor.node.dataset.index ?? anchor.node.dataset.nativeTranscriptIndex);
+  if (!Number.isInteger(index) || index < 0) return;
+  const node = container.querySelector(`[${indexAttribute}="${index}"]`);
+  if (!node) return;
+  const headingHeight = container.querySelector(".blr-reading-transcript-heading")?.getBoundingClientRect().height || 0;
+  restoreTranscriptScrollAnchor({
+    container, node, scrollTop: container.scrollTop,
+    offset: headingHeight + Math.max(0, anchor.offset - anchor.headingHeight)
+  });
+}
+
+function restoreTranscriptScrollAnchor(anchor) {
+  if (!anchor?.container.isConnected) return;
+  const { container, node, offset, scrollTop } = anchor;
+  const top = node?.isConnected && container.contains(node)
+    ? container.scrollTop + node.getBoundingClientRect().top - container.getBoundingClientRect().top - offset
+    : scrollTop;
+  stopTranscriptScroll(container);
+  container.scrollTo({ top: Math.max(0, top), behavior: "instant" });
+}
+
 function syncReadingViewPlayback(forceScroll = false) {
-  if (!state.readingViewOpen) {
+  if (!state.readingViewOpen || state.readingModeTransition?.phase === "animating") {
     return;
   }
 
@@ -5369,17 +5729,18 @@ function setActiveReadingItems(subtitleIndex, chapterIndex, shouldScroll = false
   }
 
   if (shouldScroll && state.readingAutoScroll) {
-    if (Date.now() < state.readingManualScrollPauseUntil) {
+    if (document.body.hasAttribute("data-blr-reader-resizing") || Date.now() < state.readingManualScrollPauseUntil) {
       updateReaderFollowState();
       state.readingActiveSubtitleIndex = subtitleIndex;
       state.readingActiveChapterIndex = chapterIndex;
       return;
     }
+    const behavior = getReadingScrollBehavior();
     if (nextTranscript) {
-      scrollReadingTranscriptItemIntoView(nextTranscript);
+      scrollReadingTranscriptItemIntoView(nextTranscript, behavior);
     }
     if (nextChapter) {
-      scrollReadingRailItemIntoView(nextChapter);
+      scrollReadingRailItemIntoView(nextChapter, behavior);
     }
   }
 
@@ -5387,19 +5748,25 @@ function setActiveReadingItems(subtitleIndex, chapterIndex, shouldScroll = false
   state.readingActiveChapterIndex = chapterIndex;
 }
 
-function scrollReadingRailItemIntoView(node) {
+function getReadingScrollBehavior() {
+  // "instant" also overrides smooth scrolling inherited from the host page.
+  return state.readingNextScrollBehavior === "auto" || !state.readingViewReady ||
+    state.readingModeTransition?.direction === "enter" ? "instant" : "smooth";
+}
+
+function scrollReadingRailItemIntoView(node, behavior = getReadingScrollBehavior()) {
   if (!node) {
     return;
   }
-  state.readingProgrammaticScrollUntil = Date.now() + 600;
+  state.readingProgrammaticScrollUntil = Date.now() + (behavior === "instant" ? 120 : 600);
   node.scrollIntoView({
-    behavior: "smooth",
+    behavior,
     block: "nearest",
     inline: "nearest"
   });
 }
 
-function scrollReadingTranscriptItemIntoView(node) {
+function scrollReadingTranscriptItemIntoView(node, behavior = getReadingScrollBehavior()) {
   if (!node) {
     return;
   }
@@ -5409,12 +5776,11 @@ function scrollReadingTranscriptItemIntoView(node) {
   const listRect = transcriptList.getBoundingClientRect();
   const itemRect = node.getBoundingClientRect();
   if (!(listRect.height > 0) || !(itemRect.height > 0)) {
-    scrollReadingRailItemIntoView(node);
+    scrollReadingRailItemIntoView(node, behavior);
     return;
   }
 
-  const behavior = state.readingNextScrollBehavior === "auto" ? "auto" : "smooth";
-  state.readingProgrammaticScrollUntil = Date.now() + (behavior === "auto" ? 120 : 800);
+  state.readingProgrammaticScrollUntil = Date.now() + (behavior === "instant" ? 120 : 800);
   state.readingNextScrollBehavior = "smooth";
   if (state.readingNativePageMode && inlineHost && inlineHost.scrollHeight > inlineHost.clientHeight + 8) {
     const hostRect = inlineHost.getBoundingClientRect();

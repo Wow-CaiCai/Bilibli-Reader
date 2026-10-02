@@ -1,6 +1,53 @@
 
+function stopTranscriptScroll(container) {
+  if (!container) return;
+  const until = Date.now() + 120;
+  state.readingProgrammaticScrollUntil = Math.max(state.readingProgrammaticScrollUntil, until);
+  state.nativeTranscriptProgrammaticScrollUntil = Math.max(state.nativeTranscriptProgrammaticScrollUntil, until);
+  container.scrollTo({ top: container.scrollTop, left: container.scrollLeft, behavior: "instant" });
+}
+
+function captureTranscriptScrollAnchor(container, selector) {
+  if (!container?.isConnected) return null;
+  stopTranscriptScroll(container);
+  const bounds = container.getBoundingClientRect();
+  const headingHeight = container.querySelector(".blr-reading-transcript-heading")?.getBoundingClientRect().height || 0;
+  const node = Array.from(container.querySelectorAll(selector)).find((item) => {
+    const rect = item.getBoundingClientRect();
+    return rect.bottom > bounds.top + headingHeight && rect.top < bounds.bottom;
+  });
+  return {
+    container, node, headingHeight,
+    offset: node ? node.getBoundingClientRect().top - bounds.top : 0,
+    scrollTop: container.scrollTop
+  };
+}
+
+function transferTranscriptScrollAnchor(anchor, container, indexAttribute) {
+  if (!anchor?.node || !container) return;
+  const index = Number(anchor.node.dataset.index ?? anchor.node.dataset.nativeTranscriptIndex);
+  if (!Number.isInteger(index) || index < 0) return;
+  const node = container.querySelector(`[${indexAttribute}="${index}"]`);
+  if (!node) return;
+  const headingHeight = container.querySelector(".blr-reading-transcript-heading")?.getBoundingClientRect().height || 0;
+  restoreTranscriptScrollAnchor({
+    container, node, scrollTop: container.scrollTop,
+    offset: headingHeight + Math.max(0, anchor.offset - anchor.headingHeight)
+  });
+}
+
+function restoreTranscriptScrollAnchor(anchor) {
+  if (!anchor?.container.isConnected) return;
+  const { container, node, offset, scrollTop } = anchor;
+  const top = node?.isConnected && container.contains(node)
+    ? container.scrollTop + node.getBoundingClientRect().top - container.getBoundingClientRect().top - offset
+    : scrollTop;
+  stopTranscriptScroll(container);
+  container.scrollTo({ top: Math.max(0, top), behavior: "instant" });
+}
+
 function syncReadingViewPlayback(forceScroll = false) {
-  if (!state.readingViewOpen) {
+  if (!state.readingViewOpen || state.readingModeTransition?.phase === "animating") {
     return;
   }
 
@@ -88,17 +135,18 @@ function setActiveReadingItems(subtitleIndex, chapterIndex, shouldScroll = false
   }
 
   if (shouldScroll && state.readingAutoScroll) {
-    if (Date.now() < state.readingManualScrollPauseUntil) {
+    if (document.body.hasAttribute("data-blr-reader-resizing") || Date.now() < state.readingManualScrollPauseUntil) {
       updateReaderFollowState();
       state.readingActiveSubtitleIndex = subtitleIndex;
       state.readingActiveChapterIndex = chapterIndex;
       return;
     }
+    const behavior = getReadingScrollBehavior();
     if (nextTranscript) {
-      scrollReadingTranscriptItemIntoView(nextTranscript);
+      scrollReadingTranscriptItemIntoView(nextTranscript, behavior);
     }
     if (nextChapter) {
-      scrollReadingRailItemIntoView(nextChapter);
+      scrollReadingRailItemIntoView(nextChapter, behavior);
     }
   }
 
@@ -106,19 +154,25 @@ function setActiveReadingItems(subtitleIndex, chapterIndex, shouldScroll = false
   state.readingActiveChapterIndex = chapterIndex;
 }
 
-function scrollReadingRailItemIntoView(node) {
+function getReadingScrollBehavior() {
+  // "instant" also overrides smooth scrolling inherited from the host page.
+  return state.readingNextScrollBehavior === "auto" || !state.readingViewReady ||
+    state.readingModeTransition?.direction === "enter" ? "instant" : "smooth";
+}
+
+function scrollReadingRailItemIntoView(node, behavior = getReadingScrollBehavior()) {
   if (!node) {
     return;
   }
-  state.readingProgrammaticScrollUntil = Date.now() + 600;
+  state.readingProgrammaticScrollUntil = Date.now() + (behavior === "instant" ? 120 : 600);
   node.scrollIntoView({
-    behavior: "smooth",
+    behavior,
     block: "nearest",
     inline: "nearest"
   });
 }
 
-function scrollReadingTranscriptItemIntoView(node) {
+function scrollReadingTranscriptItemIntoView(node, behavior = getReadingScrollBehavior()) {
   if (!node) {
     return;
   }
@@ -128,12 +182,11 @@ function scrollReadingTranscriptItemIntoView(node) {
   const listRect = transcriptList.getBoundingClientRect();
   const itemRect = node.getBoundingClientRect();
   if (!(listRect.height > 0) || !(itemRect.height > 0)) {
-    scrollReadingRailItemIntoView(node);
+    scrollReadingRailItemIntoView(node, behavior);
     return;
   }
 
-  const behavior = state.readingNextScrollBehavior === "auto" ? "auto" : "smooth";
-  state.readingProgrammaticScrollUntil = Date.now() + (behavior === "auto" ? 120 : 800);
+  state.readingProgrammaticScrollUntil = Date.now() + (behavior === "instant" ? 120 : 800);
   state.readingNextScrollBehavior = "smooth";
   if (state.readingNativePageMode && inlineHost && inlineHost.scrollHeight > inlineHost.clientHeight + 8) {
     const hostRect = inlineHost.getBoundingClientRect();
