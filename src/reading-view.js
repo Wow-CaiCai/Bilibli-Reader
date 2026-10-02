@@ -559,6 +559,9 @@ function renderReadingView() {
   updateReaderChapterPresence(hasChapters);
   applyReadingViewPresentation();
   updateReadingTranscriptTailSpacer();
+  // Position newly rendered text before the transition captures the reader.
+  // A smooth initial scroll continues after the entrance animation finishes.
+  state.readingNextScrollBehavior = "auto";
   state.readingActiveSubtitleIndex = -1;
   state.readingActiveChapterIndex = -1;
 }

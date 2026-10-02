@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bilibili Reader｜哔哩哔哩阅读模式
 // @namespace    https://github.com/bilibli-reader
-// @version      0.0.9-alpha.4
+// @version      0.0.9-alpha.5
 // @description  将 B 站视频切换为视频、章节与字幕联动的阅读视图
 // @author       Wow-CaiCai
 // @license      MIT
@@ -293,7 +293,7 @@ const DEFAULT_SETTINGS = {
 };
 const PLAYER_AI_ICON_VARIANT = "badge";
 
-const READER_VERSION = "0.0.9-alpha.4";
+const READER_VERSION = "0.0.9-alpha.5";
 const CACHE_KEY_PREFIX = "bilibli_reader_subtitle_cache_";
 globalThis.__BILIBLI_READER_CONTENT_SCRIPT_LOADED__ = READER_VERSION;
 const state = {
@@ -1521,7 +1521,8 @@ function scrollNativeTranscriptItemIntoView(node, list, behavior = "smooth") {
   }
   const padding = Math.max(32, Math.min(listRect.height * 0.22, 96));
   const target = list.scrollTop + itemRect.top - listRect.top - padding;
-  state.nativeTranscriptProgrammaticScrollUntil = Date.now() + (behavior === "auto" ? 120 : 700);
+  if (behavior === "auto") behavior = "instant";
+  state.nativeTranscriptProgrammaticScrollUntil = Date.now() + (behavior === "instant" ? 120 : 700);
   list.scrollTo({ top: Math.max(0, Math.round(target)), behavior });
 }
 
@@ -3515,6 +3516,9 @@ function renderReadingView() {
   updateReaderChapterPresence(hasChapters);
   applyReadingViewPresentation();
   updateReadingTranscriptTailSpacer();
+  // Position newly rendered text before the transition captures the reader.
+  // A smooth initial scroll continues after the entrance animation finishes.
+  state.readingNextScrollBehavior = "auto";
   state.readingActiveSubtitleIndex = -1;
   state.readingActiveChapterIndex = -1;
 }
@@ -5521,11 +5525,12 @@ function setActiveReadingItems(subtitleIndex, chapterIndex, shouldScroll = false
       state.readingActiveChapterIndex = chapterIndex;
       return;
     }
+    const behavior = getReadingScrollBehavior();
     if (nextTranscript) {
-      scrollReadingTranscriptItemIntoView(nextTranscript);
+      scrollReadingTranscriptItemIntoView(nextTranscript, behavior);
     }
     if (nextChapter) {
-      scrollReadingRailItemIntoView(nextChapter);
+      scrollReadingRailItemIntoView(nextChapter, behavior);
     }
   }
 
@@ -5533,19 +5538,25 @@ function setActiveReadingItems(subtitleIndex, chapterIndex, shouldScroll = false
   state.readingActiveChapterIndex = chapterIndex;
 }
 
-function scrollReadingRailItemIntoView(node) {
+function getReadingScrollBehavior() {
+  // "instant" also overrides smooth scrolling inherited from the host page.
+  return state.readingNextScrollBehavior === "auto" || !state.readingViewReady ||
+    state.readingModeTransition?.direction === "enter" ? "instant" : "smooth";
+}
+
+function scrollReadingRailItemIntoView(node, behavior = getReadingScrollBehavior()) {
   if (!node) {
     return;
   }
-  state.readingProgrammaticScrollUntil = Date.now() + 600;
+  state.readingProgrammaticScrollUntil = Date.now() + (behavior === "instant" ? 120 : 600);
   node.scrollIntoView({
-    behavior: "smooth",
+    behavior,
     block: "nearest",
     inline: "nearest"
   });
 }
 
-function scrollReadingTranscriptItemIntoView(node) {
+function scrollReadingTranscriptItemIntoView(node, behavior = getReadingScrollBehavior()) {
   if (!node) {
     return;
   }
@@ -5555,12 +5566,11 @@ function scrollReadingTranscriptItemIntoView(node) {
   const listRect = transcriptList.getBoundingClientRect();
   const itemRect = node.getBoundingClientRect();
   if (!(listRect.height > 0) || !(itemRect.height > 0)) {
-    scrollReadingRailItemIntoView(node);
+    scrollReadingRailItemIntoView(node, behavior);
     return;
   }
 
-  const behavior = state.readingNextScrollBehavior === "auto" ? "auto" : "smooth";
-  state.readingProgrammaticScrollUntil = Date.now() + (behavior === "auto" ? 120 : 800);
+  state.readingProgrammaticScrollUntil = Date.now() + (behavior === "instant" ? 120 : 800);
   state.readingNextScrollBehavior = "smooth";
   if (state.readingNativePageMode && inlineHost && inlineHost.scrollHeight > inlineHost.clientHeight + 8) {
     const hostRect = inlineHost.getBoundingClientRect();

@@ -94,11 +94,12 @@ function setActiveReadingItems(subtitleIndex, chapterIndex, shouldScroll = false
       state.readingActiveChapterIndex = chapterIndex;
       return;
     }
+    const behavior = getReadingScrollBehavior();
     if (nextTranscript) {
-      scrollReadingTranscriptItemIntoView(nextTranscript);
+      scrollReadingTranscriptItemIntoView(nextTranscript, behavior);
     }
     if (nextChapter) {
-      scrollReadingRailItemIntoView(nextChapter);
+      scrollReadingRailItemIntoView(nextChapter, behavior);
     }
   }
 
@@ -106,19 +107,25 @@ function setActiveReadingItems(subtitleIndex, chapterIndex, shouldScroll = false
   state.readingActiveChapterIndex = chapterIndex;
 }
 
-function scrollReadingRailItemIntoView(node) {
+function getReadingScrollBehavior() {
+  // "instant" also overrides smooth scrolling inherited from the host page.
+  return state.readingNextScrollBehavior === "auto" || !state.readingViewReady ||
+    state.readingModeTransition?.direction === "enter" ? "instant" : "smooth";
+}
+
+function scrollReadingRailItemIntoView(node, behavior = getReadingScrollBehavior()) {
   if (!node) {
     return;
   }
-  state.readingProgrammaticScrollUntil = Date.now() + 600;
+  state.readingProgrammaticScrollUntil = Date.now() + (behavior === "instant" ? 120 : 600);
   node.scrollIntoView({
-    behavior: "smooth",
+    behavior,
     block: "nearest",
     inline: "nearest"
   });
 }
 
-function scrollReadingTranscriptItemIntoView(node) {
+function scrollReadingTranscriptItemIntoView(node, behavior = getReadingScrollBehavior()) {
   if (!node) {
     return;
   }
@@ -128,12 +135,11 @@ function scrollReadingTranscriptItemIntoView(node) {
   const listRect = transcriptList.getBoundingClientRect();
   const itemRect = node.getBoundingClientRect();
   if (!(listRect.height > 0) || !(itemRect.height > 0)) {
-    scrollReadingRailItemIntoView(node);
+    scrollReadingRailItemIntoView(node, behavior);
     return;
   }
 
-  const behavior = state.readingNextScrollBehavior === "auto" ? "auto" : "smooth";
-  state.readingProgrammaticScrollUntil = Date.now() + (behavior === "auto" ? 120 : 800);
+  state.readingProgrammaticScrollUntil = Date.now() + (behavior === "instant" ? 120 : 800);
   state.readingNextScrollBehavior = "smooth";
   if (state.readingNativePageMode && inlineHost && inlineHost.scrollHeight > inlineHost.clientHeight + 8) {
     const hostRect = inlineHost.getBoundingClientRect();

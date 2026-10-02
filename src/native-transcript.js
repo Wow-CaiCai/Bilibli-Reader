@@ -595,7 +595,8 @@ function scrollNativeTranscriptItemIntoView(node, list, behavior = "smooth") {
   }
   const padding = Math.max(32, Math.min(listRect.height * 0.22, 96));
   const target = list.scrollTop + itemRect.top - listRect.top - padding;
-  state.nativeTranscriptProgrammaticScrollUntil = Date.now() + (behavior === "auto" ? 120 : 700);
+  if (behavior === "auto") behavior = "instant";
+  state.nativeTranscriptProgrammaticScrollUntil = Date.now() + (behavior === "instant" ? 120 : 700);
   list.scrollTo({ top: Math.max(0, Math.round(target)), behavior });
 }
 
