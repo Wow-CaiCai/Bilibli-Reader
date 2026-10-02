@@ -259,8 +259,8 @@ async function prepareReaderMode() {
   state.readingNativePageMode = true;
   document.body.setAttribute("data-blr-reading-active", "1");
   hydrateReaderStateFromSettings(state.settings);
-  // Each entry starts at the largest fitted size; dragging still works afterward.
-  state.readingVideoHeightPx = 0;
+  // Each entry gives the video its largest fitted size before allocating subtitles.
+  state.readingTranscriptAutoWidth = true;
   applyReadingViewPresentation();
   alignReaderViewportToPlayer();
   await sleep(0);
@@ -772,7 +772,6 @@ function hydrateReaderStateFromSettings(settings = state.settings) {
   state.readingContentWidth = normalizeReaderContentWidth(settings?.readerContentWidth);
   state.readingChapterWidthPx = normalizeReaderColumnWidth(settings?.readerChapterWidthPx, 220, 140, 360);
   state.readingTranscriptWidthPx = normalizeReaderColumnWidth(settings?.readerTranscriptWidthPx, 440, 280, 720);
-  state.readingVideoHeightPx = normalizeReaderVideoHeight(settings?.readerVideoHeightPx);
   // The retired settings panel could persist hidden sections. Keep both visible now that
   // the only reader controls live in the transcript header.
   state.readingChapterVisible = true;
@@ -843,19 +842,18 @@ function updateReaderChapterPresence(hasChapters) {
   document.body.dataset.blrReaderHasChapters = value;
 }
 
-function bindReaderResizeHandle(node, side) {
+function bindReaderResizeHandle(node) {
   if (!node || node.dataset.blrBound === "1") return;
 
   node.addEventListener("pointerdown", (event) => {
     if (event.button !== 0 || window.innerWidth <= 1180 || state.readingModeTransition) return;
     event.preventDefault();
     node.setPointerCapture?.(event.pointerId);
-    document.body.dataset.blrReaderResizing = side;
+    document.body.dataset.blrReaderResizing = "transcript";
     noteManualReaderInteraction();
     const scrollAnchor = captureTranscriptScrollAnchor(
       document.getElementById("blr-reading-inline-host"), ".blr-reading-complete-segment"
     );
-    const playerRect = getReaderPlayerWrapNode()?.getBoundingClientRect?.();
 
     const move = (moveEvent) => {
       if (!state.readingViewOpen || !isReaderMode()) {
@@ -863,21 +861,14 @@ function bindReaderResizeHandle(node, side) {
         return;
       }
       const pagePadding = getReaderPagePaddingPx();
-      const halfGap = Math.min(24, Math.max(16, window.innerWidth * 0.014)) / 2;
-      if (side === "chapter") {
-        if (!playerRect) return;
-        const maxHeight = getReaderPlayerMaxHeightPx(playerRect.top);
-        state.readingVideoHeightPx = Math.round(
-          Math.min(maxHeight, Math.max(240, moveEvent.clientY - playerRect.top))
-        );
-      } else {
-        state.readingTranscriptWidthPx = normalizeReaderColumnWidth(
-          window.innerWidth - pagePadding - moveEvent.clientX - halfGap,
-          state.readingTranscriptWidthPx,
-          280,
-          720
-        );
-      }
+      const { gap, minTranscriptWidth, maxTranscriptWidth } = getEffectiveReaderColumnWidths();
+      state.readingTranscriptAutoWidth = false;
+      state.readingTranscriptWidthPx = normalizeReaderColumnWidth(
+        window.innerWidth - pagePadding - moveEvent.clientX - gap / 2,
+        state.readingTranscriptWidthPx,
+        minTranscriptWidth,
+        maxTranscriptWidth
+      );
       applyReaderColumnLayout();
       layoutReaderPlayerHost();
       restoreTranscriptScrollAnchor(scrollAnchor);
@@ -892,9 +883,7 @@ function bindReaderResizeHandle(node, side) {
       noteManualReaderInteraction();
       state.settings = {
         ...state.settings,
-        readerChapterWidthPx: state.readingChapterWidthPx,
-        readerTranscriptWidthPx: state.readingTranscriptWidthPx,
-        readerVideoHeightPx: state.readingVideoHeightPx
+        readerTranscriptWidthPx: state.readingTranscriptWidthPx
       };
       persistReaderSettings();
     };
@@ -1165,11 +1154,7 @@ function layoutReaderPlayerHost() {
     return;
   }
 
-  const video = state.readingVideoEl || getRuntimeVideoElement();
-  const aspectRatio =
-    Number(video?.videoWidth) > 0 && Number(video?.videoHeight) > 0
-      ? Number(video.videoWidth) / Number(video.videoHeight)
-      : 16 / 9;
+  const aspectRatio = getReaderVideoAspectRatio();
 
   if (state.readingNativePageMode) {
     const rect = playerHost.getBoundingClientRect();
@@ -1181,12 +1166,9 @@ function layoutReaderPlayerHost() {
     const wrapRect = getReaderPlayerWrapNode(playerHost)?.getBoundingClientRect?.();
     const layoutTop = Number.isFinite(wrapRect?.top) ? wrapRect.top : rect.top;
     const maxHeight = getReaderPlayerMaxHeightPx(layoutTop);
-    const heightLimit = state.readingVideoHeightPx > 0
-      ? Math.min(maxHeight, Math.max(240, state.readingVideoHeightPx))
-      : maxHeight;
     // Fit the whole video, then size the player to that same aspect ratio.
     // Filling the width and height independently creates letterbox bars.
-    const renderedWidth = Math.min(widthLimit, heightLimit * aspectRatio);
+    const renderedWidth = Math.min(widthLimit, maxHeight * aspectRatio);
     const renderedHeight = renderedWidth / aspectRatio;
 
     clearNativeReaderFloatingStyles(playerHost);
@@ -1213,7 +1195,8 @@ function layoutReaderPlayerHost() {
     return;
   }
 
-  const targetWidth = Math.min(rect.width, rect.height * aspectRatio);
+  const maxHeight = Math.min(rect.height, getReaderPlayerMaxHeightPx(rect.top));
+  const targetWidth = Math.min(rect.width, maxHeight * aspectRatio);
   const targetHeight = targetWidth / aspectRatio;
   const left = rect.left + (rect.width - targetWidth) / 2;
 

@@ -251,8 +251,7 @@ function bindSettingsWatcher() {
         const activeLayout = state.readingViewOpen
           ? {
               chapterWidth: state.readingChapterWidthPx,
-              transcriptWidth: state.readingTranscriptWidthPx,
-              videoHeight: state.readingVideoHeightPx
+              transcriptWidth: state.readingTranscriptWidthPx
             }
           : null;
         state.settings = settings;
@@ -264,12 +263,10 @@ function bindSettingsWatcher() {
         if (activeLayout) {
           state.readingChapterWidthPx = activeLayout.chapterWidth;
           state.readingTranscriptWidthPx = activeLayout.transcriptWidth;
-          state.readingVideoHeightPx = activeLayout.videoHeight;
           state.settings = {
             ...state.settings,
             readerChapterWidthPx: activeLayout.chapterWidth,
-            readerTranscriptWidthPx: activeLayout.transcriptWidth,
-            readerVideoHeightPx: activeLayout.videoHeight
+            readerTranscriptWidthPx: activeLayout.transcriptWidth
           };
         }
         applyReadingViewPresentation();
@@ -354,8 +351,7 @@ function buildUiHtml() {
           </section>
         </section>
       </div>
-      <div id="${ids.readingChapterResizeHandle}" class="blr-reading-resize-handle blr-reading-resize-handle-left" role="separator" aria-label="上下拖动调整视频高度" aria-orientation="horizontal" aria-valuemin="240" aria-valuemax="900"></div>
-      <div id="${ids.readingTranscriptResizeHandle}" class="blr-reading-resize-handle blr-reading-resize-handle-right" role="separator" aria-label="调整视频和字幕宽度" aria-orientation="vertical" aria-valuemin="280" aria-valuemax="720"></div>
+      <div id="${ids.readingTranscriptResizeHandle}" class="blr-reading-resize-handle blr-reading-resize-handle-right" role="separator" aria-label="调整视频、章节和字幕宽度" aria-orientation="vertical" aria-valuemin="280" aria-valuemax="720"></div>
     </section>
   `;
 }
@@ -387,8 +383,7 @@ function bindUiEvents() {
       logWarn("[Bilibili Reader] reader exit failed", error);
     });
   });
-  bindReaderResizeHandle(byId(ids.readingChapterResizeHandle), "chapter");
-  bindReaderResizeHandle(byId(ids.readingTranscriptResizeHandle), "transcript");
+  bindReaderResizeHandle(byId(ids.readingTranscriptResizeHandle));
 
   const handleReaderManualScroll = () => {
     if (Date.now() <= state.readingProgrammaticScrollUntil) {

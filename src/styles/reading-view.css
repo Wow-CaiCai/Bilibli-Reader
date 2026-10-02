@@ -1786,26 +1786,6 @@ body[data-blr-reader-mode="1"] [class*="picture-in-picture"] {
     box-shadow: 0 0 0 3px var(--blr-reader-accent-soft);
   }
 
-  body[data-blr-reader-mode="1"] .blr-reading-resize-handle-left {
-    display: block !important;
-    left: var(--blr-reader-player-left, var(--blr-reader-page-padding)) !important;
-    right: auto !important;
-    top: calc(var(--blr-reader-player-bottom, 72vh) + 1px) !important;
-    bottom: auto !important;
-    width: var(--blr-reader-player-width, var(--blr-reader-main-width)) !important;
-    height: 10px;
-    cursor: row-resize;
-  }
-
-  body[data-blr-reader-mode="1"] .blr-reading-resize-handle-left::before {
-    top: 4px;
-    right: 0;
-    bottom: auto;
-    left: 0;
-    width: auto;
-    height: 2px;
-  }
-
   body[data-blr-reader-mode="1"] .blr-reading-resize-handle-right {
     right: calc(
       var(--blr-reader-page-padding) + var(--blr-reader-transcript-width) +
@@ -1816,12 +1796,6 @@ body[data-blr-reader-mode="1"] [class*="picture-in-picture"] {
   body[data-blr-reader-resizing="transcript"],
   body[data-blr-reader-resizing="transcript"] * {
     cursor: col-resize !important;
-    user-select: none !important;
-  }
-
-  body[data-blr-reader-resizing="chapter"],
-  body[data-blr-reader-resizing="chapter"] * {
-    cursor: row-resize !important;
     user-select: none !important;
   }
 
