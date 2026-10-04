@@ -1,9 +1,105 @@
 
+// Data commits replace arrays. WeakMap entries disappear with old clip data.
+const readingSubtitleCache = new WeakMap();
+const readingChapterCache = new WeakMap();
+const readerNodeCache = new WeakMap();
+const readerContainerNodeCache = new WeakMap();
+
+function invalidateReaderNodeCache(container) {
+  if (!container) return;
+  const entries = readerContainerNodeCache.get(container);
+  entries?.forEach((cache) => { cache.invalidated = true; });
+  readerContainerNodeCache.delete(container);
+}
+
+function getReaderNodeCache(container, selector, indexAttribute = "data-index") {
+  if (!container) return null;
+  const key = `${selector}|${indexAttribute}`;
+  let containerEntries = readerContainerNodeCache.get(container);
+  const existing = containerEntries?.get(key);
+  if (existing && !existing.invalidated && existing.first.isConnected &&
+      container.contains(existing.first) && existing.childCount === existing.root.childElementCount) return existing;
+  const first = container?.querySelector(selector);
+  if (!first) return null;
+  const root = first.parentElement;
+  let entries = readerNodeCache.get(root);
+  if (!entries) {
+    entries = new Map();
+    readerNodeCache.set(root, entries);
+  }
+  let cached = entries.get(key);
+  if (!cached || cached.invalidated || cached.first !== first || cached.childCount !== root.childElementCount) {
+    const nodes = root.querySelectorAll(selector);
+    const byIndex = new Map();
+    let activeNode = null;
+    for (const node of nodes) {
+      const index = Number(node.getAttribute(indexAttribute));
+      if (!byIndex.has(index)) byIndex.set(index, node);
+      if (node.classList.contains("is-active")) activeNode = node;
+    }
+    cached = { root, first, nodes, byIndex, activeNode, childCount: root.childElementCount, invalidated: false };
+    entries.set(key, cached);
+  }
+  if (!containerEntries) {
+    containerEntries = new Map();
+    readerContainerNodeCache.set(container, containerEntries);
+  }
+  containerEntries.set(key, cached);
+  return cached;
+}
+
+function setCachedReaderActiveNode(cache, next) {
+  if (!cache || cache.activeNode === next) return;
+  cache.activeNode?.classList.remove("is-active");
+  next?.classList.add("is-active");
+  cache.activeNode = next;
+}
+
+function getCachedSubtitleData(body = clipState.subtitleBody) {
+  if (!Array.isArray(body)) return { intervals: [], items: [], canBinarySearch: true, hasHourTimestamp: false };
+  let cached = readingSubtitleCache.get(body);
+  if (cached) return cached;
+  const intervals = body.map((item, index) => {
+    const from = Number(item?.from || 0) || 0;
+    const rawTo = Number(item?.to || 0) || 0;
+    return { index, from, rawTo, to: rawTo > from ? rawTo : from + 2 };
+  });
+  // Arbitrary ordering and overlaps must keep the original first-match rule.
+  const canBinarySearch = intervals.every((item, index) =>
+    Number.isFinite(item.from) && Number.isFinite(item.to) &&
+    item.rawTo > item.from && (index === 0 || intervals[index - 1].to <= item.from)
+  );
+  const items = body.map((item, index) => ({
+    index,
+    from: Number(item?.from || 0) || 0,
+    to: Number(item?.to || 0) || 0,
+    content: String(item?.content || "").trim()
+  })).filter((item) => item.content);
+  const hasHourTimestamp = intervals.some((item) => Number.isFinite(item.rawTo) && item.rawTo >= 3600);
+  cached = { intervals, items, canBinarySearch, hasHourTimestamp };
+  readingSubtitleCache.set(body, cached);
+  return cached;
+}
+
+function getCachedReadingTranscriptItems(body = clipState.subtitleBody) {
+  return getCachedSubtitleData(body).items;
+}
+
+function getCachedReadingChapters(chapters = clipState.chapters) {
+  if (!Array.isArray(chapters)) return [];
+  let cached = readingChapterCache.get(chapters);
+  if (!cached) {
+    cached = normalizeChapters(chapters);
+    readingChapterCache.set(chapters, cached);
+  }
+  return cached;
+}
+
 function stopTranscriptScroll(container) {
   if (!container) return;
   const until = Date.now() + 120;
-  state.readingProgrammaticScrollUntil = Math.max(state.readingProgrammaticScrollUntil, until);
-  state.nativeTranscriptProgrammaticScrollUntil = Math.max(state.nativeTranscriptProgrammaticScrollUntil, until);
+  readerSessionState.programmaticScrollUntil = Math.max(readerSessionState.programmaticScrollUntil, until);
+  nativeTranscriptState.programmaticScrollUntil = Math.max(nativeTranscriptState.programmaticScrollUntil, until);
   container.scrollTo({ top: container.scrollTop, left: container.scrollLeft, behavior: "instant" });
 }
 
@@ -12,10 +108,25 @@ function captureTranscriptScrollAnchor(container, selector) {
   stopTranscriptScroll(container);
   const bounds = container.getBoundingClientRect();
   const headingHeight = container.querySelector(".blr-reading-transcript-heading")?.getBoundingClientRect().height || 0;
-  const node = Array.from(container.querySelectorAll(selector)).find((item) => {
-    const rect = item.getBoundingClientRect();
-    return rect.bottom > bounds.top + headingHeight && rect.top < bounds.bottom;
-  });
+  const indexAttribute = selector === ".blr-native-transcript-segment"
+    ? "data-native-transcript-index" : "data-index";
+  const nodes = getReaderNodeCache(container, selector, indexAttribute)?.nodes;
+  let node = null;
+  if (nodes?.length) {
+    // Both transcript templates use inline segments in document order. Their
+    // bottom edges are monotonic even when one segment wraps onto several lines.
+    const visibleTop = bounds.top + headingHeight;
+    let low = 0;
+    let high = nodes.length;
+    while (low < high) {
+      const mid = (low + high) >>> 1;
+      if (nodes[mid].getBoundingClientRect().bottom <= visibleTop) low = mid + 1;
+      else high = mid;
+    }
+    const candidate = nodes[low];
+    const rect = candidate?.getBoundingClientRect();
+    if (rect && rect.bottom > visibleTop && rect.top < bounds.bottom) node = candidate;
+  }
   return {
     container, node, headingHeight,
     offset: node ? node.getBoundingClientRect().top - bounds.top : 0,
@@ -27,7 +138,9 @@ function transferTranscriptScrollAnchor(anchor, container, indexAttribute) {
   if (!anchor?.node || !container) return;
   const index = Number(anchor.node.dataset.index ?? anchor.node.dataset.nativeTranscriptIndex);
   if (!Number.isInteger(index) || index < 0) return;
-  const node = container.querySelector(`[${indexAttribute}="${index}"]`);
+  const selector = indexAttribute === "data-native-transcript-index"
+    ? ".blr-native-transcript-segment" : ".blr-reading-complete-segment";
+  const node = getReaderNodeCache(container, selector, indexAttribute)?.byIndex.get(index);
   if (!node) return;
   const headingHeight = container.querySelector(".blr-reading-transcript-heading")?.getBoundingClientRect().height || 0;
   restoreTranscriptScrollAnchor({
@@ -47,25 +160,21 @@ function restoreTranscriptScrollAnchor(anchor) {
 }
 
 function syncReadingViewPlayback(forceScroll = false) {
-  if (!state.readingViewOpen || state.readingModeTransition?.phase === "animating") {
+  if (!readerSessionState.open || readerSessionState.transition?.phase === "animating") {
     return;
-  }
-
-  if (state.readingNativePageMode) {
-    layoutReaderPlayerHost();
   }
 
   const runtimeVideo = getRuntimeVideoElement();
   const runtimeHost = findReaderPlayerHost(runtimeVideo);
   if (runtimeVideo && runtimeHost) {
     const playerChanged =
-      runtimeVideo !== state.readingVideoEl || runtimeHost !== state.readingPlayerHost;
+      runtimeVideo !== readerPlayerState.videoEl || runtimeHost !== readerPlayerState.host;
     if (playerChanged) {
       queueEnsureReaderPlayerMounted();
     }
   }
 
-  const video = bindReadingViewVideo(runtimeVideo || state.readingVideoEl);
+  const video = bindReadingViewVideo(runtimeVideo || readerPlayerState.videoEl);
   if (!video) {
     renderReadingStatus("当前页面没有找到可联动的视频播放器。");
     return;
@@ -75,8 +184,8 @@ function syncReadingViewPlayback(forceScroll = false) {
   const subtitleIndex = findActiveSubtitleIndex(currentTime);
   const chapterIndex = findActiveChapterIndex(currentTime);
   const changed =
-    subtitleIndex !== state.readingActiveSubtitleIndex ||
-    chapterIndex !== state.readingActiveChapterIndex;
+    subtitleIndex !== readerSessionState.activeSubtitleIndex ||
+    chapterIndex !== readerSessionState.activeChapterIndex;
 
   setActiveReadingItems(subtitleIndex, chapterIndex, forceScroll || changed);
   updateReaderFollowState();
@@ -84,21 +193,27 @@ function syncReadingViewPlayback(forceScroll = false) {
 }
 
 function findActiveSubtitleIndex(currentTime) {
-  const items = Array.isArray(state.subtitleBody) ? state.subtitleBody : [];
-  for (let index = 0; index < items.length; index += 1) {
-    const item = items[index];
-    const from = Number(item?.from || 0) || 0;
-    const rawTo = Number(item?.to || 0) || 0;
-    const to = rawTo > from ? rawTo : from + 2;
-    if (currentTime >= from && currentTime < to) {
-      return index;
+  const { intervals, canBinarySearch } = getCachedSubtitleData();
+  if (canBinarySearch) {
+    let low = 0;
+    let high = intervals.length - 1;
+    while (low <= high) {
+      const mid = (low + high) >>> 1;
+      const item = intervals[mid];
+      if (currentTime < item.from) high = mid - 1;
+      else if (currentTime >= item.to) low = mid + 1;
+      else return currentTime >= item.from && currentTime < item.to ? item.index : -1;
     }
+    return -1;
+  }
+  for (const item of intervals) {
+    if (currentTime >= item.from && currentTime < item.to) return item.index;
   }
   return -1;
 }
 
 function findActiveChapterIndex(currentTime) {
-  const chapters = normalizeChapters(state.chapters || []);
+  const chapters = getCachedReadingChapters();
   for (let index = 0; index < chapters.length; index += 1) {
     const item = chapters[index];
     const from = Number(item?.from || 0) || 0;
@@ -114,31 +229,25 @@ function findActiveChapterIndex(currentTime) {
 }
 
 function setActiveReadingItems(subtitleIndex, chapterIndex, shouldScroll = false) {
+  const transcriptChanged = subtitleIndex !== readerSessionState.activeSubtitleIndex;
+  const chapterChanged = chapterIndex !== readerSessionState.activeChapterIndex;
+  if (!transcriptChanged && !chapterChanged && !shouldScroll) return;
   const transcriptList = byId(ids.readingTranscriptList);
   const chapterList = byId(ids.readingChapterList);
-  const nextTranscript = transcriptList.querySelector(`[data-index="${subtitleIndex}"]`);
-  const nextChapter = chapterList.querySelector(`[data-index="${chapterIndex}"]`);
-  const currentTranscript = transcriptList.querySelector(".blr-reading-complete-segment.is-active");
-  const currentChapter = chapterList.querySelector(".blr-reading-chapter.is-active");
+  const transcriptCache = getReaderNodeCache(transcriptList, ".blr-reading-complete-segment");
+  const chapterCache = getReaderNodeCache(chapterList, ".blr-reading-chapter");
+  const nextTranscript = transcriptChanged || shouldScroll
+    ? transcriptCache?.byIndex.get(subtitleIndex) || null : null;
+  const nextChapter = chapterChanged || shouldScroll
+    ? chapterCache?.byIndex.get(chapterIndex) || null : null;
+  if (transcriptChanged) setCachedReaderActiveNode(transcriptCache, nextTranscript);
+  if (chapterChanged) setCachedReaderActiveNode(chapterCache, nextChapter);
 
-  if (currentTranscript && currentTranscript !== nextTranscript) {
-    currentTranscript.classList.remove("is-active");
-  }
-  if (currentChapter && currentChapter !== nextChapter) {
-    currentChapter.classList.remove("is-active");
-  }
-  if (nextTranscript) {
-    nextTranscript.classList.add("is-active");
-  }
-  if (nextChapter) {
-    nextChapter.classList.add("is-active");
-  }
-
-  if (shouldScroll && state.readingAutoScroll) {
-    if (document.body.hasAttribute("data-blr-reader-resizing") || Date.now() < state.readingManualScrollPauseUntil) {
+  if (shouldScroll && readerPreferences.autoScroll) {
+    if (document.body.hasAttribute("data-blr-reader-resizing") || Date.now() < readerSessionState.manualScrollPauseUntil) {
       updateReaderFollowState();
-      state.readingActiveSubtitleIndex = subtitleIndex;
-      state.readingActiveChapterIndex = chapterIndex;
+      readerSessionState.activeSubtitleIndex = subtitleIndex;
+      readerSessionState.activeChapterIndex = chapterIndex;
       return;
     }
     const behavior = getReadingScrollBehavior();
@@ -150,21 +259,21 @@ function setActiveReadingItems(subtitleIndex, chapterIndex, shouldScroll = false
     }
   }
 
-  state.readingActiveSubtitleIndex = subtitleIndex;
-  state.readingActiveChapterIndex = chapterIndex;
+  readerSessionState.activeSubtitleIndex = subtitleIndex;
+  readerSessionState.activeChapterIndex = chapterIndex;
 }
 
 function getReadingScrollBehavior() {
   // "instant" also overrides smooth scrolling inherited from the host page.
-  return state.readingNextScrollBehavior === "auto" || !state.readingViewReady ||
-    state.readingModeTransition?.direction === "enter" ? "instant" : "smooth";
+  return readerSessionState.nextScrollBehavior === "auto" || !readerSessionState.ready ||
+    readerSessionState.transition?.direction === "enter" ? "instant" : "smooth";
 }
 
 function scrollReadingRailItemIntoView(node, behavior = getReadingScrollBehavior()) {
   if (!node) {
     return;
   }
-  state.readingProgrammaticScrollUntil = Date.now() + (behavior === "instant" ? 120 : 600);
+  readerSessionState.programmaticScrollUntil = Date.now() + (behavior === "instant" ? 120 : 600);
   node.scrollIntoView({
     behavior,
     block: "nearest",
@@ -173,7 +282,7 @@ function scrollReadingRailItemIntoView(node, behavior = getReadingScrollBehavior
 }
 
 function scrollReadingTranscriptItemIntoView(node, behavior = getReadingScrollBehavior()) {
-  if (!node) {
+  if (!readerSessionState.open || !node) {
     return;
   }
 
@@ -186,9 +295,9 @@ function scrollReadingTranscriptItemIntoView(node, behavior = getReadingScrollBe
     return;
   }
 
-  state.readingProgrammaticScrollUntil = Date.now() + (behavior === "instant" ? 120 : 800);
-  state.readingNextScrollBehavior = "smooth";
-  if (state.readingNativePageMode && inlineHost && inlineHost.scrollHeight > inlineHost.clientHeight + 8) {
+  readerSessionState.programmaticScrollUntil = Date.now() + (behavior === "instant" ? 120 : 800);
+  readerSessionState.nextScrollBehavior = "smooth";
+  if (inlineHost && inlineHost.scrollHeight > inlineHost.clientHeight + 8) {
     const hostRect = inlineHost.getBoundingClientRect();
     const computed = window.getComputedStyle(node);
     const lineHeight = Number.parseFloat(computed.lineHeight) || itemRect.height || 32;
@@ -204,20 +313,10 @@ function scrollReadingTranscriptItemIntoView(node, behavior = getReadingScrollBe
     });
     return;
   }
-  if (state.readingNativePageMode || transcriptList.scrollHeight <= transcriptList.clientHeight + 8) {
-    const desiredTop = listRect.top + Math.max(72, Math.min(listRect.height * 0.24, 220));
-    const nextTop = window.scrollY + itemRect.top - desiredTop;
-    window.scrollTo({
-      top: Math.max(0, Math.round(nextTop)),
-      behavior
-    });
-    return;
-  }
-
-  const targetScrollTop =
-    transcriptList.scrollTop + (itemRect.top - listRect.top) - Math.max(48, Math.min(listRect.height * 0.24, 180));
-  transcriptList.scrollTo({
-    top: Math.max(0, Math.round(targetScrollTop)),
+  const desiredTop = listRect.top + Math.max(72, Math.min(listRect.height * 0.24, 220));
+  const nextTop = window.scrollY + itemRect.top - desiredTop;
+  window.scrollTo({
+    top: Math.max(0, Math.round(nextTop)),
     behavior
   });
 }
@@ -230,8 +329,8 @@ function jumpReadingTarget(seconds) {
   }
 
   const nextTime = Math.max(0, Number(seconds || 0) || 0);
-  state.readingManualScrollPauseUntil = 0;
-  state.readingNextScrollBehavior = "auto";
+  readerSessionState.manualScrollPauseUntil = 0;
+  readerSessionState.nextScrollBehavior = "auto";
   updateReaderFollowState();
   video.currentTime = nextTime;
   if (video.paused) {
@@ -250,7 +349,7 @@ function onReadingChapterClick(event) {
 
 async function onReadingCollectionClick(event) {
   const target = event.target.closest(".blr-reading-collection-item");
-  if (!target || target.classList.contains("is-active") || state.readingCollectionSwitchInFlight) {
+  if (!target || target.classList.contains("is-active") || readerSessionState.collectionSwitchInFlight) {
     return;
   }
   const bvid = String(target.dataset.bvid || "").trim();
@@ -261,9 +360,9 @@ async function onReadingCollectionClick(event) {
 
   const pageIndex = Number(target.dataset.page || 0);
   const targetIndex = Number(target.dataset.index);
-  const currentIndex = Number(state.collection?.currentIndex);
+  const currentIndex = Number(clipState.collection?.currentIndex);
   const expectedSignature = [bvid, pageIndex > 0 ? pageIndex : 1].join("|");
-  state.readingCollectionSwitchInFlight = true;
+  readerSessionState.collectionSwitchInFlight = true;
   target.setAttribute("aria-busy", "true");
   renderReadingStatus("正在使用播放器原生逻辑切换选集...");
 
@@ -273,7 +372,7 @@ async function onReadingCollectionClick(event) {
       targetIndex,
       bvid,
       pageIndex,
-      cid: String(state.collection?.episodes?.[targetIndex]?.cid || "")
+      cid: String(clipState.collection?.episodes?.[targetIndex]?.cid || "")
     });
     if (nativeTriggered && (await waitForClipSignature(expectedSignature, 4500))) {
       return;
@@ -288,7 +387,7 @@ async function onReadingCollectionClick(event) {
     nextUrl.searchParams.set("bilibli_reader", "1");
     location.assign(nextUrl.toString());
   } finally {
-    state.readingCollectionSwitchInFlight = false;
+    readerSessionState.collectionSwitchInFlight = false;
     target.removeAttribute("aria-busy");
   }
 }
@@ -325,7 +424,7 @@ function findNativePlayerEpisodeControl(direction) {
         "[title*='下一集']",
         "[data-text*='下一集']"
       ];
-  const roots = [getReaderControlsRoot(), getReaderPlayerWrapNode(), state.readingPlayerHost, document].filter(
+  const roots = [getReaderControlsRoot(), getReaderPlayerWrapNode(), readerPlayerState.host, document].filter(
     Boolean
   );
 
@@ -438,11 +537,11 @@ function onReadingTranscriptClick(event) {
 }
 
 function noteManualReaderInteraction(durationMs = 3000) {
-  if (!state.readingAutoScroll) {
+  if (!readerPreferences.autoScroll) {
     updateReaderFollowState();
     return;
   }
-  state.readingManualScrollPauseUntil = Date.now() + durationMs;
+  readerSessionState.manualScrollPauseUntil = Date.now() + durationMs;
   updateReaderFollowState();
 }
 
@@ -452,6 +551,6 @@ function updateReaderFollowState() {
     return;
   }
   const mode =
-    !state.readingAutoScroll ? "off" : Date.now() < state.readingManualScrollPauseUntil ? "manual" : "auto";
+    !readerPreferences.autoScroll ? "off" : Date.now() < readerSessionState.manualScrollPauseUntil ? "manual" : "auto";
   readingView.setAttribute("data-blr-reader-follow", mode);
 }

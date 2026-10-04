@@ -86,7 +86,7 @@ class BuildUserscriptVersionTests(unittest.TestCase):
                 patch.object(build_userscript, "README_PATH", readme_path),
                 patch.object(build_userscript, "SCRIPT_CAT_README_PATH", scriptcat_path),
             ):
-                build_userscript.main()
+                build_userscript.main(bump=True)
                 self.assertIn(
                     "// @version      0.0.6-alpha.1", output_path.read_text(encoding="utf-8")
                 )
@@ -97,7 +97,7 @@ class BuildUserscriptVersionTests(unittest.TestCase):
                     "Bilibli-Reader@main/docs/images/sample_reader.png",
                     scriptcat_path.read_text(encoding="utf-8"),
                 )
-                build_userscript.main()
+                build_userscript.main(bump=True)
                 self.assertIn(
                     "// @version      0.0.6-alpha.2", output_path.read_text(encoding="utf-8")
                 )

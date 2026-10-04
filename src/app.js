@@ -1,6 +1,6 @@
-
+const readingTranscriptLanguageCache = new WeakMap();
 function shouldForceNormalPageState(url = location.href) {
-  return !isReaderMode(url) && !state.readingViewOpen;
+  return !isReaderMode(url) && !readerSessionState.open;
 }
 
 function enforceNormalPageStateIfNeeded(url = location.href) {
@@ -11,10 +11,10 @@ function enforceNormalPageStateIfNeeded(url = location.href) {
 }
 
 function bindNormalPageStateGuard() {
-  if (state.normalPageStateGuardBound) {
+  if (uiState.normalPageStateGuardBound) {
     return;
   }
-  state.normalPageStateGuardBound = true;
+  uiState.normalPageStateGuardBound = true;
 
   const observer = new MutationObserver(() => {
     enforceNormalPageStateIfNeeded();
@@ -37,69 +37,22 @@ function bindNormalPageStateGuard() {
     attributes: true,
     attributeFilter: ["data-blr-reader-mode", "data-blr-reader-line-height", "data-blr-reading-active"]
   });
-  state.normalPageStateObserver = observer;
+  uiState.normalPageStateObserver = observer;
   enforceNormalPageStateIfNeeded();
 }
 
 function bindRuntimeEvents() {
-  if (state.runtimeEventsBound) {
+  if (uiState.runtimeEventsBound) {
     return;
   }
-  state.runtimeEventsBound = true;
+  uiState.runtimeEventsBound = true;
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (!message || typeof message !== "object") {
       return false;
     }
 
-    if (message.type === "popup-get-state") {
-      sendResponse({ ok: true, payload: getPopupPayload() });
-      return false;
-    }
-
-    if (message.type === "popup-refresh") {
-      refreshClip()
-        .then(() => sendResponse({ ok: true, payload: getPopupPayload() }))
-        .catch((error) =>
-          sendResponse({ ok: false, error: getErrorMessage(error), payload: getPopupPayload() })
-        );
-      return true;
-    }
-
-    if (message.type === "popup-select-subtitle") {
-      const runId = state.fetchRunId;
-      const url = String(message.url || "").trim();
-      const lang = String(message.lang || "unknown");
-      const subtitleId = String(message.subtitleId || "");
-      if (!url) {
-        sendResponse({ ok: false, error: "Missing subtitle URL", payload: getPopupPayload() });
-        return false;
-      }
-      loadSubtitle(url, lang, runId, subtitleId)
-        .then(() => {
-          ensureRunActive(runId);
-          setStatus("字幕切换完成。");
-          renderSubtitleSelect();
-          sendResponse({ ok: true, payload: getPopupPayload() });
-        })
-        .catch((error) =>
-          sendResponse({ ok: false, error: getErrorMessage(error), payload: getPopupPayload() })
-        );
-      return true;
-    }
-
-    if (message.type === "popup-send-obsidian") {
-      sendToObsidian()
-        .then(() => sendResponse({ ok: true, payload: getPopupPayload() }))
-        .catch((error) =>
-          sendResponse({ ok: false, error: getErrorMessage(error), payload: getPopupPayload() })
-        );
-      return true;
-    }
-
     if (message.type === "popup-trigger-reading-view") {
-      state.playerAiQuickActionSuppressedUntil = Date.now() + 2500;
-      removePlayerAiQuickActionButton();
       ensureUiReady();
       const readerUrl = String(message.readerUrl || "").trim();
       if (readerUrl) {
@@ -107,7 +60,7 @@ function bindRuntimeEvents() {
         document.documentElement.setAttribute("data-blr-reader-mode", "1");
         document.body.setAttribute("data-blr-reader-mode", "1");
       }
-      if (!state.readingViewOpen) {
+      if (!readerSessionState.open) {
         enterReaderMode().catch((error) => {
           logWarn("[BOC] reading mode trigger failed", error);
         });
@@ -116,108 +69,21 @@ function bindRuntimeEvents() {
       return true;
     }
 
-    if (message.type === "sidepanel-get-context") {
-      const settings = state.settings || DEFAULT_SETTINGS;
-      const body = state.subtitleBody || [];
-      let subtitleMarkdown = "";
-      try {
-        subtitleMarkdown = body.length
-          ? buildMarkdown(state, body, { ...settings, includeHotCommentsInNote: false })
-          : "";
-      } catch (e) {
-        subtitleMarkdown = "";
-        logWarn("[BOC] sidepanel-get-context: buildMarkdown failed", e);
-      }
-      sendResponse({
-        ok: true,
-        payload: {
-          url: location.href,
-          title: state.title || "",
-          author: state.author || "",
-          uploadDate: state.uploadDate || "",
-          bvid: state.bvid || "",
-          cid: state.cid || "",
-          aid: state.aid || "",
-          pageIndex: Number(state.pageIndex) > 0 ? Number(state.pageIndex) : 1,
-          pageCount: Number(state.pageCount) > 0 ? Number(state.pageCount) : 0,
-          pageTitle: state.pageTitle || "",
-          subtitleBody: body,
-          subtitleMarkdown,
-          subtitleLang: state.selectedSubtitleLang || "",
-          selectedSubtitleId: state.selectedSubtitleId || "",
-          selectedSubtitleUrl: state.selectedSubtitleUrl || "",
-          subtitleOptions: state.subtitles || [],
-          hotComments: []
-        }
-      });
-      return false;
-    }
-
-    if (message.type === "sidepanel-get-hot-comments") {
-      const count = 20; // 固定取前 20 条热门评论
-      if (!count) {
-        sendResponse({ ok: true, comments: [] });
-        return false;
-      }
-
-      if (!getCurrentAid()) {
-        state.hotComments = [];
-        sendResponse({ ok: true, comments: [], note: "无法获取视频 aid" });
-        return false;
-      }
-
-      fetchHotComments(count)
-        .then((hotComments) => {
-          state.hotComments = hotComments;
-          sendResponse({ ok: true, comments: hotComments });
-        })
-        .catch((error) => {
-          state.hotComments = [];
-          sendResponse({ ok: true, comments: [], note: String(error?.message || error) });
-        });
-      return true;
-    }
-
-    if (message.type === "sidepanel-seek-video-time") {
-      const seconds = Number(message.seconds);
-      const video = getRuntimeVideoElement();
-      if (!video) {
-        sendResponse({ ok: false, error: "当前页面没有找到可联动的视频播放器。" });
-        return false;
-      }
-      const nextTime = Math.max(0, Number.isFinite(seconds) ? seconds : 0);
-      const wasPaused = Boolean(video.paused);
-      video.currentTime = nextTime;
-      if (!wasPaused) {
-        video.play().catch(() => {});
-      }
-      if (state.readingViewOpen) {
-        state.readingManualScrollPauseUntil = 0;
-        state.readingNextScrollBehavior = "auto";
-        updateReaderFollowState();
-        syncReadingViewPlayback(true);
-      }
-      sendResponse({ ok: true, currentTime: nextTime });
-      return false;
-    }
-
     return false;
   });
 }
 
 function bindSettingsWatcher() {
-  if (state.settingsWatcherBound || !chrome.storage?.onChanged) {
+  if (uiState.settingsWatcherBound || !chrome.storage?.onChanged) {
     return;
   }
-  state.settingsWatcherBound = true;
+  uiState.settingsWatcherBound = true;
 
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName !== "sync" && areaName !== "local") {
       return;
     }
     if (
-      !changes.enablePlayerAiQuickAction &&
-      !changes.playerAiQuickPrompt &&
       !changes.readerTheme &&
       !changes.readerFontScale &&
       !changes.readerFontWeight &&
@@ -226,10 +92,7 @@ function bindSettingsWatcher() {
       !changes.readerContentWidth &&
       !changes.readerChapterWidthPx &&
       !changes.readerTranscriptWidthPx &&
-      !changes.readerVideoHeightPx &&
-      !changes.readerChapterVisibility &&
       !changes.readerTranscriptVisible &&
-      !changes.readerTimestampVisible &&
       !changes.nativeTranscriptTheme &&
       !changes.nativeTranscriptFontSize &&
       !changes.nativeTranscriptFontWeight
@@ -239,7 +102,7 @@ function bindSettingsWatcher() {
 
     getSettings()
       .then(async (settings) => {
-        const transition = state.readingModeTransition;
+        const transition = readerSessionState.transition;
         if (transition) {
           // Storage echoes must not reflow the live target during its motion.
           await transition.finished.catch(() => {});
@@ -248,30 +111,30 @@ function bindSettingsWatcher() {
         const scrollAnchor = captureTranscriptScrollAnchor(
           document.getElementById("blr-reading-inline-host"), ".blr-reading-complete-segment"
         );
-        const activeLayout = state.readingViewOpen
+        const activeLayout = readerSessionState.open
           ? {
-              chapterWidth: state.readingChapterWidthPx,
-              transcriptWidth: state.readingTranscriptWidthPx
+              chapterWidth: readerPreferences.chapterWidthPx,
+              transcriptWidth: readerPreferences.transcriptWidthPx
             }
           : null;
-        state.settings = settings;
+        readerPreferences.settings = settings;
         hydrateReaderStateFromSettings(settings);
         hydrateNativeTranscriptSettings(settings);
         // The open reader owns its live drag state. Storage notifications can
         // arrive out of order when two resize handles are used in quick
         // succession, so they must not restore an older column or video size.
         if (activeLayout) {
-          state.readingChapterWidthPx = activeLayout.chapterWidth;
-          state.readingTranscriptWidthPx = activeLayout.transcriptWidth;
-          state.settings = {
-            ...state.settings,
+          readerPreferences.chapterWidthPx = activeLayout.chapterWidth;
+          readerPreferences.transcriptWidthPx = activeLayout.transcriptWidth;
+          readerPreferences.settings = {
+            ...readerPreferences.settings,
             readerChapterWidthPx: activeLayout.chapterWidth,
             readerTranscriptWidthPx: activeLayout.transcriptWidth
           };
         }
         applyReadingViewPresentation();
+        scheduleReaderLayout();
         restoreTranscriptScrollAnchor(scrollAnchor);
-        schedulePlayerAiQuickActionSync();
       })
       .catch((error) => {
         logWarn("[BOC] failed to refresh settings after storage change", error);
@@ -281,36 +144,6 @@ function bindSettingsWatcher() {
 
 function buildUiHtml() {
   return `
-    <aside id="${ids.panel}" aria-hidden="true">
-      <header class="blr-header">
-        <strong>Default</strong>
-        <div class="blr-header-actions">
-          <button id="${ids.settingsBtn}" type="button" title="插件设置">设置</button>
-          <button id="${ids.closeBtn}" type="button" title="关闭">关闭</button>
-        </div>
-      </header>
-
-      <p id="${ids.status}" class="blr-status">准备就绪，点击“刷新抓取”开始。</p>
-      <div class="blr-props-head">属性</div>
-      <div id="${ids.meta}" class="blr-meta"></div>
-
-      <label class="blr-label" for="${ids.subtitleSelect}">字幕语言</label>
-      <select id="${ids.subtitleSelect}" disabled>
-        <option value="">暂无字幕</option>
-      </select>
-
-      <label class="blr-label" for="${ids.preview}">字幕预览</label>
-      <textarea id="${ids.preview}" readonly></textarea>
-
-      <div class="blr-actions">
-        <button id="${ids.refreshBtn}" type="button">刷新抓取</button>
-        <button id="${ids.copyBtn}" type="button">复制完整 Markdown</button>
-        <button id="${ids.downloadBtn}" type="button">下载字幕</button>
-        <button id="${ids.sendBtn}" type="button">发送到 Obsidian</button>
-      </div>
-      <p id="${ids.message}" class="blr-message"></p>
-    </aside>
-
     <section id="${ids.readingView}" aria-hidden="true" data-blr-reader-ready="0" aria-busy="true">
       <div class="blr-reading-topbar">
         <div class="blr-reading-heading-group">
@@ -330,7 +163,7 @@ function buildUiHtml() {
         <section class="blr-reading-stage">
           <header class="blr-reading-header">
             <div class="blr-reading-header-copy">
-              <strong class="blr-reading-title">${escapeHtml(state.title || "B站字幕阅读")}</strong>
+              <strong class="blr-reading-title">${escapeHtml(clipState.title || "B站字幕阅读")}</strong>
               <div id="${ids.readingMeta}" class="blr-reading-meta">bilibili.com</div>
             </div>
             <div class="blr-reading-actions">
@@ -341,10 +174,6 @@ function buildUiHtml() {
           </header>
 
           <p id="${ids.readingStatus}" class="blr-reading-status">使用页面原生播放器联动章节和字幕。</p>
-
-          <div class="blr-reading-player-shell">
-            <div id="${ids.readingPlayerSlot}" class="blr-reading-player-slot"></div>
-          </div>
 
           <section class="blr-reading-main">
             <div id="${ids.readingTranscriptList}" class="blr-reading-transcript"></div>
@@ -357,27 +186,12 @@ function buildUiHtml() {
 }
 
 function bindUiEvents() {
-  const panel = byId(ids.panel);
-  const closeBtn = byId(ids.closeBtn);
-  const refreshBtn = byId(ids.refreshBtn);
-  const select = byId(ids.subtitleSelect);
-  const copyBtn = byId(ids.copyBtn);
-  const downloadBtn = byId(ids.downloadBtn);
-  const sendBtn = byId(ids.sendBtn);
-  const settingsBtn = byId(ids.settingsBtn);
   const readingView = byId(ids.readingView);
   const readingCloseBtn = byId(ids.readingCloseBtn);
   const readingCollectionList = byId(ids.readingCollectionList);
   const chapterList = byId(ids.readingChapterList);
   const transcriptList = byId(ids.readingTranscriptList);
 
-  closeBtn.addEventListener("click", () => panel.classList.remove("open"));
-  refreshBtn.addEventListener("click", refreshClip);
-  select.addEventListener("change", onSubtitleChange);
-  copyBtn.addEventListener("click", copyMarkdown);
-  downloadBtn.addEventListener("click", downloadSubtitle);
-  sendBtn.addEventListener("click", sendToObsidian);
-  settingsBtn.addEventListener("click", requestOpenOptions);
   readingCloseBtn.addEventListener("click", () => {
     exitReaderMode().catch((error) => {
       logWarn("[Bilibili Reader] reader exit failed", error);
@@ -386,7 +200,7 @@ function bindUiEvents() {
   bindReaderResizeHandle(byId(ids.readingTranscriptResizeHandle));
 
   const handleReaderManualScroll = () => {
-    if (Date.now() <= state.readingProgrammaticScrollUntil) {
+    if (Date.now() <= readerSessionState.programmaticScrollUntil) {
       return;
     }
     noteManualReaderInteraction();
@@ -400,33 +214,42 @@ function bindUiEvents() {
   readingCollectionList.addEventListener("click", onReadingCollectionClick);
   transcriptList.addEventListener("click", onReadingTranscriptClick);
   readingView.addEventListener("transitionend", () => {
-    if (!state.readingViewOpen) {
+    if (!readerSessionState.open) {
       stopReadingViewSync();
     }
   });
 }
 
 function startUrlWatcher() {
-  if (state.urlWatcherStarted) {
+  if (uiState.urlWatcherStarted) {
     return;
   }
-  state.urlWatcherStarted = true;
+  uiState.urlWatcherStarted = true;
 
   const checkCurrentClip = () => {
-    const nextUrl = location.href;
+    let nextUrl = location.href;
     const nextSignature = computeCurrentClipSignature();
-    if (nextSignature === state.currentClipSignature) {
+    if (nextSignature === clipState.currentClipSignature) {
       return;
     }
 
-    state.currentUrl = nextUrl;
-    state.currentClipSignature = nextSignature;
+    // Native episode navigation can drop the reader query. Keep an open
+    // reader session active across clip changes before starting its new run.
+    if (readerSessionState.open && !isReaderMode(nextUrl)) {
+      const readerUrl = new URL(nextUrl);
+      readerUrl.searchParams.set("bilibli_reader", "1");
+      replaceReaderModeUrl(readerUrl.toString());
+      nextUrl = location.href;
+    }
+
+    clipState.currentClipSignature = nextSignature;
+    refreshReaderPageScopes();
     enforceNormalPageStateIfNeeded(nextUrl);
     ensureUiReady();
-    resetClipState({ preserveReadingContent: state.readingViewOpen && isReaderMode(nextUrl) });
+    resetClipState({ preserveReadingContent: readerSessionState.open && isReaderMode(nextUrl) });
     scheduleNativeTranscriptPanelSync(0);
     const shouldEnterReaderMode = isReaderMode(nextUrl);
-    if (!state.readingViewOpen && shouldEnterReaderMode) {
+    if (!readerSessionState.open && shouldEnterReaderMode) {
       document.documentElement.setAttribute("data-blr-reader-mode", "1");
       document.body.setAttribute("data-blr-reader-mode", "1");
       renderReadingStatus("检测到阅读视图跳转，正在打开阅读模式...");
@@ -435,11 +258,12 @@ function startUrlWatcher() {
       });
       return;
     }
-    if (state.readingViewOpen || shouldEnterReaderMode) {
+    if (readerSessionState.open || shouldEnterReaderMode) {
       renderReadingStatus("检测到视频变化，正在自动刷新字幕...");
-      const changeRunId = state.fetchRunId;
+      const changeRunId = clipState.fetchRunId;
+      const sessionId = readerSessionState.id;
       waitForVideoMetadata().then(() => {
-        if (changeRunId !== state.fetchRunId || computeCurrentClipSignature() !== nextSignature) {
+        if (!isReaderSessionActive(sessionId) || changeRunId !== clipState.fetchRunId || computeCurrentClipSignature() !== nextSignature) {
           return;
         }
         refreshClip().catch((error) => {
@@ -450,7 +274,7 @@ function startUrlWatcher() {
       });
       return;
     }
-    setStatus("检测到页面变化，正在自动加载当前视频字幕...");
+
     ensureNativeTranscriptLoaded({ force: true });
   };
   window.addEventListener("popstate", checkCurrentClip);
@@ -459,112 +283,109 @@ function startUrlWatcher() {
 
 function resetClipState({ preserveReadingContent = false } = {}) {
   // 切换时立即使旧请求失效，不能等新请求开始后才递增编号。
-  state.fetchRunId += 1;
-  state.fetchClipSignature = "";
-  state.bvid = "";
-  state.aid = "";
-  state.cid = "";
-  state.cidSource = "";
-  state.videoDuration = 0;
+  clipState.fetchRunId += 1;
+  if (readerSessionState.open) invalidateReaderSession();
+  clipState.fetchClipSignature = "";
+  clipState.bvid = "";
+  clipState.aid = "";
+  clipState.cid = "";
+  clipState.cidSource = "";
+  clipState.videoDuration = 0;
   if (!preserveReadingContent) {
-    state.pageIndex = 1;
-    state.pageCount = 0;
-    state.pageTitle = "";
-    state.collection = null;
-    state.description = "";
-    state.title = "";
-    state.author = "";
-    state.uploadDate = "";
+    clipState.pageIndex = 1;
+    clipState.pageCount = 0;
+    clipState.pageTitle = "";
+    clipState.collection = null;
+    clipState.title = "";
+    clipState.author = "";
+    clipState.uploadDate = "";
   }
   // 保留阅读视图布局和合集信息时，也必须清空上一集的字幕与章节。
-  state.subtitles = [];
-  state.selectedSubtitleId = "";
-  state.selectedSubtitleUrl = "";
-  state.selectedSubtitleLang = "";
-  state.subtitleBody = [];
-  state.chapters = [];
-  state.subtitleFetchState = "loading";
-  state.hotComments = [];
-  state.markdown = "";
-  state.srt = "";
-  state.txt = "";
-  state.currentClipSignature = computeCurrentClipSignature();
+  clearSubtitleContent({ clearTracks: true, clearChapters: true, fetchState: "loading" });
+  clipState.currentClipSignature = computeCurrentClipSignature();
   stopReadingViewSync();
-  state.readingActiveSubtitleIndex = -1;
-  state.readingActiveChapterIndex = -1;
-  state.nativeTranscriptLoadedSignature = "";
-  state.nativeTranscriptLoadPromise = null;
-  state.nativeTranscriptLoadSignature = "";
-  state.nativeTranscriptAutoFoldedSignature = "";
-  state.nativeTranscriptRenderedKey = "";
-  state.nativeTranscriptOpen = true;
-  state.nativeTranscriptActiveIndex = -1;
-  state.nativeTranscriptManualScrollPauseUntil = 0;
-  state.readingVideoEl = null;
+  nativeTranscriptState.loadedSignature = "";
+  nativeTranscriptState.loadPromise = null;
+  nativeTranscriptState.loadSignature = "";
+  nativeTranscriptState.open = true;
+  nativeTranscriptState.manualScrollPauseUntil = 0;
+  readerPlayerState.videoEl = null;
   stopReaderPlayerObserver();
 
-  renderMeta();
-  renderSubtitleSelect();
-  byId(ids.preview).value = "";
-  setMessage("");
   renderNativeTranscriptPanel();
-  if (state.readingViewOpen) {
+  if (readerSessionState.open) {
     renderReadingView();
     renderReadingStatus("正在切换选集并加载新字幕...");
   }
 }
 
-function clearSubtitleContentAfterFetchError() {
-  state.selectedSubtitleId = "";
-  state.selectedSubtitleUrl = "";
-  state.selectedSubtitleLang = "";
-  state.subtitleBody = [];
-  state.hotComments = [];
-  state.markdown = "";
-  state.srt = "";
-  state.txt = "";
-  state.readingActiveSubtitleIndex = -1;
-
-  renderMeta();
-  renderSubtitleSelect();
-  byId(ids.preview).value = "";
-  setMessage("");
+function clearSubtitleContent({
+  clearTracks = false,
+  clearChapters = false,
+  fetchState = clipState.subtitleFetchState
+} = {}) {
+  if (clearTracks) clipState.subtitles = [];
+  if (clearChapters) clipState.chapters = [];
+  clipState.selectedSubtitleId = "";
+  clipState.selectedSubtitleUrl = "";
+  clipState.selectedSubtitleLang = "";
+  clipState.subtitleBody = [];
+  clipState.subtitleRevision += 1;
+  clipState.subtitleFetchState = fetchState;
+  readerSessionState.activeSubtitleIndex = -1;
+  readerSessionState.activeChapterIndex = -1;
+  nativeTranscriptState.activeIndex = -1;
 }
 
-async function finishNoSubtitleLoad(runId) {
-  ensureRunActive(runId);
+async function finishNoSubtitleLoad(request) {
+  ensureSubtitleRequestActive(request);
   applyNoSubtitleState();
-  renderMeta();
-  renderSubtitleSelect();
-  await refreshOpenReadingView("当前视频无可用字幕。", runId);
-  ensureRunActive(runId);
-  setStatus("当前视频无可用字幕。");
+
+  await refreshOpenReadingView("当前视频无可用字幕。", request.runId, request);
+  ensureSubtitleRequestActive(request);
 }
 
-async function refreshClip() {
+let clipRefreshTask = null;
+
+function refreshClip() {
+  const signature = computeCurrentClipSignature();
+  if (clipRefreshTask?.signature === signature &&
+      clipRefreshTask.runId === clipState.fetchRunId &&
+      clipRefreshTask.requestId === subtitleRequestId) {
+    return clipRefreshTask.promise;
+  }
+  const promise = refreshClipData();
+  const task = { signature, runId: clipState.fetchRunId, requestId: subtitleRequestId, promise };
+  clipRefreshTask = task;
+  const release = () => {
+    if (clipRefreshTask === task) clipRefreshTask = null;
+  };
+  promise.then(release, release);
+  return promise;
+}
+
+async function refreshClipData() {
   const clipUrl = location.href;
   const clipSignature = computeCurrentClipSignature(clipUrl);
-  if (state.currentClipSignature !== clipSignature) {
-    resetClipState({ preserveReadingContent: state.readingViewOpen && isReaderMode(clipUrl) });
+  if (clipState.currentClipSignature !== clipSignature) {
+    resetClipState({ preserveReadingContent: readerSessionState.open && isReaderMode(clipUrl) });
   }
-  const runId = ++state.fetchRunId;
-  state.fetchClipSignature = clipSignature;
+  const runId = ++clipState.fetchRunId;
+  clipState.fetchClipSignature = clipSignature;
+  const request = beginSubtitleRequest(runId);
   try {
-    setBusyState(true);
-    setMessage("");
-    setStatus("正在抓取视频信息...");
-    state.subtitleFetchState = "loading";
+    clipState.subtitleFetchState = "loading";
     renderNativeTranscriptPanel();
-    if (state.readingViewOpen) {
+    if (readerSessionState.open) {
       renderReadingView();
     }
     const settings = await getSettings();
-    ensureRunActive(runId);
-    state.settings = settings;
+    ensureSubtitleRequestActive(request);
+    readerPreferences.settings = settings;
 
     const bvid = extractBvid(clipUrl);
-    state.bvid = bvid;
-    if (!state.bvid) {
+    clipState.bvid = bvid;
+    if (!clipState.bvid) {
       throw new Error("当前页面不是标准 BV 视频地址，无法抓取字幕。");
     }
 
@@ -572,10 +393,10 @@ async function refreshClip() {
     const oid = extractOid(clipUrl);
     const hasPageParam = hasExplicitPageParam(clipUrl);
     const meta = await retryAsync(() => {
-      ensureRunActive(runId);
+      ensureSubtitleRequestActive(request);
       return fetchVideoMeta(bvid);
     }, 2, 250);
-    ensureRunActive(runId);
+    ensureSubtitleRequestActive(request);
 
     // 调试：打印 API 返回的原始数据
     logInfo("[BOC] raw meta data", {
@@ -584,12 +405,11 @@ async function refreshClip() {
       pagesCount: (meta.pages || []).length
     });
 
-    state.aid = meta.aid || "";
-    state.title = meta.title || readVideoTitle();
-    state.author = meta.author || readVideoAuthor();
-    state.uploadDate = meta.uploadDate || readUploadDate();
-    state.description = meta.description || readVideoDescription();
-    state.pageCount = Array.isArray(meta.pages) ? meta.pages.length : 0;
+    clipState.aid = meta.aid || "";
+    clipState.title = meta.title || readVideoTitle();
+    clipState.author = meta.author || readVideoAuthor();
+    clipState.uploadDate = meta.uploadDate || readUploadDate();
+    clipState.pageCount = Array.isArray(meta.pages) ? meta.pages.length : 0;
     let resolvedPageIndex = pageIndex;
     if ((meta.pages || []).length > 1 && !hasPageParam) {
       const pageIndexFromOid = pickPageIndexFromOid(meta.pages, oid);
@@ -609,38 +429,37 @@ async function refreshClip() {
     }
 
     const currentPage = pickPageFromPages(meta.pages, resolvedPageIndex);
-    state.pageIndex = resolvedPageIndex;
-    state.pageTitle = currentPage?.part || "";
-    state.collection = resolveVideoCollectionCurrent(meta.collection, {
-      bvid: state.bvid,
-      aid: state.aid,
+    clipState.pageIndex = resolvedPageIndex;
+    clipState.pageTitle = currentPage?.part || "";
+    clipState.collection = resolveVideoCollectionCurrent(meta.collection, {
+      bvid: clipState.bvid,
+      aid: clipState.aid,
       pageIndex: resolvedPageIndex
     });
-    state.cid = currentPage?.cid || pickCidFromPages(meta.pages, resolvedPageIndex, meta.defaultCid);
-    state.cidSource = "meta-pages";
-    state.videoDuration = pickDurationFromPages(meta.pages, resolvedPageIndex, meta.defaultDuration);
-    if (!(state.videoDuration > 0)) {
-      state.videoDuration = readRuntimeVideoDuration();
+    clipState.cid = currentPage?.cid || pickCidFromPages(meta.pages, resolvedPageIndex, meta.defaultCid);
+    clipState.cidSource = "meta-pages";
+    clipState.videoDuration = pickDurationFromPages(meta.pages, resolvedPageIndex, meta.defaultDuration);
+    if (!(clipState.videoDuration > 0)) {
+      clipState.videoDuration = readRuntimeVideoDuration();
     }
-    if (!(state.videoDuration > 0)) {
+    if (!(clipState.videoDuration > 0)) {
       throw new Error("无法获取当前视频时长，已停止抓取以避免串到错误字幕。");
     }
 
     logInfo("[BOC] resolved video ids", {
       url: location.href,
-      aid: state.aid,
-      bvid: state.bvid,
-      cid: state.cid,
-      cidSource: state.cidSource,
+      aid: clipState.aid,
+      bvid: clipState.bvid,
+      cid: clipState.cid,
+      cidSource: clipState.cidSource,
       pageIndex: resolvedPageIndex,
-      videoDuration: state.videoDuration
+      videoDuration: clipState.videoDuration
     });
 
-    setStatus("正在获取可用字幕...");
-    const cid = state.cid;
-    const aid = state.aid;
+    const cid = clipState.cid;
+    const aid = clipState.aid;
     const fetchCurrentSubtitleBundle = () => {
-      ensureRunActive(runId);
+      ensureSubtitleRequestActive(request);
       return fetchSubtitleBundle(bvid, cid, aid, meta.subtitleTracks || []);
     };
     let subtitleBundle = await retryAsync(
@@ -648,12 +467,12 @@ async function refreshClip() {
       3,
       500
     );
-    ensureRunActive(runId);
-    state.subtitles = normalizeSubtitleTracks(subtitleBundle.tracks);
-    state.chapters = normalizeChapters(subtitleBundle.chapters);
+    ensureSubtitleRequestActive(request);
+    clipState.subtitles = normalizeSubtitleTracks(subtitleBundle.tracks);
+    clipState.chapters = normalizeChapters(subtitleBundle.chapters);
     logInfo(
       "[BOC] chapters",
-      state.chapters.map((item) => ({
+      clipState.chapters.map((item) => ({
         from: item.from,
         to: item.to,
         title: item.title
@@ -661,7 +480,7 @@ async function refreshClip() {
     );
     logInfo(
       "[BOC] subtitle tracks",
-      state.subtitles.map((item) => ({
+      clipState.subtitles.map((item) => ({
         id: item.id,
         lan: item.lan,
         lanDoc: item.lanDoc,
@@ -670,32 +489,32 @@ async function refreshClip() {
     );
 
     // 无字幕时也允许进入阅读视图，只是字幕区域保持空态。
-    if (state.subtitles.length === 0) {
-      await finishNoSubtitleLoad(runId);
+    if (clipState.subtitles.length === 0) {
+      await finishNoSubtitleLoad(request);
       return;
     }
 
     // 显式点击“刷新抓取”时默认走网络，避免命中历史缓存导致字幕错位。
     const forceRefresh = true;
 
-    const preferred = pickPreferredSubtitle(state.subtitles, {
-      previousId: state.selectedSubtitleId,
-      previousUrl: state.selectedSubtitleUrl,
-      previousLang: state.selectedSubtitleLang
+    const preferred = pickPreferredSubtitle(clipState.subtitles, {
+      previousId: clipState.selectedSubtitleId,
+      previousUrl: clipState.selectedSubtitleUrl,
+      previousLang: clipState.selectedSubtitleLang
     });
 
     if (!preferred) {
-      await finishNoSubtitleLoad(runId);
+      await finishNoSubtitleLoad(request);
       return;
     }
 
-    const candidates = buildSubtitleCandidates(state.subtitles, preferred);
+    const candidates = buildSubtitleCandidates(clipState.subtitles, preferred);
     let selected = null;
 
     try {
-      selected = await tryLoadSubtitleCandidates(candidates, runId, forceRefresh);
+      selected = await tryLoadSubtitleCandidates(candidates, runId, forceRefresh, request);
     } catch (error) {
-      ensureRunActive(runId);
+      ensureSubtitleRequestActive(request);
 
       // 正文失败时先重新核对列表，空列表应收起面板，不能沿用旧错误。
       // 非空列表再用新的签名地址重试，网络故障仍保留为加载错误。
@@ -704,22 +523,22 @@ async function refreshClip() {
         2,
         500
       );
-      ensureRunActive(runId);
-      state.subtitles = normalizeSubtitleTracks(subtitleBundle.tracks);
-      state.chapters = normalizeChapters(subtitleBundle.chapters);
-      const retryPreferred = pickPreferredSubtitle(state.subtitles, {
+      ensureSubtitleRequestActive(request);
+      clipState.subtitles = normalizeSubtitleTracks(subtitleBundle.tracks);
+      clipState.chapters = normalizeChapters(subtitleBundle.chapters);
+      const retryPreferred = pickPreferredSubtitle(clipState.subtitles, {
         previousId: preferred.id,
         previousUrl: preferred.subtitleUrl,
         previousLang: preferred.lanDoc || preferred.lan || ""
       });
       if (!retryPreferred) {
-        await finishNoSubtitleLoad(runId);
+        await finishNoSubtitleLoad(request);
         return;
       }
-      const retryCandidates = buildSubtitleCandidates(state.subtitles, retryPreferred);
-      selected = await tryLoadSubtitleCandidates(retryCandidates, runId, forceRefresh);
+      const retryCandidates = buildSubtitleCandidates(clipState.subtitles, retryPreferred);
+      selected = await tryLoadSubtitleCandidates(retryCandidates, runId, forceRefresh, request);
     }
-    ensureRunActive(runId);
+    ensureSubtitleRequestActive(request);
     if (selected) {
       logInfo("[BOC] selected subtitle track", {
         id: selected.id,
@@ -727,148 +546,137 @@ async function refreshClip() {
         lanDoc: selected.lanDoc
       });
     }
-    state.subtitleFetchState = "ready";
-    renderMeta();
-    renderSubtitleSelect();
-    await refreshOpenReadingView("抓取完成，阅读视图已同步最新字幕。", runId);
-    ensureRunActive(runId);
-    setStatus("抓取完成，可以复制、下载或发送到 Obsidian。");
+    clipState.subtitleFetchState = "ready";
+
+    await refreshOpenReadingView("抓取完成，阅读视图已同步最新字幕。", runId, request);
+    ensureSubtitleRequestActive(request);
   } catch (error) {
-    if (isStaleRunError(error) || !isRunActive(runId)) {
+    if (isStaleRunError(error) || !isSubtitleRequestActive(request)) {
       return;
     }
     if (isUnavailableSubtitleError(error)) {
-      await finishNoSubtitleLoad(runId);
+      await finishNoSubtitleLoad(request);
       return;
     }
     // 字幕正文与章节列表来自不同请求。字幕域名被拦截、网络失败或签名
     // 过期时，保留已经成功取得的章节和当前视频元数据。
-    clearSubtitleContentAfterFetchError();
-    state.subtitleFetchState = "error";
-    await refreshOpenReadingView("字幕加载失败，请刷新重试。", runId);
-    if (!isRunActive(runId)) {
+    clearSubtitleContent({ fetchState: "error" });
+    await refreshOpenReadingView("字幕加载失败，请刷新重试。", runId, request);
+    if (!isSubtitleRequestActive(request)) {
       return;
     }
-    setStatus(`抓取失败：${getErrorMessage(error)}`);
   } finally {
-    if (isRunActive(runId)) {
-      setBusyState(false);
+    if (isSubtitleRequestActive(request)) {
       renderNativeTranscriptPanel();
     }
   }
 }
 
-async function onSubtitleChange(event) {
-  const runId = state.fetchRunId;
-  const value = event.target.value;
-  const option = event.target.options[event.target.selectedIndex];
-  const lang = option?.dataset.lang || "unknown";
-  const subtitleId = option?.dataset.id || "";
-  if (!value) {
-    return;
-  }
+let subtitleRequestId = 0;
 
+function beginSubtitleRequest(runId = clipState.fetchRunId) {
+  ensureRunActive(runId);
+  return { runId, id: ++subtitleRequestId };
+}
+
+function isSubtitleRequestActive(request) {
+  return Boolean(request) && request.id === subtitleRequestId && isRunActive(request.runId);
+}
+
+function ensureSubtitleRequestActive(request) {
+  if (!isSubtitleRequestActive(request)) {
+    const error = new Error("Stale subtitle request");
+    error.code = "STALE_RUN";
+    throw error;
+  }
+}
+
+function commitSubtitle({ url, lang, subtitleId, body }, request) {
+  ensureSubtitleRequestActive(request);
+  clipState.selectedSubtitleId = subtitleId ? String(subtitleId) : "";
+  clipState.selectedSubtitleUrl = url;
+  clipState.selectedSubtitleLang = lang;
+  clipState.subtitleBody = body;
+  clipState.subtitleRevision += 1;
+  clipState.subtitleFetchState = "ready";
+  if (readerSessionState.open) {
+    renderReadingView();
+    syncReadingViewPlayback(true);
+  }
+  renderNativeTranscriptPanel();
+}
+
+async function selectSubtitle(url, lang, subtitleId = "") {
+  if (!isRunActive(clipState.fetchRunId)) return;
+  const request = beginSubtitleRequest();
+  const previousFetchState = clipState.subtitleFetchState;
+  clipState.subtitleFetchState = "loading";
+  syncReadingTranscriptHeaderControls();
+  const nativePanel = document.getElementById(ids.nativeTranscriptPanel);
+  if (nativePanel) renderNativeTranscriptHeaderControls(nativePanel);
   try {
-    setBusyState(true);
-    setStatus(`正在切换字幕：${lang}`);
-    setMessage("");
-    await loadSubtitle(value, lang, runId, subtitleId);
-    ensureRunActive(runId);
-    setStatus("字幕切换完成。");
+    await loadSubtitle(url, lang, request.runId, subtitleId, false, request);
+    ensureSubtitleRequestActive(request);
   } catch (error) {
-    if (isStaleRunError(error) || !isRunActive(runId)) {
-      return;
-    }
-    setStatus(`切换字幕失败：${getErrorMessage(error)}`);
+    if (isStaleRunError(error) || !isSubtitleRequestActive(request)) return;
+    // A failed language switch keeps the last successful transcript usable.
+    clipState.subtitleFetchState = clipState.subtitleBody.length ? "ready" :
+      previousFetchState === "empty" ? "empty" : "error";
+    logWarn("[Bilibili Reader] subtitle switch failed", error);
+    if (readerSessionState.open) renderReadingStatus(`切换字幕失败：${getErrorMessage(error)}`);
   } finally {
-    if (isRunActive(runId)) {
-      setBusyState(false);
+    if (isSubtitleRequestActive(request)) {
+      syncReadingTranscriptHeaderControls();
+      renderNativeTranscriptPanel();
     }
   }
 }
 
-async function loadSubtitle(url, lang, runId = state.fetchRunId, subtitleId = "", forceRefresh = false) {
-  ensureRunActive(runId);
-  if (!url) {
-    throw new Error("字幕 URL 为空。");
-  }
-
+async function loadSubtitle(
+  url, lang, runId = clipState.fetchRunId, subtitleId = "", forceRefresh = false,
+  request = beginSubtitleRequest(runId)
+) {
+  ensureSubtitleRequestActive(request);
+  if (!url) throw new Error("字幕 URL 为空。");
   const cacheKey = getSubtitleCacheKey({
-    bvid: state.bvid,
-    cid: state.cid,
-    subtitleId,
-    subtitleUrl: url,
-    lang
+    bvid: clipState.bvid, cid: clipState.cid, subtitleId, subtitleUrl: url, lang
   });
 
-  // 尝试从缓存读取
   if (!forceRefresh) {
     const cachedBody = await loadSubtitleFromCache(cacheKey);
-    ensureRunActive(runId);
-    if (cachedBody && Array.isArray(cachedBody) && cachedBody.length > 0) {
-      const cachedCheck = validateSubtitleByDuration(cachedBody, state.videoDuration);
-      if (!cachedCheck.ok) {
-        logWarn("[BOC] cached subtitle duration mismatch, clearing cache", {
-          cacheKey,
-          reason: cachedCheck.reason
-        });
-        await clearSubtitleCacheByKey(cacheKey);
-        ensureRunActive(runId);
-      } else {
-        logInfo("[BOC] using cached subtitle", { cacheKey, itemCount: cachedBody.length });
-        ensureRunActive(runId);
-        state.selectedSubtitleId = subtitleId ? String(subtitleId) : state.selectedSubtitleId;
-        state.selectedSubtitleUrl = url;
-        state.selectedSubtitleLang = lang;
-        state.subtitleBody = cachedBody;
-        state.subtitleFetchState = "ready";
-        await refreshDerivedContent({ runId });
-        ensureRunActive(runId);
-        if (state.readingViewOpen) {
-          renderReadingView();
-          syncReadingViewPlayback(true);
-        }
-        renderNativeTranscriptPanel();
+    ensureSubtitleRequestActive(request);
+    if (Array.isArray(cachedBody) && cachedBody.length > 0) {
+      const cachedCheck = validateSubtitleByDuration(cachedBody, clipState.videoDuration);
+      if (cachedCheck.ok) {
+        logInfo("[Bilibili Reader] using cached subtitle", { cacheKey, itemCount: cachedBody.length });
+        commitSubtitle({ url, lang, subtitleId, body: cachedBody }, request);
         return;
       }
+      logWarn("[Bilibili Reader] cached subtitle duration mismatch", { cacheKey, reason: cachedCheck.reason });
+      await clearSubtitleCacheByKey(cacheKey);
+      ensureSubtitleRequestActive(request);
     }
   }
 
-  // 从网络获取
   const subtitle = await fetchSubtitleBody(url);
-  ensureRunActive(runId);
+  ensureSubtitleRequestActive(request);
   const body = Array.isArray(subtitle?.body)
-    ? subtitle.body.filter((item) => String(item?.content || "").trim())
-    : [];
+    ? subtitle.body.filter((item) => String(item?.content || "").trim()) : [];
   if (body.length === 0) {
     const error = new Error("字幕文件为空。");
     error.code = "SUBTITLE_EMPTY";
     throw error;
   }
-  const durationCheck = validateSubtitleByDuration(body, state.videoDuration);
+  const durationCheck = validateSubtitleByDuration(body, clipState.videoDuration);
   if (!durationCheck.ok) {
-    const mismatchError = new Error("字幕时长与当前视频不匹配。");
-    mismatchError.code = "SUBTITLE_DURATION_MISMATCH";
-    mismatchError.details = durationCheck;
-    throw mismatchError;
+    const error = new Error("字幕时长与当前视频不匹配。");
+    error.code = "SUBTITLE_DURATION_MISMATCH";
+    error.details = durationCheck;
+    throw error;
   }
-
-  // 存入缓存
   await saveSubtitleToCache(cacheKey, body);
-  ensureRunActive(runId);
-
-  state.selectedSubtitleId = subtitleId ? String(subtitleId) : state.selectedSubtitleId;
-  state.selectedSubtitleUrl = url;
-  state.selectedSubtitleLang = lang;
-  state.subtitleBody = body;
-  state.subtitleFetchState = "ready";
-  await refreshDerivedContent({ runId });
-  ensureRunActive(runId);
-  if (state.readingViewOpen) {
-    renderReadingView();
-    syncReadingViewPlayback(true);
-  }
-  renderNativeTranscriptPanel();
+  ensureSubtitleRequestActive(request);
+  commitSubtitle({ url, lang, subtitleId, body }, request);
 }
 
 function getSubtitleCacheKey({ bvid, cid, subtitleId = "", subtitleUrl = "", lang = "" }) {
@@ -935,54 +743,6 @@ async function clearSubtitleCacheByKey(cacheKey) {
   }
 }
 
-function renderMeta() {
-  const meta = byId(ids.meta);
-  if (!state.bvid) {
-    meta.innerHTML = '<div class="blr-meta-item">尚未抓取视频信息</div>';
-    return;
-  }
-
-  const subtitleCount = state.subtitles.length;
-  meta.innerHTML = `
-    <div class="blr-meta-item"><strong>标题：</strong>${escapeHtml(state.title)}</div>
-    <div class="blr-meta-item"><strong>URL：</strong>${escapeHtml(cleanVideoUrl())}</div>
-    <div class="blr-meta-item"><strong>作者：</strong>${escapeHtml(state.author || "未知")}</div>
-    <div class="blr-meta-item"><strong>日期：</strong>${escapeHtml(state.uploadDate || "未知")}</div>
-    <div class="blr-meta-item"><strong>字幕轨：</strong>${subtitleCount}</div>
-  `;
-}
-
-function renderSubtitleSelect() {
-  const select = byId(ids.subtitleSelect);
-  const subtitles = state.subtitles || [];
-
-  if (subtitles.length === 0) {
-    select.innerHTML = '<option value="">暂无字幕</option>';
-    select.disabled = true;
-    syncReadingTranscriptHeaderControls();
-    return;
-  }
-
-  select.innerHTML = subtitles
-    .map((item) => {
-      const selectedById =
-        state.selectedSubtitleId && String(item.id) === String(state.selectedSubtitleId);
-      const selectedByUrl = item.subtitleUrl === state.selectedSubtitleUrl;
-      const selected = selectedById || selectedByUrl ? "selected" : "";
-      const label = item.lanDoc || item.lan || "unknown";
-      const isAi = isAiSubtitle(item);
-      const aiTag = isAi ? " [AI自动]" : "";
-      const optionLabel = `${label}${aiTag}`;
-      return `<option value="${escapeHtml(item.subtitleUrl)}" data-lang="${escapeHtml(
-        label
-      )}" data-id="${escapeHtml(String(item.id || ""))}" data-isai="${isAi}" ${selected}>${escapeHtml(
-        optionLabel
-      )}</option>`;
-    })
-    .join("");
-  select.disabled = false;
-}
-
 function buildReadingTranscriptHeadingHtml() {
   return `
     <span class="blr-reading-transcript-heading-title">字幕</span>
@@ -1012,34 +772,31 @@ function syncReadingTranscriptHeaderControls() {
   const themeButton = heading.querySelector(`#${ids.readingTranscriptThemeButton}`);
   if (themeButton) {
     const labels = { light: "浅色", dark: "深色", paper: "纸张" };
-    const label = `切换字幕主题，当前：${labels[state.readingTheme] || "浅色"}`;
+    const label = `切换字幕主题，当前：${labels[readerPreferences.theme] || "浅色"}`;
     themeButton.title = label;
     themeButton.setAttribute("aria-label", label);
   }
   const fontSizeSelect = heading.querySelector(`#${ids.readingTranscriptQuickFontSizeSelect}`);
   const fontWeightSelect = heading.querySelector(`#${ids.readingTranscriptQuickFontWeightSelect}`);
   if (fontSizeSelect) {
-    fontSizeSelect.value = state.readingFontScale;
+    fontSizeSelect.value = readerPreferences.fontScale;
   }
   if (fontWeightSelect) {
-    fontWeightSelect.value = state.readingFontWeight;
+    fontWeightSelect.value = readerPreferences.fontWeight;
   }
   const languageSelect = heading.querySelector(`#${ids.readingTranscriptQuickSubtitleSelect}`);
   if (!languageSelect) {
     return;
   }
-  const selectedUrlKey = normalizeSubtitleUrlForCache(state.selectedSubtitleUrl);
-  const languageRenderKey = JSON.stringify([
-    state.selectedSubtitleId,
-    selectedUrlKey,
-    state.subtitles.map((item) => [item.id, item.subtitleUrl, item.lanDoc, item.lan])
-  ]);
-  if (languageSelect.dataset.renderKey !== languageRenderKey) {
-    languageSelect.innerHTML = state.subtitles.length
-      ? state.subtitles
+  const selectedUrlKey = normalizeSubtitleUrlForCache(clipState.selectedSubtitleUrl);
+  const previous = readingTranscriptLanguageCache.get(languageSelect);
+  if (!previous || previous.tracks !== clipState.subtitles ||
+      previous.selectedId !== clipState.selectedSubtitleId || previous.selectedUrl !== selectedUrlKey) {
+    languageSelect.innerHTML = clipState.subtitles.length
+      ? clipState.subtitles
           .map((item) => {
             const selected =
-              (state.selectedSubtitleId && String(item.id) === String(state.selectedSubtitleId)) ||
+              (clipState.selectedSubtitleId && String(item.id) === String(clipState.selectedSubtitleId)) ||
               normalizeSubtitleUrlForCache(item.subtitleUrl) === selectedUrlKey;
             return `<option value="${escapeHtml(item.subtitleUrl)}" data-id="${escapeHtml(
               item.id
@@ -1049,13 +806,16 @@ function syncReadingTranscriptHeaderControls() {
           })
           .join("")
       : '<option value="">字幕</option>';
-    languageSelect.dataset.renderKey = languageRenderKey;
+    readingTranscriptLanguageCache.set(languageSelect, {
+      tracks: clipState.subtitles, selectedId: clipState.selectedSubtitleId, selectedUrl: selectedUrlKey
+    });
   }
-  languageSelect.disabled = state.subtitles.length === 0 || state.subtitleFetchState === "loading";
+  languageSelect.disabled = clipState.subtitles.length === 0 || clipState.subtitleFetchState === "loading";
+  syncSubtitleSelection(languageSelect);
 }
 
 function returnReadingTranscriptToCurrent() {
-  state.readingManualScrollPauseUntil = 0;
+  readerSessionState.manualScrollPauseUntil = 0;
   const video = getRuntimeVideoElement();
   const transcriptList = document.getElementById(ids.readingTranscriptList);
   if (!video || !transcriptList) {
@@ -1064,7 +824,7 @@ function returnReadingTranscriptToCurrent() {
   const subtitleIndex = findActiveSubtitleIndex(Number(video.currentTime || 0) || 0);
   const target = transcriptList.querySelector(`[data-index="${subtitleIndex}"]`);
   if (target) {
-    state.readingNextScrollBehavior = "smooth";
+    readerSessionState.nextScrollBehavior = "smooth";
     scrollReadingTranscriptItemIntoView(target);
   }
   syncReadingViewPlayback(false);
@@ -1084,7 +844,7 @@ function bindReadingTranscriptHeaderControls(heading) {
   heading.querySelector(`#${ids.readingTranscriptThemeButton}`)?.addEventListener("click", (event) => {
     const button = event.currentTarget;
     const themes = ["light", "dark", "paper"];
-    const nextIndex = (themes.indexOf(state.readingTheme) + 1) % themes.length;
+    const nextIndex = (themes.indexOf(readerPreferences.theme) + 1) % themes.length;
     updateReaderPreferences({ readerTheme: themes[nextIndex] }, { persist: true });
     button.classList.add("is-active");
     window.setTimeout(() => button.classList.remove("is-active"), 300);
@@ -1108,250 +868,15 @@ function bindReadingTranscriptHeaderControls(heading) {
       if (!url) {
         return;
       }
-      select.disabled = true;
-      const runId = state.fetchRunId;
-      loadSubtitle(
+      selectSubtitle(
         url,
         String(option.dataset.lang || "unknown"),
-        runId,
         String(option.dataset.id || "")
-      )
-        .then(() => {
-          if (!isRunActive(runId)) {
-            return;
-          }
-          renderReadingView();
-          syncReadingViewPlayback(true);
-        })
-        .catch((error) => {
-          if (isStaleRunError(error) || !isRunActive(runId)) {
-            return;
-          }
-          logWarn("[BOC] failed to switch subtitle in reading transcript header", error);
-          syncReadingTranscriptHeaderControls();
-        });
+      );
     });
   heading.dataset.blrControlsBound = "1";
 }
 
-function getPopupPayload() {
-  const subtitleOptions = (state.subtitles || []).map((item) => {
-    const label = item.lanDoc || item.lan || "unknown";
-    const isAi = isAiSubtitle(item);
-    const selectedById =
-      state.selectedSubtitleId && String(item.id) === String(state.selectedSubtitleId);
-    const selectedByUrl = item.subtitleUrl === state.selectedSubtitleUrl;
-    return {
-      id: String(item.id || ""),
-      url: item.subtitleUrl,
-      lang: label,
-      isAi,
-      selected: selectedById || selectedByUrl
-    };
-  });
-
-  return {
-    contentVersion: READER_VERSION,
-    url: cleanVideoUrl(),
-    title: state.title || "",
-    author: state.author || "",
-    uploadDate: state.uploadDate || "",
-    tags: String(state.settings?.tags || ""),
-    status: state.statusText || "",
-    message: state.messageText || "",
-    subtitlePreview: buildSubtitlePreview(state.subtitleBody || [], state.settings || DEFAULT_SETTINGS),
-    markdown: state.markdown || "",
-    srt: state.srt || "",
-    txt: state.txt || "",
-    downloadFormat: normalizeDownloadFormat(state.settings?.downloadFormat),
-    subtitleOptions
-  };
-}
-
-async function copyMarkdown() {
-  state.settings = await getSettings();
-  await refreshDerivedContent();
-  if (!state.markdown) {
-    setMessage("没有可复制的内容，请先刷新抓取。");
-    return;
-  }
-
-  try {
-    await navigator.clipboard.writeText(state.markdown);
-    setMessage("Markdown 已复制到剪贴板。");
-  } catch (error) {
-    setMessage(`复制失败：${getErrorMessage(error)}`);
-  }
-}
-
-async function downloadSubtitle() {
-  state.settings = await getSettings();
-  rebuildDerivedContent();
-  const format = normalizeDownloadFormat(state.settings?.downloadFormat);
-  const content = format === "txt" ? state.txt : state.srt;
-  if (!content) {
-    setMessage("没有可下载的字幕，请先刷新抓取。");
-    return;
-  }
-
-  const safeTitle = sanitizeFileName(state.title || state.bvid || "bilibili-subtitle");
-  const langSuffix = sanitizeFileName(state.selectedSubtitleLang || "subtitle") || "subtitle";
-  const filename = `${safeTitle}.${langSuffix}.${format}`;
-  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-
-  setMessage(`已下载：${filename}`);
-}
-
-async function sendToObsidian() {
-  state.settings = await getSettings();
-  await refreshDerivedContent();
-  if (!state.markdown) {
-    setMessage("没有可发送内容，请先刷新抓取。");
-    return;
-  }
-
-  const filename = buildNoteFilename(state);
-  const folder = resolveFolderTemplate(state.settings.noteFolder || "", state);
-  const filepath = folder ? `${folder}/${filename}` : filename;
-  const baseUrl = String(state.settings.obsidianApiBaseUrl || "").trim();
-  const apiKey = String(state.settings.obsidianApiKey || "").trim();
-  if (!baseUrl || !apiKey) {
-    setMessage("请先在设置中填写 Obsidian Local REST API 地址和 API Key。");
-    requestOpenOptions();
-    return;
-  }
-
-  try {
-    const exists = await checkObsidianNoteExists(baseUrl, apiKey, filepath);
-    if (exists) {
-      const shouldOverwrite = await confirmOverwriteNote(filepath);
-      if (!shouldOverwrite) {
-        setMessage("已取消保存，原笔记未被覆盖。");
-        return;
-      }
-    }
-    await writeNoteByLocalApi(baseUrl, apiKey, filepath, state.markdown);
-    setMessage(`已写入 Obsidian：${filepath}`);
-  } catch (error) {
-    if (isExtensionContextInvalidated(error)) {
-      setMessage("扩展刚刚更新，请刷新当前页面后重试。");
-      return;
-    }
-    setMessage(`写入失败：${getErrorMessage(error)}`);
-  }
-}
-
-async function checkObsidianNoteExists(baseUrl, apiKey, filepath) {
-  const resp = await sendRuntimeMessage({
-    type: "obsidian-note-exists",
-    baseUrl,
-    apiKey,
-    filepath
-  });
-  if (!resp?.ok) {
-    throw new Error(toReadableText(resp?.error, "Local API 检查失败"));
-  }
-  return Boolean(resp.exists);
-}
-
-async function writeNoteByLocalApi(baseUrl, apiKey, filepath, content) {
-  const resp = await sendRuntimeMessage({
-    type: "write-obsidian-note",
-    baseUrl,
-    apiKey,
-    filepath,
-    content
-  });
-  if (!resp?.ok) {
-    throw new Error(toReadableText(resp?.error, "Local API 写入失败"));
-  }
-}
-
-function confirmOverwriteNote(filepath) {
-  return new Promise((resolve) => {
-    const existing = document.querySelector(".blr-confirm-overlay");
-    if (existing) {
-      existing.remove();
-    }
-
-    const overlay = document.createElement("div");
-    overlay.className = "blr-confirm-overlay";
-    overlay.innerHTML = `
-      <div class="blr-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="blrConfirmTitle">
-        <div id="blrConfirmTitle" class="blr-confirm-title">该笔记已存在</div>
-        <div class="blr-confirm-body">继续会覆盖原内容：</div>
-        <div class="blr-confirm-path"></div>
-        <div class="blr-confirm-actions">
-          <button type="button" class="blr-confirm-cancel">取消</button>
-          <button type="button" class="blr-confirm-primary">覆盖</button>
-        </div>
-      </div>
-    `;
-    overlay.querySelector(".blr-confirm-path").textContent = String(filepath || "");
-
-    const cleanup = (value) => {
-      overlay.remove();
-      document.removeEventListener("keydown", onKeydown, true);
-      resolve(value);
-    };
-    const onKeydown = (event) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        cleanup(false);
-      }
-    };
-
-    overlay.addEventListener("click", (event) => {
-      if (event.target === overlay) {
-        cleanup(false);
-      }
-    });
-    overlay.querySelector(".blr-confirm-cancel")?.addEventListener("click", () => cleanup(false));
-    overlay.querySelector(".blr-confirm-primary")?.addEventListener("click", () => cleanup(true));
-    document.addEventListener("keydown", onKeydown, true);
-    document.body.appendChild(overlay);
-    overlay.querySelector(".blr-confirm-primary")?.focus();
-  });
-}
-
-function setBusyState(disabled) {
-  byId(ids.copyBtn).disabled = disabled;
-  byId(ids.downloadBtn).disabled = disabled;
-  byId(ids.sendBtn).disabled = disabled;
-  byId(ids.refreshBtn).disabled = disabled;
-  byId(ids.settingsBtn).disabled = disabled;
-  byId(ids.subtitleSelect).disabled = disabled || state.subtitles.length === 0;
-}
-
-function setStatus(text) {
-  state.statusText = String(text || "");
-  byId(ids.status).textContent = state.statusText;
-}
-
-function setMessage(text) {
-  state.messageText = String(text || "");
-  byId(ids.message).textContent = state.messageText;
-}
-
 function applyNoSubtitleState() {
-  state.subtitles = [];
-  state.selectedSubtitleId = "";
-  state.selectedSubtitleUrl = "";
-  state.selectedSubtitleLang = "";
-  state.subtitleBody = [];
-  state.subtitleFetchState = "empty";
-  state.hotComments = [];
-  state.markdown = "";
-  state.srt = "";
-  state.txt = "";
-  byId(ids.preview).value = "";
+  clearSubtitleContent({ clearTracks: true, fetchState: "empty" });
 }

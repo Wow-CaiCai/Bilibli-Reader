@@ -62,27 +62,6 @@ function sendRuntimeMessage(message) {
   });
 }
 
-function isExtensionContextInvalidated(error) {
-  const msg = String(error?.message || "");
-  return msg.includes("Extension context invalidated");
-}
-
-function requestOpenOptions() {
-  sendRuntimeMessage({ type: "open-options" })
-    .then((resp) => {
-      if (!resp?.ok) {
-        setMessage(`打开设置失败：${toReadableText(resp?.error, "未知错误")}`);
-      }
-    })
-    .catch((error) => {
-      if (isExtensionContextInvalidated(error)) {
-        setMessage("扩展刚刚更新，请刷新当前页面后重试。");
-        return;
-      }
-      setMessage(`打开设置失败：${getErrorMessage(error)}`);
-    });
-}
-
 async function getSettings() {
   try {
     const response = await sendRuntimeMessage({ type: "get-settings" });
@@ -99,19 +78,24 @@ async function getSettings() {
   }
 }
 
-async function refreshOpenReadingView(statusText, runId = state.fetchRunId) {
-  if (!isRunActive(runId) || !state.readingViewOpen || !isReaderMode()) {
+async function refreshOpenReadingView(statusText, runId = clipState.fetchRunId, request = null) {
+  const sessionId = readerSessionState.id;
+  if ((request && !isSubtitleRequestActive(request)) || !isRunActive(runId) || !isReaderSessionActive(sessionId)) {
     return;
   }
 
   setReadingViewReady(false);
+  const readingView = document.getElementById(ids.readingView);
+  if (!readingView?.classList.contains("open")) openReaderViewShell(readingView);
   let mounted = false;
   try {
     mounted = await ensureReaderPlayerMounted({ retries: 24, delayMs: 120, forceLayout: true });
   } catch (error) {
+    if (!isReaderSessionActive(sessionId) || !isRunActive(runId) ||
+      (request && !isSubtitleRequestActive(request))) return;
     logWarn("[BOC] failed to remount reader after clip change", error);
   }
-  if (!isRunActive(runId) || !state.readingViewOpen || !isReaderMode()) {
+  if ((request && !isSubtitleRequestActive(request)) || !isRunActive(runId) || !isReaderSessionActive(sessionId)) {
     return;
   }
 
@@ -133,11 +117,19 @@ async function refreshOpenReadingView(statusText, runId = state.fetchRunId) {
 function migrateReaderDefaults(savedSettings) {
   const saved = savedSettings && typeof savedSettings === "object" ? savedSettings : {};
   const merged = { ...DEFAULT_SETTINGS, ...saved };
-  const hadLegacyTranscriptMode = Object.hasOwn(merged, "readerTranscriptMode");
-  delete merged.readerTranscriptMode;
+  let removedLegacySettings = false;
+  for (const key of [
+    "readerTranscriptMode", "readerVideoHeightPx", "readerChapterVisibility",
+    "readerTimestampVisible", "enablePlayerAiQuickAction", "playerAiQuickPrompt"
+  ]) {
+    if (Object.hasOwn(merged, key)) {
+      delete merged[key];
+      removedLegacySettings = true;
+    }
+  }
   const savedDefaultsVersion = Number(saved.readerDefaultsVersion || 0);
   if (savedDefaultsVersion >= 3) {
-    return { settings: merged, changed: hadLegacyTranscriptMode };
+    return { settings: merged, changed: removedLegacySettings };
   }
 
   const legacyDefaults = {
@@ -158,9 +150,6 @@ function migrateReaderDefaults(savedSettings) {
     merged.readerLineHeight = DEFAULT_SETTINGS.readerLineHeight;
   }
 
-  // v3 将“未手动指定高度”的默认含义统一为当前窗口可用的最大高度。
-  // 清除旧版本曾保存的固定像素值，避免它继续覆盖新的最大高度默认值。
-  merged.readerVideoHeightPx = 0;
   merged.readerDefaultsVersion = 3;
   return { settings: merged, changed: true };
 }
@@ -249,8 +238,8 @@ function extractOid(url) {
 
 function isRunActive(runId) {
   return (
-    runId === state.fetchRunId &&
-    state.fetchClipSignature === computeCurrentClipSignature()
+    runId === clipState.fetchRunId &&
+    clipState.fetchClipSignature === computeCurrentClipSignature()
   );
 }
 
@@ -337,7 +326,6 @@ async function fetchVideoMeta(bvid) {
     aid: data.aid ? String(data.aid) : "",
     title: String(data.title || ""),
     author: String(data.owner?.name || ""),
-    description: String(data.desc || ""),
     uploadDate,
     defaultCid: data.cid ? String(data.cid) : "",
     defaultDuration: Number(data.duration || 0) || 0,
@@ -502,13 +490,6 @@ function readVideoAuthor() {
 
   const author = document.querySelector('meta[name="author"]');
   return author?.getAttribute("content")?.trim() || "";
-}
-
-function readVideoDescription() {
-  const descNode = document.querySelector(
-    ".desc-info-text, .video-desc .desc-info-text, .video-info-detail .text, .basic-desc-info"
-  );
-  return descNode?.textContent?.trim() || "";
 }
 
 function readUploadDate() {
@@ -863,10 +844,11 @@ function buildSubtitleCandidates(subtitles, preferred) {
   return list;
 }
 
-async function tryLoadSubtitleCandidates(candidates, runId, forceRefresh) {
+async function tryLoadSubtitleCandidates(candidates, runId, forceRefresh, request) {
   let lastError = null;
   let lastLoadError = null;
   for (const item of candidates || []) {
+    ensureSubtitleRequestActive(request);
     try {
       logInfo("[BOC] try subtitle track", {
         id: item.id,
@@ -879,10 +861,13 @@ async function tryLoadSubtitleCandidates(candidates, runId, forceRefresh) {
         item.lanDoc || item.lan || "unknown",
         runId,
         item.id,
-        forceRefresh
+        forceRefresh,
+        request
       );
+      ensureSubtitleRequestActive(request);
       return item;
     } catch (error) {
+      ensureSubtitleRequestActive(request);
       lastError = error;
       if (!isUnavailableSubtitleError(error)) {
         lastLoadError = error;
@@ -900,7 +885,6 @@ async function tryLoadSubtitleCandidates(candidates, runId, forceRefresh) {
       } else {
         logWarn(`[BOC] subtitle track rejected ${JSON.stringify(meta)}`);
       }
-      ensureRunActive(runId);
       continue;
     }
   }
@@ -916,12 +900,6 @@ async function tryLoadSubtitleCandidates(candidates, runId, forceRefresh) {
 
 function isUnavailableSubtitleError(error) {
   return ["SUBTITLE_EMPTY", "SUBTITLE_DURATION_MISMATCH", "NO_USABLE_SUBTITLE"].includes(error?.code);
-}
-
-function isAiSubtitle(item) {
-  const lan = String(item?.lan || "").toLowerCase();
-  // B站 AI 自动字幕的 lan 以 "ai-" 开头
-  return lan.startsWith("ai-");
 }
 
 function subtitlePriority(item) {
@@ -1009,90 +987,13 @@ function readRuntimeVideoDuration() {
 
 async function fetchSubtitleBody(url) {
   logInfo("[BOC] fetch subtitle body", { url });
-  return fetchJsonInBackground(url);
+  return fetchJson(url);
 }
 
 async function fetchJson(url) {
-  if (typeof url === "string" && url.startsWith("https://api.bilibili.com/")) {
-    return fetchJsonInBackground(url);
+  const response = await sendRuntimeMessage({ type: "fetch-json", url });
+  if (!response?.ok) {
+    throw new Error(toReadableText(response?.error, "网络请求失败"));
   }
-
-  const response = await fetch(url, {
-    credentials: "include",
-    cache: "no-store"
-  });
-
-  if (!response.ok) {
-    throw new Error(`请求失败：${response.status}`);
-  }
-
-  return response.json();
-}
-
-async function fetchJsonInBackground(url) {
-  try {
-    const resp = await sendRuntimeMessage({ type: "fetch-json", url });
-    if (!resp?.ok) {
-      throw new Error(toReadableText(resp?.error, "Background fetch failed"));
-    }
-    return resp.data;
-  } catch (error) {
-    if (isExtensionContextInvalidated(error)) {
-      throw new Error("扩展刚刚更新，请刷新当前页面后重试。");
-    }
-    throw error;
-  }
-}
-
-function normalizeHotComments(comments, limit = 20) {
-  if (!Array.isArray(comments)) {
-    return [];
-  }
-
-  return comments
-    .map((item) => ({
-      uname: String(item?.uname || "匿名").trim() || "匿名",
-      like: Number(item?.like || 0) || 0,
-      message: String(item?.message || "").trim().slice(0, 500)
-    }))
-    .filter((item) => item.message)
-    .slice(0, limit);
-}
-
-function getCurrentAid() {
-  let aid = Number(state.aid) || 0;
-  if (!aid && typeof window !== "undefined") {
-    try {
-      aid = Number(window?.__INITIAL_STATE__?.aid) || 0;
-    } catch {}
-  }
-  return aid;
-}
-
-async function fetchHotComments(count = 20) {
-  const safeCount = Math.max(0, Number(count) || 0);
-  if (!safeCount) {
-    return [];
-  }
-
-  const aid = getCurrentAid();
-  if (!aid) {
-    return [];
-  }
-
-  const url = `https://api.bilibili.com/x/v2/reply/main?type=1&oid=${aid}&mode=3&ps=${safeCount}&pn=1`;
-  const resp = await sendRuntimeMessage({ type: "fetch-json", url });
-  if (!resp?.ok) {
-    throw new Error(resp?.error || "评论接口失败");
-  }
-
-  const replies = Array.isArray(resp?.data?.data?.replies) ? resp.data.data.replies : [];
-  return normalizeHotComments(
-    replies.map((item) => ({
-      uname: item?.member?.uname || "匿名",
-      like: item?.like || 0,
-      message: item?.content?.message || ""
-    })),
-    safeCount
-  );
+  return response.data;
 }
