@@ -1,40 +1,38 @@
+const nativeTranscriptRenderCache = new WeakMap();
+
 function startNativeTranscriptPanelObserver() {
-  if (state.nativeTranscriptObserver || !document.body) {
+  if (nativeTranscriptState.observer || !document.body) {
     return;
   }
 
-  state.nativeTranscriptObserver = new MutationObserver(() => {
-    scheduleNativeTranscriptPanelSync();
-  });
-  state.nativeTranscriptObserver.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
+  nativeTranscriptState.observer = subscribeReaderPageChanges(
+    "native", () => scheduleNativeTranscriptPanelSync()
+  );
   window.addEventListener("resize", () => scheduleNativeTranscriptPanelSync(60), {
     passive: true
   });
-  startNativeTranscriptPlaybackSync();
   scheduleNativeTranscriptPanelSync(0);
 }
 
 function scheduleNativeTranscriptPanelSync(delayMs = 120) {
-  if (state.nativeTranscriptSyncTimer) {
+  if (nativeTranscriptState.syncTimer) {
     return;
   }
-  state.nativeTranscriptSyncTimer = window.setTimeout(() => {
-    state.nativeTranscriptSyncTimer = 0;
+  nativeTranscriptState.syncTimer = window.setTimeout(() => {
+    nativeTranscriptState.syncTimer = 0;
     // closeReadingView restores the panel before the exit snapshot. Keep
     // observer-driven refreshes out of the animation; completion syncs again.
-    if (state.readingModeTransition?.direction === "exit") return;
+    if (readerSessionState.transition?.direction === "exit") return;
     ensureNativeTranscriptPanel();
   }, Math.max(0, Number(delayMs) || 0));
 }
 
 function shouldShowNativeTranscriptPanel() {
-  return Boolean(extractBvid(location.href)) && !isReaderMode() && !state.readingViewOpen;
+  return isSupportedTranscriptPage() && !isReaderMode() && !readerSessionState.open;
 }
 
 function findNativeTranscriptAnchor() {
+  if (isYouTubePage()) return document.querySelector("ytd-watch-flexy #secondary-inner #related");
   const danmaku = document.getElementById("danmukuBox") || document.querySelector(".danmaku-box");
   const rightContainer = danmaku?.closest(".right-container-inner");
   const collaborationPanel = rightContainer?.querySelector(
@@ -47,8 +45,11 @@ function findNativeTranscriptAnchor() {
 function ensureNativeTranscriptPanel() {
   const existing = document.getElementById(ids.nativeTranscriptPanel);
   if (!shouldShowNativeTranscriptPanel()) {
+    existing?.parentElement?.removeAttribute("data-blr-youtube-transcript-open");
+    stopNativeTranscriptPlaybackSync();
+    nativeTranscriptState.resizeObserver?.disconnect();
+    nativeTranscriptState.observedPlayer = null;
     existing?.remove();
-    state.nativeTranscriptRenderedKey = "";
     return null;
   }
 
@@ -64,7 +65,7 @@ function ensureNativeTranscriptPanel() {
     panel.id = ids.nativeTranscriptPanel;
     panel.className = "blr-native-transcript-panel";
     panel.setAttribute("data-blr-extension-node", "native-transcript");
-    panel.innerHTML = `
+    panel.innerHTML = readerHtml(`
       <div id="${ids.nativeTranscriptHeader}" class="blr-native-transcript-header">
         <button
           class="blr-native-transcript-title-button"
@@ -74,6 +75,16 @@ function ensureNativeTranscriptPanel() {
           aria-expanded="true"
         >字幕</button>
         <div id="${ids.nativeTranscriptControls}" class="blr-native-transcript-controls">
+          <button
+            id="${ids.nativeTranscriptReaderButton}"
+            class="blr-native-transcript-reader-button"
+            type="button"
+            title="进入阅读模式"
+            aria-label="进入阅读模式"
+            aria-pressed="false"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5.5C9 3.5 5.5 3.5 2.5 4.5v15c3-1 6.5-1 9.5 1 3-2 6.5-2 9.5-1v-15c-3-1-6.5-1-9.5 1Z"/><path d="M12 5.5v15M5.5 8h3M5.5 11.5h3M15.5 8h3M15.5 11.5h3"/></svg>
+          </button>
           <button
             id="${ids.nativeTranscriptReturnButton}"
             class="blr-native-transcript-return-button"
@@ -122,23 +133,26 @@ function ensureNativeTranscriptPanel() {
       <div id="${ids.nativeTranscriptBody}" class="blr-native-transcript-body">
         <div class="blr-native-transcript-state">正在加载字幕...</div>
       </div>
-    `;
+    `);
     bindNativeTranscriptPanelEvents(panel);
   }
 
   if (panel.parentElement !== anchor.parentElement || panel.nextElementSibling !== anchor) {
+    panel.parentElement?.removeAttribute("data-blr-youtube-transcript-open");
     anchor.insertAdjacentElement("beforebegin", panel);
   }
+  panel.dataset.platform = isYouTubePage() ? "youtube" : "bilibili";
 
   panel.classList.toggle(
     "is-collaboration-layout",
     anchor.matches(".up-panel-container") && Boolean(anchor.querySelector(".members-info-container"))
   );
 
-  setNativeTranscriptExpanded(panel, state.nativeTranscriptOpen);
+  setNativeTranscriptExpanded(panel, nativeTranscriptState.open);
+  if (created && isYouTubePage()) nativeTranscriptState.observedPlayer = null;
   bindNativeTranscriptPanelResize();
-  syncNativeTranscriptPanelAlignment();
-  syncNativeTranscriptPanelHeight();
+  const playerRect = syncNativeTranscriptPanelAlignment();
+  syncNativeTranscriptPanelHeight(playerRect);
   ensureNativeTranscriptLoaded();
   renderNativeTranscriptPanel({ force: created });
   return panel;
@@ -146,6 +160,7 @@ function ensureNativeTranscriptPanel() {
 
 function bindNativeTranscriptPanelEvents(panel) {
   const body = panel.querySelector(`#${ids.nativeTranscriptBody}`);
+  panel.querySelector(`#${ids.nativeTranscriptReaderButton}`)?.addEventListener("click", onTranscriptReaderEntryClick);
   const returnButton = panel.querySelector(`#${ids.nativeTranscriptReturnButton}`);
   const themeButton = panel.querySelector(`#${ids.nativeTranscriptThemeButton}`);
   const toggle = () => {
@@ -154,9 +169,9 @@ function bindNativeTranscriptPanelEvents(panel) {
       showNativeTranscriptEmptyNotice(panel);
       return;
     }
-    state.nativeTranscriptOpen = !state.nativeTranscriptOpen;
-    setNativeTranscriptExpanded(panel, state.nativeTranscriptOpen);
-    if (state.nativeTranscriptOpen) {
+    nativeTranscriptState.open = !nativeTranscriptState.open;
+    setNativeTranscriptExpanded(panel, nativeTranscriptState.open);
+    if (nativeTranscriptState.open) {
       ensureNativeTranscriptLoaded();
       syncNativeTranscriptPlayback(true);
     }
@@ -170,9 +185,9 @@ function bindNativeTranscriptPanelEvents(panel) {
       showNativeTranscriptEmptyNotice(panel);
       return;
     }
-    state.nativeTranscriptManualScrollPauseUntil = 0;
-    if (!state.nativeTranscriptOpen) {
-      state.nativeTranscriptOpen = true;
+    nativeTranscriptState.manualScrollPauseUntil = 0;
+    if (!nativeTranscriptState.open) {
+      nativeTranscriptState.open = true;
       setNativeTranscriptExpanded(panel, true);
       ensureNativeTranscriptLoaded().then(() => syncNativeTranscriptPlayback(true));
     } else {
@@ -183,7 +198,7 @@ function bindNativeTranscriptPanelEvents(panel) {
   });
   themeButton?.addEventListener("click", () => {
     const themes = ["light", "dark", "paper"];
-    const nextIndex = (themes.indexOf(state.nativeTranscriptTheme) + 1) % themes.length;
+    const nextIndex = (themes.indexOf(readerPreferences.nativeTheme) + 1) % themes.length;
     updateNativeTranscriptTheme(themes[nextIndex]);
     themeButton.classList.add("is-active");
     window.setTimeout(() => themeButton.classList.remove("is-active"), 300);
@@ -191,10 +206,10 @@ function bindNativeTranscriptPanelEvents(panel) {
   body?.addEventListener("click", onNativeTranscriptClick);
   panel.addEventListener("change", onNativeTranscriptChange);
   const noteManualScroll = () => {
-    if (Date.now() <= state.nativeTranscriptProgrammaticScrollUntil) {
+    if (Date.now() <= nativeTranscriptState.programmaticScrollUntil) {
       return;
     }
-    state.nativeTranscriptManualScrollPauseUntil = Date.now() + 3000;
+    nativeTranscriptState.manualScrollPauseUntil = Date.now() + 3000;
   };
   body?.addEventListener("scroll", noteManualScroll, true);
   body?.addEventListener("wheel", noteManualScroll, { passive: true });
@@ -203,8 +218,8 @@ function bindNativeTranscriptPanelEvents(panel) {
 
 function isNativeTranscriptEmpty() {
   return (
-    state.fetchClipSignature === computeCurrentClipSignature() &&
-    state.subtitleFetchState === "empty"
+    clipState.fetchClipSignature === computeCurrentClipSignature() &&
+    clipState.subtitleFetchState === "empty"
   );
 }
 
@@ -228,30 +243,37 @@ function setNativeTranscriptExpanded(panel, expanded) {
   }
   const isExpanded = Boolean(expanded) && !isNativeTranscriptEmpty();
   panel.classList.toggle("is-folded", !isExpanded);
+  if (isYouTubePage()) {
+    panel.parentElement?.toggleAttribute("data-blr-youtube-transcript-open", isExpanded);
+  }
   panel.querySelectorAll("[data-native-transcript-toggle]").forEach((button) => {
-    button.setAttribute("aria-expanded", String(isExpanded));
+    const value = String(isExpanded);
+    if (button.getAttribute("aria-expanded") !== value) button.setAttribute("aria-expanded", value);
   });
   const arrowButton = panel.querySelector(".blr-native-transcript-arrow-button");
-  arrowButton?.setAttribute("aria-label", isExpanded ? "折叠字幕" : "展开字幕");
+  const label = isExpanded ? "折叠字幕" : "展开字幕";
+  if (arrowButton && arrowButton.getAttribute("aria-label") !== label) arrowButton.setAttribute("aria-label", label);
   const body = panel.querySelector(`#${ids.nativeTranscriptBody}`);
-  if (body) {
+  if (body && body.hidden !== !isExpanded) {
     body.hidden = !isExpanded;
   }
+  if (isExpanded) startNativeTranscriptPlaybackSync();
+  else stopNativeTranscriptPlaybackSync();
 }
 
-function hydrateNativeTranscriptSettings(settings = state.settings) {
-  state.nativeTranscriptTheme = normalizeNativeTranscriptTheme(settings?.nativeTranscriptTheme);
-  state.nativeTranscriptFontSize = normalizeNativeTranscriptFontSize(
+function hydrateNativeTranscriptSettings(settings = readerPreferences.settings) {
+  readerPreferences.nativeTheme = normalizeReaderTheme(settings?.nativeTranscriptTheme);
+  readerPreferences.nativeFontSize = normalizeNativeTranscriptFontSize(
     settings?.nativeTranscriptFontSize
   );
-  state.nativeTranscriptFontWeight = normalizeNativeTranscriptFontWeight(
+  readerPreferences.nativeFontWeight = normalizeNativeTranscriptFontWeight(
     settings?.nativeTranscriptFontWeight
   );
-  state.settings = {
-    ...state.settings,
-    nativeTranscriptTheme: state.nativeTranscriptTheme,
-    nativeTranscriptFontSize: state.nativeTranscriptFontSize,
-    nativeTranscriptFontWeight: state.nativeTranscriptFontWeight
+  readerPreferences.settings = {
+    ...readerPreferences.settings,
+    nativeTranscriptTheme: readerPreferences.nativeTheme,
+    nativeTranscriptFontSize: readerPreferences.nativeFontSize,
+    nativeTranscriptFontWeight: readerPreferences.nativeFontWeight
   };
   applyNativeTranscriptTypography();
 }
@@ -260,61 +282,61 @@ function applyNativeTranscriptTypography(panel = document.getElementById(ids.nat
   if (!panel) {
     return;
   }
-  const typographyChanged = panel.style.getPropertyValue("--blr-native-transcript-font-size") !== `${state.nativeTranscriptFontSize}px` ||
-    panel.style.getPropertyValue("--blr-native-transcript-font-weight") !== String(state.nativeTranscriptFontWeight);
+  const typographyChanged = panel.style.getPropertyValue("--blr-native-transcript-font-size") !== `${readerPreferences.nativeFontSize}px` ||
+    panel.style.getPropertyValue("--blr-native-transcript-font-weight") !== String(readerPreferences.nativeFontWeight);
   const scrollAnchor = typographyChanged ? captureTranscriptScrollAnchor(
     panel.querySelector(`#${ids.nativeTranscriptList}`), ".blr-native-transcript-segment"
   ) : null;
-  panel.dataset.theme = state.nativeTranscriptTheme;
+  setReaderDatasetValue(panel, "theme", readerPreferences.nativeTheme);
   const themeButton = panel.querySelector(`#${ids.nativeTranscriptThemeButton}`);
   if (themeButton) {
     const themeLabels = { light: "浅色", dark: "深色", paper: "纸张" };
-    const label = `切换字幕主题，当前：${themeLabels[state.nativeTranscriptTheme] || "浅色"}`;
-    themeButton.title = label;
-    themeButton.setAttribute("aria-label", label);
+    const label = `切换字幕主题，当前：${themeLabels[readerPreferences.nativeTheme] || "浅色"}`;
+    if (themeButton.title !== label) themeButton.title = label;
+    if (themeButton.getAttribute("aria-label") !== label) themeButton.setAttribute("aria-label", label);
   }
-  panel.style.setProperty(
+  setReaderStyle(panel,
     "--blr-native-transcript-font-size",
-    `${state.nativeTranscriptFontSize}px`
+    `${readerPreferences.nativeFontSize}px`
   );
-  panel.style.setProperty(
+  setReaderStyle(panel,
     "--blr-native-transcript-font-weight",
-    String(state.nativeTranscriptFontWeight)
+    String(readerPreferences.nativeFontWeight)
   );
   const fontSizeSelect = panel.querySelector(`#${ids.nativeTranscriptFontSizeSelect}`);
   const fontWeightSelect = panel.querySelector(`#${ids.nativeTranscriptFontWeightSelect}`);
-  if (fontSizeSelect) {
-    fontSizeSelect.value = String(state.nativeTranscriptFontSize);
+  if (fontSizeSelect && fontSizeSelect.value !== String(readerPreferences.nativeFontSize)) {
+    fontSizeSelect.value = String(readerPreferences.nativeFontSize);
   }
-  if (fontWeightSelect) {
-    fontWeightSelect.value = String(state.nativeTranscriptFontWeight);
+  if (fontWeightSelect && fontWeightSelect.value !== String(readerPreferences.nativeFontWeight)) {
+    fontWeightSelect.value = String(readerPreferences.nativeFontWeight);
   }
   restoreTranscriptScrollAnchor(scrollAnchor);
 }
 
 function updateNativeTranscriptTheme(theme) {
-  state.nativeTranscriptTheme = normalizeNativeTranscriptTheme(theme);
-  state.settings = {
-    ...state.settings,
-    nativeTranscriptTheme: state.nativeTranscriptTheme
+  readerPreferences.nativeTheme = normalizeReaderTheme(theme);
+  readerPreferences.settings = {
+    ...readerPreferences.settings,
+    nativeTranscriptTheme: readerPreferences.nativeTheme
   };
   applyNativeTranscriptTypography();
   persistReaderSettings();
 }
 
 function updateNativeTranscriptTypography({ fontSize, fontWeight } = {}) {
-  state.readingModeTransition?.cancel();
-  state.nativeTranscriptManualScrollPauseUntil = Date.now() + 3000;
-  state.nativeTranscriptFontSize = normalizeNativeTranscriptFontSize(
-    fontSize ?? state.nativeTranscriptFontSize
+  readerSessionState.transition?.cancel();
+  nativeTranscriptState.manualScrollPauseUntil = Date.now() + 3000;
+  readerPreferences.nativeFontSize = normalizeNativeTranscriptFontSize(
+    fontSize ?? readerPreferences.nativeFontSize
   );
-  state.nativeTranscriptFontWeight = normalizeNativeTranscriptFontWeight(
-    fontWeight ?? state.nativeTranscriptFontWeight
+  readerPreferences.nativeFontWeight = normalizeNativeTranscriptFontWeight(
+    fontWeight ?? readerPreferences.nativeFontWeight
   );
-  state.settings = {
-    ...state.settings,
-    nativeTranscriptFontSize: state.nativeTranscriptFontSize,
-    nativeTranscriptFontWeight: state.nativeTranscriptFontWeight
+  readerPreferences.settings = {
+    ...readerPreferences.settings,
+    nativeTranscriptFontSize: readerPreferences.nativeFontSize,
+    nativeTranscriptFontWeight: readerPreferences.nativeFontWeight
   };
   applyNativeTranscriptTypography();
   persistReaderSettings();
@@ -322,52 +344,26 @@ function updateNativeTranscriptTypography({ fontSize, fontWeight } = {}) {
 
 function renderNativeTranscriptHeaderControls(panel) {
   const languageSelect = panel.querySelector(`#${ids.nativeTranscriptSelect}`);
-  if (languageSelect) {
-    const selectedUrlKey = normalizeSubtitleUrlForCache(state.selectedSubtitleUrl);
-    const languageRenderKey = JSON.stringify([
-      state.selectedSubtitleId,
-      selectedUrlKey,
-      state.subtitles.map((item) => [item.id, item.subtitleUrl, item.lanDoc, item.lan])
-    ]);
-    const optionsHtml = state.subtitles.length
-      ? state.subtitles
-          .map((item) => {
-            const selected =
-              (state.selectedSubtitleId && String(item.id) === String(state.selectedSubtitleId)) ||
-              normalizeSubtitleUrlForCache(item.subtitleUrl) === selectedUrlKey;
-            return `<option value="${escapeHtml(item.subtitleUrl)}" data-id="${escapeHtml(
-              item.id
-            )}" data-lang="${escapeHtml(item.lanDoc || item.lan || "unknown")}"${
-              selected ? " selected" : ""
-            }>${escapeHtml(item.lanDoc || item.lan || "字幕")}</option>`;
-          })
-          .join("")
-      : '<option value="">字幕</option>';
-    if (languageSelect.dataset.renderKey !== languageRenderKey) {
-      languageSelect.innerHTML = optionsHtml;
-      languageSelect.dataset.renderKey = languageRenderKey;
-    }
-    languageSelect.disabled = state.subtitles.length === 0 || state.subtitleFetchState === "loading";
-  }
+  syncSubtitleLanguageSelect(languageSelect);
   applyNativeTranscriptTypography(panel);
 }
 
 function getNativeTranscriptPlaceholderText() {
   if (
-    state.fetchClipSignature !== computeCurrentClipSignature() ||
-    state.subtitleFetchState === "loading" ||
-    state.subtitleFetchState === "idle"
+    clipState.fetchClipSignature !== computeCurrentClipSignature() ||
+    clipState.subtitleFetchState === "loading" ||
+    clipState.subtitleFetchState === "idle"
   ) {
     return "正在加载字幕...";
   }
-  if (state.subtitleFetchState === "error") {
+  if (clipState.subtitleFetchState === "error") {
     return "字幕加载失败";
   }
   return "当前视频无字幕";
 }
 
 function renderNativeTranscriptPanel({ force = false } = {}) {
-  if (state.readingModeTransition?.phase === "animating") return;
+  if (readerSessionState.transition?.phase === "animating") return;
   const panel = document.getElementById(ids.nativeTranscriptPanel);
   const body = panel?.querySelector(`#${ids.nativeTranscriptBody}`);
   if (!panel || !body || !shouldShowNativeTranscriptPanel()) {
@@ -381,28 +377,33 @@ function renderNativeTranscriptPanel({ force = false } = {}) {
     clearNativeTranscriptEmptyNotice(panel);
   }
 
-  const transcriptItems = getReadingTranscriptItems();
   const renderKey = [
     computeCurrentClipSignature(),
-    state.subtitleFetchState,
-    state.selectedSubtitleId,
-    normalizeSubtitleUrlForCache(state.selectedSubtitleUrl),
-    transcriptItems.length,
-    state.subtitles.length
+    clipState.fetchClipSignature,
+    clipState.subtitleFetchState,
+    clipState.selectedSubtitleId,
+    normalizeSubtitleUrlForCache(clipState.selectedSubtitleUrl),
+    clipState.subtitleRevision
   ].join("|");
-  if (!force && state.nativeTranscriptRenderedKey === renderKey && body.childElementCount > 0) {
+  const previous = nativeTranscriptRenderCache.get(body);
+  if (!force && previous?.key === renderKey && previous.subtitleBody === clipState.subtitleBody &&
+      body.childElementCount > 0) {
+    startNativeTranscriptPlaybackSync();
     return;
   }
-  state.nativeTranscriptRenderedKey = renderKey;
+  const transcriptItems = getReadingTranscriptItems();
+  nativeTranscriptRenderCache.set(body, { key: renderKey, subtitleBody: clipState.subtitleBody });
+  invalidateReaderNodeCache(document.getElementById(ids.nativeTranscriptList));
   if (transcriptItems.length === 0) {
-    const retry = state.subtitleFetchState === "error";
-    body.innerHTML = `
+    const retry = clipState.subtitleFetchState === "error";
+    body.innerHTML = readerHtml(`
       <div class="blr-native-transcript-state${retry ? " is-error" : ""}">
         <span>${escapeHtml(getNativeTranscriptPlaceholderText())}</span>
         ${retry ? '<button type="button" data-native-transcript-retry>重试</button>' : ""}
       </div>
-    `;
-    state.nativeTranscriptActiveIndex = -1;
+    `);
+    nativeTranscriptState.activeIndex = -1;
+    stopNativeTranscriptPlaybackSync();
     return;
   }
 
@@ -424,12 +425,13 @@ function renderNativeTranscriptPanel({ force = false } = {}) {
     </div>
   `;
 
-  body.innerHTML = `
+  body.innerHTML = readerHtml(`
     <div id="${ids.nativeTranscriptList}" class="blr-native-transcript-list">
       ${transcriptHtml}
     </div>
-  `;
-  state.nativeTranscriptActiveIndex = -1;
+  `);
+  nativeTranscriptState.activeIndex = -1;
+  startNativeTranscriptPlaybackSync();
   syncNativeTranscriptPlayback(true);
 }
 
@@ -439,27 +441,26 @@ function ensureNativeTranscriptLoaded({ force = false } = {}) {
   }
 
   const signature = computeCurrentClipSignature();
-  if (signature !== state.currentClipSignature) {
+  if (signature !== clipState.currentClipSignature) {
     resetClipState();
   }
   initializeNativeTranscriptForSignature(signature);
   if (
     !force &&
-    signature === state.nativeTranscriptLoadedSignature &&
-    ["ready", "empty", "error"].includes(state.subtitleFetchState)
+    signature === nativeTranscriptState.loadedSignature &&
+    ["ready", "empty", "error"].includes(clipState.subtitleFetchState)
   ) {
     autoFoldNativeTranscriptIfEmpty(signature);
-    renderNativeTranscriptPanel();
     return Promise.resolve();
   }
   if (
-    state.nativeTranscriptLoadPromise &&
-    state.nativeTranscriptLoadSignature === signature
+    nativeTranscriptState.loadPromise &&
+    nativeTranscriptState.loadSignature === signature
   ) {
-    return state.nativeTranscriptLoadPromise;
+    return nativeTranscriptState.loadPromise;
   }
 
-  state.subtitleFetchState = "loading";
+  clipState.subtitleFetchState = "loading";
   renderNativeTranscriptPanel();
   const loadSignature = signature;
   const loadPromise = refreshClip()
@@ -467,32 +468,31 @@ function ensureNativeTranscriptLoaded({ force = false } = {}) {
       logWarn("[Bilibili Reader] native transcript load failed", error);
     })
     .finally(() => {
-      if (isRunActive(loadRunId) && state.nativeTranscriptLoadPromise === loadPromise) {
-        state.nativeTranscriptLoadedSignature = loadSignature;
+      if (isRunActive(loadRunId) && nativeTranscriptState.loadPromise === loadPromise) {
+        nativeTranscriptState.loadedSignature = loadSignature;
         autoFoldNativeTranscriptIfEmpty(loadSignature);
       }
-      if (state.nativeTranscriptLoadPromise === loadPromise) {
-        state.nativeTranscriptLoadPromise = null;
-        state.nativeTranscriptLoadSignature = "";
+      if (nativeTranscriptState.loadPromise === loadPromise) {
+        nativeTranscriptState.loadPromise = null;
+        nativeTranscriptState.loadSignature = "";
       }
       if (isRunActive(loadRunId)) {
         renderNativeTranscriptPanel();
         syncNativeTranscriptPlayback(true);
       }
     });
-  const loadRunId = state.fetchRunId;
-  state.nativeTranscriptLoadSignature = loadSignature;
-  state.nativeTranscriptLoadPromise = loadPromise;
+  const loadRunId = clipState.fetchRunId;
+  nativeTranscriptState.loadSignature = loadSignature;
+  nativeTranscriptState.loadPromise = loadPromise;
   return loadPromise;
 }
 
 function initializeNativeTranscriptForSignature(signature = computeCurrentClipSignature()) {
-  if (!signature || state.nativeTranscriptDisplaySignature === signature) {
+  if (!signature || nativeTranscriptState.displaySignature === signature) {
     return;
   }
-  state.nativeTranscriptDisplaySignature = signature;
-  state.nativeTranscriptAutoFoldedSignature = "";
-  state.nativeTranscriptOpen = true;
+  nativeTranscriptState.displaySignature = signature;
+  nativeTranscriptState.open = true;
   setNativeTranscriptExpanded(document.getElementById(ids.nativeTranscriptPanel), true);
 }
 
@@ -503,83 +503,112 @@ function autoFoldNativeTranscriptIfEmpty(signature = computeCurrentClipSignature
   ) {
     return;
   }
-  state.nativeTranscriptAutoFoldedSignature = signature;
-  state.nativeTranscriptOpen = false;
+  nativeTranscriptState.open = false;
   setNativeTranscriptExpanded(document.getElementById(ids.nativeTranscriptPanel), false);
 }
 
 function bindNativeTranscriptPanelResize() {
-  const player = document.getElementById("playerWrap") || document.getElementById("bilibili-player");
-  if (!player || state.nativeTranscriptObservedPlayer === player) {
+  const player = getNativeTranscriptPlayerNode();
+  if (!player || nativeTranscriptState.observedPlayer === player) {
     return;
   }
-  state.nativeTranscriptResizeObserver?.disconnect();
-  state.nativeTranscriptResizeObserver = new ResizeObserver(() => {
-    if (state.readingModeTransition?.phase === "animating") return;
+  nativeTranscriptState.resizeObserver?.disconnect();
+  nativeTranscriptState.resizeObserver = new ResizeObserver(() => {
+    if (readerSessionState.transition?.phase === "animating") return;
     const scrollAnchor = captureTranscriptScrollAnchor(
       document.getElementById(ids.nativeTranscriptList), ".blr-native-transcript-segment"
     );
-    syncNativeTranscriptPanelAlignment();
-    syncNativeTranscriptPanelHeight();
+    const playerRect = syncNativeTranscriptPanelAlignment();
+    syncNativeTranscriptPanelHeight(playerRect);
     restoreTranscriptScrollAnchor(scrollAnchor);
   });
-  state.nativeTranscriptResizeObserver.observe(player);
-  state.nativeTranscriptObservedPlayer = player;
+  nativeTranscriptState.resizeObserver.observe(player);
+  if (isYouTubePage()) {
+    const header = document.getElementById(ids.nativeTranscriptHeader);
+    if (header) nativeTranscriptState.resizeObserver.observe(header);
+  }
+  nativeTranscriptState.observedPlayer = player;
+}
+
+function getNativeTranscriptPlayerRect() {
+  const player = getNativeTranscriptPlayerNode();
+  return player?.getBoundingClientRect() || null;
+}
+
+function getNativeTranscriptPlayerNode() {
+  return isYouTubePage() ? document.getElementById("movie_player") :
+    document.getElementById("playerWrap") || document.getElementById("bilibili-player");
 }
 
 function syncNativeTranscriptPanelAlignment() {
   const panel = document.getElementById(ids.nativeTranscriptPanel);
   if (!panel) {
-    return;
+    return null;
   }
   if (!panel.classList.contains("is-collaboration-layout")) {
     panel.style.removeProperty("margin-top");
-    return;
+    return getNativeTranscriptPlayerRect();
   }
   const player = document.getElementById("playerWrap") || document.getElementById("bilibili-player");
   if (!player) {
-    return;
+    return null;
   }
-  panel.style.setProperty("margin-top", "0px");
+  setReaderStyle(panel, "margin-top", "0px");
   const panelTop = panel.getBoundingClientRect().top;
-  const playerTop = player.getBoundingClientRect().top;
+  const playerRect = player.getBoundingClientRect();
+  const playerTop = playerRect.top;
   if (!Number.isFinite(panelTop) || !Number.isFinite(playerTop)) {
-    return;
+    return playerRect;
   }
-  panel.style.setProperty("margin-top", `${Math.max(0, Math.round(playerTop - panelTop))}px`);
+  setReaderStyle(panel, "margin-top", `${Math.max(0, Math.round(playerTop - panelTop))}px`);
+  return playerRect;
 }
 
-function syncNativeTranscriptPanelHeight() {
+function syncNativeTranscriptPanelHeight(playerRect = getNativeTranscriptPlayerRect()) {
   const panel = document.getElementById(ids.nativeTranscriptPanel);
-  const player = document.getElementById("playerWrap") || document.getElementById("bilibili-player");
-  if (!panel || !player) {
+  if (!panel || !playerRect) {
     return;
   }
-  const playerHeight = player.getBoundingClientRect().height;
+  const playerHeight = playerRect.height;
   if (!(playerHeight > 120)) {
     return;
   }
-  panel.style.setProperty(
+  const headerHeight = isYouTubePage()
+    ? (panel.querySelector(`#${ids.nativeTranscriptHeader}`)?.getBoundingClientRect().height || 44) + 8
+    : 56;
+  setReaderStyle(panel,
     "--blr-native-transcript-body-height",
-    `${Math.max(0, Math.round(playerHeight - 56))}px`
+    `${Math.max(0, Math.round(playerHeight - headerHeight))}px`
   );
 }
 
 function startNativeTranscriptPlaybackSync() {
-  if (state.nativeTranscriptPlaybackTimer) {
+  if (nativeTranscriptState.playbackTimer || !shouldShowNativeTranscriptPanel() ||
+      !nativeTranscriptState.open || !clipState.subtitleBody.length ||
+      !document.getElementById(ids.nativeTranscriptList)) {
     return;
   }
-  state.nativeTranscriptPlaybackTimer = window.setInterval(() => {
+  nativeTranscriptState.playbackTimer = window.setInterval(() => {
     syncNativeTranscriptPlayback();
   }, 250);
 }
 
+function stopNativeTranscriptPlaybackSync() {
+  if (!nativeTranscriptState.playbackTimer) return;
+  window.clearInterval(nativeTranscriptState.playbackTimer);
+  nativeTranscriptState.playbackTimer = 0;
+}
+
 function syncNativeTranscriptPlayback(forceScroll = false) {
-  if (state.readingModeTransition &&
-    (state.readingModeTransition.phase === "animating" || !forceScroll)) return;
-  const panel = document.getElementById(ids.nativeTranscriptPanel);
-  const list = panel?.querySelector(`#${ids.nativeTranscriptList}`);
-  if (!panel || !list || !state.nativeTranscriptOpen || state.subtitleBody.length === 0) {
+  if (readerSessionState.transition &&
+    (readerSessionState.transition.phase === "animating" || !forceScroll)) return;
+  if (!shouldShowNativeTranscriptPanel() || !nativeTranscriptState.open || !clipState.subtitleBody.length) {
+    stopNativeTranscriptPlaybackSync();
+    return;
+  }
+  const list = document.getElementById(ids.nativeTranscriptList);
+  if (!list) {
+    stopNativeTranscriptPlaybackSync();
     return;
   }
   const video = getRuntimeVideoElement();
@@ -587,20 +616,16 @@ function syncNativeTranscriptPlayback(forceScroll = false) {
     return;
   }
   const nextIndex = findActiveSubtitleIndex(Number(video.currentTime || 0) || 0);
-  const current = list.querySelector(".is-active");
-  const next = list.querySelector(`[data-native-transcript-index="${nextIndex}"]`);
-  if (current && current !== next) {
-    current.classList.remove("is-active");
-  }
-  if (next) {
-    next.classList.add("is-active");
-  }
-  const changed = nextIndex !== state.nativeTranscriptActiveIndex;
-  state.nativeTranscriptActiveIndex = nextIndex;
+  const changed = nextIndex !== nativeTranscriptState.activeIndex;
+  if (!changed && !forceScroll) return;
+  const cache = getReaderNodeCache(list, ".blr-native-transcript-segment", "data-native-transcript-index");
+  const next = cache?.byIndex.get(nextIndex) || null;
+  if (changed) setCachedReaderActiveNode(cache, next);
+  nativeTranscriptState.activeIndex = nextIndex;
   if (
     next &&
     (changed || forceScroll) &&
-    Date.now() >= state.nativeTranscriptManualScrollPauseUntil
+    Date.now() >= nativeTranscriptState.manualScrollPauseUntil
   ) {
     scrollNativeTranscriptItemIntoView(next, list, forceScroll ? "auto" : "smooth");
   }
@@ -615,14 +640,14 @@ function scrollNativeTranscriptItemIntoView(node, list, behavior = "smooth") {
   const padding = Math.max(32, Math.min(listRect.height * 0.22, 96));
   const target = list.scrollTop + itemRect.top - listRect.top - padding;
   if (behavior === "auto") behavior = "instant";
-  state.nativeTranscriptProgrammaticScrollUntil = Date.now() + (behavior === "instant" ? 120 : 700);
+  nativeTranscriptState.programmaticScrollUntil = Date.now() + (behavior === "instant" ? 120 : 700);
   list.scrollTo({ top: Math.max(0, Math.round(target)), behavior });
 }
 
 function onNativeTranscriptClick(event) {
   const retry = event.target.closest("[data-native-transcript-retry]");
   if (retry) {
-    state.nativeTranscriptLoadedSignature = "";
+    nativeTranscriptState.loadedSignature = "";
     ensureNativeTranscriptLoaded({ force: true });
     return;
   }
@@ -634,7 +659,7 @@ function onNativeTranscriptClick(event) {
   if (!video) {
     return;
   }
-  state.nativeTranscriptManualScrollPauseUntil = 0;
+  nativeTranscriptState.manualScrollPauseUntil = 0;
   video.currentTime = Math.max(0, Number(target.dataset.seconds || 0) || 0);
   if (video.paused) {
     video.play().catch(() => {});
@@ -662,37 +687,10 @@ function onNativeTranscriptChange(event) {
   if (!url) {
     return;
   }
-  const previousFetchState = state.subtitleFetchState;
-  const runId = state.fetchRunId;
   select.disabled = true;
-  loadSubtitle(
+  selectSubtitle(
     url,
     String(option.dataset.lang || "unknown"),
-    runId,
     String(option.dataset.id || "")
-  )
-    .then(() => {
-      if (!isRunActive(runId)) {
-        return;
-      }
-      renderNativeTranscriptPanel();
-      syncNativeTranscriptPlayback(true);
-    })
-    .catch((error) => {
-      if (isStaleRunError(error) || !isRunActive(runId)) {
-        return;
-      }
-      state.subtitleFetchState = previousFetchState === "ready" ? "ready" : "error";
-      logWarn("[Bilibili Reader] native subtitle switch failed", error);
-      renderNativeTranscriptPanel({ force: true });
-    })
-    .finally(() => {
-      if (!isRunActive(runId)) {
-        return;
-      }
-      const currentSelect = document.getElementById(ids.nativeTranscriptSelect);
-      if (currentSelect) {
-        currentSelect.disabled = state.subtitles.length === 0;
-      }
-    });
+  );
 }

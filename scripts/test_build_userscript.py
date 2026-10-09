@@ -64,7 +64,7 @@ class BuildUserscriptVersionTests(unittest.TestCase):
             bootstrap_path = source_paths[0]
             style_paths = tuple(root / "src" / "styles" / path.name for path in build_userscript.STYLE_PATHS)
             icon_path = root / "icon.png"
-            output_path = root / "Bilibli-Reader.user.js"
+            output_path = root / build_userscript.OUTPUT_PATH.name
             readme_path = root / "README.md"
             scriptcat_path = root / "docs" / "README.scriptcat.md"
             bootstrap_path.parent.mkdir()
@@ -76,7 +76,7 @@ class BuildUserscriptVersionTests(unittest.TestCase):
             for path in style_paths:
                 path.write_text("body {}\n", encoding="utf-8")
             icon_path.write_bytes(b"icon")
-            readme_path.write_text("# Reader\n\n![示例](docs/images/sample_reader.png)\n", encoding="utf-8")
+            readme_path.write_text("# Reader\n\n![示例](docs/images/reader-bilibili.png)\n", encoding="utf-8")
 
             with (
                 patch.object(build_userscript, "SOURCE_PATHS", source_paths),
@@ -86,7 +86,7 @@ class BuildUserscriptVersionTests(unittest.TestCase):
                 patch.object(build_userscript, "README_PATH", readme_path),
                 patch.object(build_userscript, "SCRIPT_CAT_README_PATH", scriptcat_path),
             ):
-                build_userscript.main()
+                build_userscript.main(bump=True)
                 self.assertIn(
                     "// @version      0.0.6-alpha.1", output_path.read_text(encoding="utf-8")
                 )
@@ -94,10 +94,10 @@ class BuildUserscriptVersionTests(unittest.TestCase):
                     'READER_VERSION = "0.0.6-alpha.1"', bootstrap_path.read_text(encoding="utf-8")
                 )
                 self.assertIn(
-                    "Bilibli-Reader@main/docs/images/sample_reader.png",
+                    "Bilibli-Reader@main/docs/images/reader-bilibili.png",
                     scriptcat_path.read_text(encoding="utf-8"),
                 )
-                build_userscript.main()
+                build_userscript.main(bump=True)
                 self.assertIn(
                     "// @version      0.0.6-alpha.2", output_path.read_text(encoding="utf-8")
                 )

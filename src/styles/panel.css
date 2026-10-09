@@ -1,101 +1,3 @@
-#viewbox_report.blr-page-reader-entry-host,
-.video-info-container.blr-page-reader-entry-host,
-.video-info-title.blr-page-reader-entry-host {
-  position: relative !important;
-}
-
-#viewbox_report.blr-page-reader-entry-host h1.video-title,
-.video-info-container.blr-page-reader-entry-host h1.video-title {
-  padding-right: 108px !important;
-  box-sizing: border-box;
-}
-
-#blr-page-reader-entry {
-  -webkit-appearance: none;
-  appearance: none;
-  position: absolute;
-  top: auto;
-  right: 2px;
-  bottom: 4px;
-  z-index: 20;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-width: 82px;
-  height: 34px;
-  margin: 0;
-  padding: 0 14px;
-  box-sizing: border-box;
-  border: 1px solid rgba(0, 174, 236, 0.42);
-  border-radius: 9px;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.08);
-  color: #18191c;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1;
-  cursor: pointer;
-  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease,
-    transform 0.16s ease, box-shadow 0.16s ease;
-}
-
-#blr-page-reader-entry svg {
-  width: 17px;
-  height: 17px;
-  flex: 0 0 auto;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-#blr-page-reader-entry:hover {
-  border-color: #00aeec;
-  background: #00aeec;
-  color: #fff;
-  box-shadow: 0 7px 20px rgba(0, 174, 236, 0.22);
-  transform: translateY(-1px);
-}
-
-#blr-page-reader-entry:active {
-  transform: translateY(0);
-}
-
-#blr-page-reader-entry:focus-visible {
-  outline: 2px solid rgba(0, 174, 236, 0.42);
-  outline-offset: 2px;
-}
-
-#blr-page-reader-entry:disabled,
-#blr-page-reader-entry.is-loading {
-  cursor: wait;
-  opacity: 0.68;
-  transform: none;
-}
-
-html[data-blr-reader-mode="1"] #blr-page-reader-entry,
-body[data-blr-reader-mode="1"] #blr-page-reader-entry {
-  display: none !important;
-}
-
-@media (max-width: 760px) {
-  #viewbox_report.blr-page-reader-entry-host h1.video-title,
-  .video-info-container.blr-page-reader-entry-host h1.video-title {
-    padding-right: 0 !important;
-  }
-
-  #blr-page-reader-entry {
-    position: relative;
-    top: auto;
-    right: auto;
-    bottom: auto;
-    margin-top: 8px;
-  }
-}
-
 #blr-native-transcript-panel {
   --blr-native-transcript-body-height: 439px;
   --blr-native-transcript-font-size: 14px;
@@ -142,7 +44,7 @@ body[data-blr-reader-mode="1"] #blr-page-reader-entry {
   -webkit-appearance: none;
   appearance: none;
   min-width: 32px;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   align-self: stretch;
   margin: 0;
   padding: 0;
@@ -163,11 +65,13 @@ body[data-blr-reader-mode="1"] #blr-page-reader-entry {
 .blr-native-transcript-controls {
   min-width: 0;
   display: flex;
-  flex: 0 0 auto;
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 4px;
 }
 
+.blr-native-transcript-reader-button,
 .blr-native-transcript-return-button,
 .blr-native-transcript-theme-button {
   -webkit-appearance: none;
@@ -187,18 +91,30 @@ body[data-blr-reader-mode="1"] #blr-page-reader-entry {
   cursor: pointer;
 }
 
+.blr-native-transcript-reader-button svg,
 .blr-native-transcript-return-button svg,
 .blr-native-transcript-theme-button svg {
   width: 17px;
   height: 17px;
 }
 
+.blr-native-transcript-reader-button:hover,
 .blr-native-transcript-return-button:hover,
 .blr-native-transcript-return-button.is-active,
 .blr-native-transcript-theme-button:hover,
 .blr-native-transcript-theme-button.is-active {
   border-color: var(--brand_blue, #00aeec);
   color: var(--brand_blue, #00aeec);
+}
+
+.blr-native-transcript-reader-button:focus-visible {
+  outline: 2px solid var(--brand_blue, #00aeec);
+  outline-offset: 2px;
+}
+
+.blr-native-transcript-reader-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
 
 .blr-native-transcript-controls select {
@@ -226,15 +142,18 @@ body[data-blr-reader-mode="1"] #blr-page-reader-entry {
 }
 
 #blr-native-transcript-select {
-  width: 72px;
+  width: auto;
+  max-width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 #blr-native-transcript-font-size {
-  width: 56px;
+  width: 52px;
 }
 
 #blr-native-transcript-font-weight {
-  width: 64px;
+  width: 60px;
 }
 
 .blr-native-transcript-arrow-button {
@@ -441,312 +360,54 @@ body[data-blr-reader-mode="1"] #blr-page-reader-entry {
   background: rgba(0, 174, 236, 0.08);
 }
 
-#blr-panel {
-  position: fixed;
-  right: 16px;
-  top: 72px;
-  width: min(420px, calc(100vw - 24px));
-  height: min(820px, calc(100vh - 88px));
-  z-index: 2147483647;
-  background: #f1f1f1;
-  border: 1px solid #d8d8d8;
-  border-radius: 14px;
-  box-shadow: 0 24px 46px rgba(0, 0, 0, 0.24);
-  padding: 12px;
-  box-sizing: border-box;
-  display: none;
-  flex-direction: column;
-  gap: 8px;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue",
-    Arial, sans-serif;
+/* The YouTube panel sits above recommendations in the secondary column,
+   which also handles narrow screens and theater mode without moving the player. */
+#blr-native-transcript-panel[data-platform="youtube"][data-theme="light"] {
+  --blr-native-transcript-surface: var(--yt-spec-base-background, #fff);
+  --blr-native-transcript-text: var(--yt-spec-text-primary, #0f0f0f);
+  --blr-native-transcript-border: var(--yt-spec-10-percent-layer, #e5e5e5);
+  color: var(--yt-spec-text-primary, #0f0f0f);
 }
 
-#blr-panel.open {
-  display: flex;
+#blr-native-transcript-panel[data-platform="youtube"] .blr-native-transcript-header {
+  gap: 4px;
+  padding: 0 6px 0 10px;
+  background: var(--yt-spec-badge-chip-background, #f2f2f2);
+  color: var(--yt-spec-text-primary, #0f0f0f);
+  border-radius: 12px;
 }
 
-.blr-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 0 4px;
-}
-
-.blr-header strong {
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  color: #3d3d3d;
-}
-
-.blr-header-actions {
-  display: flex;
-  gap: 6px;
-}
-
-.blr-header button {
-  border: 1px solid #cfcfcf;
-  background: #f8f8f8;
-  border-radius: 10px;
-  padding: 7px 10px;
-  cursor: pointer;
-  color: #4a4a4a;
-}
-
-.blr-status {
-  margin: 0;
-  font-size: 12px;
-  color: #555;
-  background: #e8e8e8;
-  border-radius: 8px;
-  padding: 7px 8px;
-}
-
-.blr-props-head {
-  font-size: 15px;
-  font-weight: 600;
-  color: #4a4a4a;
-  margin-top: 0;
-}
-
-.blr-meta {
-  border: 1px solid #d5d5d5;
-  border-radius: 10px;
-  padding: 8px 10px;
-  background: #f7f7f7;
-  display: grid;
-  gap: 6px;
-  font-size: 13px;
-  color: #3f3f3f;
-}
-
-.blr-meta-item {
-  word-break: break-word;
-}
-
-.blr-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #4d4d4d;
-  margin-top: 2px;
-}
-
-#blr-subtitle-select {
-  height: 36px;
-  border: 1px solid #cfcfcf;
-  border-radius: 8px;
-  padding: 0 10px;
-  background: #fff;
-  color: #2d2d2d;
-}
-
-.blr-player-ai-wrap {
-  align-items: center;
-  background: rgba(20, 24, 32, 0.68);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 999px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
-  display: inline-flex;
-  flex: 0 0 var(--blr-player-ai-action-hit-size, 28px);
-  height: var(--blr-player-ai-action-hit-size, 28px);
-  justify-content: center;
-  margin: 0;
-  min-width: var(--blr-player-ai-action-hit-size, 28px);
-  opacity: 0;
-  overflow: hidden;
-  pointer-events: none;
-  position: absolute;
-  right: 14px;
-  top: 50%;
-  transform: translate(8px, -50%);
-  transition: opacity 0.18s ease, background-color 0.18s ease, transform 0.18s ease;
-  width: var(--blr-player-ai-action-hit-size, 28px);
-  z-index: 30;
-}
-
-.blr-player-ai-wrap.is-active,
-.blr-player-ai-wrap:hover,
-.blr-player-ai-wrap:focus-within {
-  background: rgba(20, 24, 32, 0.78);
-  opacity: 1;
-  pointer-events: auto;
-  transform: translate(0, -50%);
-}
-
-#blr-player-ai-quick-action {
-  -webkit-appearance: none;
-  appearance: none;
-  align-items: center;
-  align-self: center;
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  box-sizing: border-box;
-  color: var(--blr-player-ai-action-color, currentColor);
-  display: inline-flex;
+#blr-native-transcript-panel[data-platform="youtube"] .blr-native-transcript-title-button {
   flex: 0 0 auto;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  cursor: pointer;
-  line-height: 0;
-  margin-bottom: 0;
-  margin-top: 0;
+}
+
+#blr-native-transcript-panel[data-platform="youtube"] .blr-native-transcript-controls {
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
+  gap: 4px;
+}
+
+#blr-native-transcript-panel[data-platform="youtube"] #blr-native-transcript-select {
+  width: auto;
+  max-width: 100%;
+  flex: 1 1 auto;
   min-width: 0;
-  overflow: hidden;
-  padding: 0;
-  position: relative;
-  top: 0;
-  vertical-align: top;
-  transition: transform 0.16s ease, color 0.16s ease, opacity 0.16s ease;
 }
 
-#blr-player-ai-quick-action svg {
-  width: var(--blr-player-ai-action-icon-size, 24px);
-  height: var(--blr-player-ai-action-icon-size, 24px);
-  display: block;
-  flex: 0 0 auto;
-  stroke: currentColor;
-  fill: none;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+#blr-native-transcript-panel[data-platform="youtube"] #blr-native-transcript-font-size {
+  width: 52px;
 }
 
-#blr-player-ai-quick-action:hover {
-  color: var(--blr-player-ai-action-hover-color, var(--blr-player-ai-action-color, currentColor));
+#blr-native-transcript-panel[data-platform="youtube"] #blr-native-transcript-font-weight {
+  width: 60px;
 }
 
-#blr-player-ai-quick-action:disabled {
-  opacity: 0.62;
-  cursor: wait;
-  transform: none;
+#blr-native-transcript-panel[data-platform="youtube"] .blr-native-transcript-body {
+  margin-top: 8px;
+  border-radius: 12px;
 }
 
-.blr-confirm-overlay {
-  align-items: center;
-  background: rgba(17, 24, 39, 0.28);
-  display: flex;
-  inset: 0;
-  justify-content: center;
-  padding: 18px;
-  position: fixed;
-  z-index: 2147483647;
-}
-
-.blr-confirm-dialog {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.22);
-  color: #111827;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  max-width: 360px;
-  padding: 18px;
-  width: calc(100vw - 36px);
-}
-
-.blr-confirm-title {
-  font-size: 15px;
-  font-weight: 700;
-  margin-bottom: 8px;
-}
-
-.blr-confirm-body {
-  color: #4b5563;
-  font-size: 13px;
-  margin-bottom: 8px;
-}
-
-.blr-confirm-path {
-  background: #f7f8fb;
-  border: 1px solid #edf0f4;
-  border-radius: 10px;
-  color: #374151;
-  font-size: 12px;
-  line-height: 1.45;
-  max-height: 96px;
-  overflow: auto;
-  padding: 9px 10px;
-  word-break: break-all;
-}
-
-.blr-confirm-actions {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-  margin-top: 14px;
-}
-
-.blr-confirm-actions button {
-  border: 1px solid #d9dee7;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 13px;
-  height: 34px;
-  padding: 0 14px;
-}
-
-.blr-confirm-cancel {
-  background: #ffffff;
-  color: #374151;
-}
-
-.blr-confirm-primary {
-  background: #111827;
-  border-color: #111827 !important;
-  color: #ffffff;
-}
-
-#blr-preview {
-  width: 100%;
-  flex: 1;
-  min-height: 180px;
-  box-sizing: border-box;
-  border: 1px solid #d0d0d0;
-  border-radius: 10px;
-  padding: 10px;
-  resize: vertical;
-  font-size: 13px;
-  line-height: 1.55;
-  background: #fff;
-  color: #2f2f2f;
-  font-family: "SF Mono", "JetBrains Mono", "PingFang SC", Menlo, Monaco, Consolas, monospace;
-}
-
-.blr-actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 0;
-}
-
-.blr-actions button {
-  border: 1px solid #cfcfcf;
-  background: #f8f8f8;
-  border-radius: 9px;
-  padding: 8px 8px;
-  cursor: pointer;
-  color: #3d3d3d;
-  font-size: 13px;
-}
-
-#blr-send-btn {
-  grid-column: span 2;
-  border: 1px solid #a88fff;
-  background: linear-gradient(180deg, #9c82ff 0%, #8f75ef 100%);
-  color: #fff;
-  font-weight: 600;
-}
-
-.blr-actions button:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
-}
-
-.blr-message {
-  margin: 0;
-  font-size: 12px;
-  color: #0f766e;
-  min-height: 18px;
-  padding: 0 2px;
+[data-blr-youtube-transcript-open] > ytd-engagement-panel-section-list-renderer[target-id="PAmodern_transcript_view"],
+[data-blr-youtube-transcript-open] > ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"] {
+  display: none !important;
 }

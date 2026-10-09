@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Bilibili Reader｜哔哩哔哩阅读模式
+// @name         小书吏 ｜ 将哔哩哔哩与YouTube视频誊写为文章
 // @namespace    https://github.com/bilibli-reader
-// @version      0.0.9
-// @description  将 B 站视频切换为视频、章节与字幕联动的阅读视图
+// @version      0.0.10
+// @description  将哔哩哔哩与 YouTube 视频字幕誊写为可阅读的文章，支持连续字幕、章节联动、点击跳转与语言切换
 // @author       Wow-CaiCai
 // @license      MIT
 // @homepageURL  https://github.com/Wow-CaiCai/Bilibli-Reader
@@ -13,6 +13,8 @@
 // @match        https://www.bilibili.com/video/*
 // @match        https://www.bilibili.com/watchlater/*
 // @match        https://www.bilibili.com/list/watchlater*
+// @match        https://www.youtube.com/*
+// @match        https://youtube.com/*
 // @icon         data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAFHUlEQVR4nO2ZTWhUVxTH/+fed99MMk4+KhNrRFE0mBhdaCVYuphaBNtFa2kdqYqlqIuiCKUbwU0qFOqi0rrqQil1ozQjRdHaUig6pVCtiKT1I2mrbfzERGOcfM3Me/ecLsbRxMR0JkYHy/zg8e77POd/73nnfjygRIkSzzQ04kwsph/3pdHOTkokXmZgO2fPNKto9LiqqamReM7Mve1h4ve2RxKP26GHIwX814U8kPulZpXdZ4XQqPfkZ/tR99OwcjSq63nKzp5k36x0KsUgKlgHQaW11m0zplXvO/3D/jYAWLB07dzOW91rfM9vIOIACzAnXI7aqkrA0YAwQArie+jo7kFHfxoOPXCaRaQsEFQVFaF/alTnh4lEwuY00X27gDS9urbids/Azdgby4NTp0yGiBSmQYCM7+Ns20X89MuZAWPU20rBZjL2YNPiReWN9bOhlYY1CnVHDyMaqUbVtGnw02mYYBA3//wLx3zClWXLoFMWQgQRgesSrt/oxpGj32dCgYoprYm9PTmfnaH2n6+tletd5++sW7m8Zl7dTMH4I4n37Dtc/vFnew4QRDa/v6F804YVHgOKGHAUcObMCdi+JIxYsPVhxMIf6ENj4wKsXv8WMhYgDTADYQX5ubWDDh460h2ZHhgWTc7Dlgmke5J92rdWmJmUUnl7TQBEAKWU3rjmdfnm2x9DKY+xft0K6UmK8X0GCUOHFNKeDwbBF4CB7J4IqYyH276F12NBWoOZkQkpSfb2EYhGJJgRAgBAKwVHa1gi6AIE5PCtBYmihY11cmfAIugK9fUxHEcDTNBa3Q/NoTEMAEQErTVYA6T1vWOFR1XkqAImAiKC4ziklIBAKDwd5Efh1VsAImMly4nhiQp4GpQEFJuSgGJTElBsSgKKTdEF5Ibs4+21iy7AMQae78MxZnzPT7A/eSMCOK6Lv9va0f77OcxfvBCOGyj4PUVpARHAMQ7aT/6Ka04Ac3Z9ikt3+3Gp9Tc4xqCQaCpKC5AC2PNATUtQt3MHnMogQvUNaN+0BWBb0Dzw6QtQCpwCZmzdBjcSAQzgdVs41VWo3/0lbG8veACgPCdSxQkhC7i1EQgAyQjI0eBBAbkGpuY5iA/kOwMqzkdMWcdB9MBRRQALhJG380ARs9CoTo5j3ln0fuBxeeYFjAwhImtZxDLEt1xQTs4+roSZAa0JDxKiMLMQaYhwQXHCzGBWwiwgkH34+jABmXSKwLaiMmRIK5BW4/pESCuTzTAiuTEOVVYaMhoQLqzRmRXCBhQuNxDxK7xMelgF5DwUiFB41UcpFerd+V1rb9Mfd64xs6W810YJUFAIh9zBRbMmharDZUvcgFtpPIUyIHn51uCJc5f7e5P96XKAx1ydHiZABEFXy8WOpKLQ1FNl6bJBiBCIhi3uItp8zElsX+rP/eDEylQ6HU/1dkMpnbehoS/LZPyr29YuvnDj9IEX7vb7NPOlNac+bznZ4BozHcgOJQrpbZktyiZNRtA171zY9eLXOV+HCcipmv3e/unhyVPnG06JcP55TcQS4MDCj3g+vdtvg6+4dy90AUCmqiFSToPHjea9pNxOwAdI5103pEREhci7ffXsua9WXxm1BSaaBZuPbrVOxQ4QQaWT285+8donT8LOKAKEYrG4GvM3zxhE50Wo5nyXxOOr7NyNh7aARLXvfnMXYi06Oi9CifNd45q5xADE4zEG6MmvVwIAmkWNWn6WiMVadCzW8tg/DUuUKPE/5l84MhkVkUnJNwAAAABJRU5ErkJggg==
 // @run-at       document-idle
 // @grant        GM_addStyle
@@ -29,6 +31,8 @@
 // @connect      i1.hdslb.com
 // @connect      i2.hdslb.com
 // @connect      *.hdslb.com
+// @connect      www.youtube.com
+// @connect      youtube.com
 // ==/UserScript==
 
 (() => {
@@ -38,18 +42,13 @@
   const runtimeListeners = [];
   const storageListeners = [];
 
-  GM_addStyle("#viewbox_report.blr-page-reader-entry-host,\n.video-info-container.blr-page-reader-entry-host,\n.video-info-title.blr-page-reader-entry-host {\n  position: relative !important;\n}\n\n#viewbox_report.blr-page-reader-entry-host h1.video-title,\n.video-info-container.blr-page-reader-entry-host h1.video-title {\n  padding-right: 108px !important;\n  box-sizing: border-box;\n}\n\n#blr-page-reader-entry {\n  -webkit-appearance: none;\n  appearance: none;\n  position: absolute;\n  top: auto;\n  right: 2px;\n  bottom: 4px;\n  z-index: 20;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: 6px;\n  min-width: 82px;\n  height: 34px;\n  margin: 0;\n  padding: 0 14px;\n  box-sizing: border-box;\n  border: 1px solid rgba(0, 174, 236, 0.42);\n  border-radius: 9px;\n  background: rgba(255, 255, 255, 0.96);\n  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.08);\n  color: #18191c;\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", sans-serif;\n  font-size: 14px;\n  font-weight: 600;\n  line-height: 1;\n  cursor: pointer;\n  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease,\n    transform 0.16s ease, box-shadow 0.16s ease;\n}\n\n#blr-page-reader-entry svg {\n  width: 17px;\n  height: 17px;\n  flex: 0 0 auto;\n  fill: none;\n  stroke: currentColor;\n  stroke-width: 1.8;\n  stroke-linecap: round;\n  stroke-linejoin: round;\n}\n\n#blr-page-reader-entry:hover {\n  border-color: #00aeec;\n  background: #00aeec;\n  color: #fff;\n  box-shadow: 0 7px 20px rgba(0, 174, 236, 0.22);\n  transform: translateY(-1px);\n}\n\n#blr-page-reader-entry:active {\n  transform: translateY(0);\n}\n\n#blr-page-reader-entry:focus-visible {\n  outline: 2px solid rgba(0, 174, 236, 0.42);\n  outline-offset: 2px;\n}\n\n#blr-page-reader-entry:disabled,\n#blr-page-reader-entry.is-loading {\n  cursor: wait;\n  opacity: 0.68;\n  transform: none;\n}\n\nhtml[data-blr-reader-mode=\"1\"] #blr-page-reader-entry,\nbody[data-blr-reader-mode=\"1\"] #blr-page-reader-entry {\n  display: none !important;\n}\n\n@media (max-width: 760px) {\n  #viewbox_report.blr-page-reader-entry-host h1.video-title,\n  .video-info-container.blr-page-reader-entry-host h1.video-title {\n    padding-right: 0 !important;\n  }\n\n  #blr-page-reader-entry {\n    position: relative;\n    top: auto;\n    right: auto;\n    bottom: auto;\n    margin-top: 8px;\n  }\n}\n\n#blr-native-transcript-panel {\n  --blr-native-transcript-body-height: 439px;\n  --blr-native-transcript-font-size: 14px;\n  --blr-native-transcript-font-weight: 500;\n  --blr-native-transcript-surface: var(--bg1, #fff);\n  --blr-native-transcript-text: var(--text1, #18191c);\n  --blr-native-transcript-border: var(--line_regular, #e3e5e7);\n  --blr-native-transcript-active: rgba(0, 174, 236, 0.12);\n  width: 100%;\n  min-width: 0;\n  position: relative;\n  z-index: 20;\n  margin: 0 0 12px;\n  box-sizing: border-box;\n  isolation: isolate;\n  pointer-events: auto;\n  color: var(--text1, #18191c);\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", sans-serif;\n}\n\n#blr-native-transcript-panel button,\n#blr-native-transcript-panel select,\n#blr-native-transcript-panel .blr-native-transcript-body,\n#blr-native-transcript-panel .blr-native-transcript-list {\n  pointer-events: auto;\n}\n\n.blr-native-transcript-header {\n  width: 100%;\n  height: 44px;\n  display: flex;\n  align-items: center;\n  gap: 4px;\n  margin: 0;\n  padding: 0 6px 0 10px;\n  box-sizing: border-box;\n  border-radius: 6px;\n  background: var(--bg2, #f1f2f3);\n  color: var(--text1, #18191c);\n  font: inherit;\n}\n\n.blr-native-transcript-title-button {\n  -webkit-appearance: none;\n  appearance: none;\n  min-width: 32px;\n  flex: 1 1 auto;\n  align-self: stretch;\n  margin: 0;\n  padding: 0;\n  overflow: hidden;\n  border: 0;\n  background: transparent;\n  color: inherit;\n  font: inherit;\n  font-size: 15px;\n  font-weight: 500;\n  line-height: 1;\n  text-align: left;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  cursor: pointer;\n}\n\n.blr-native-transcript-controls {\n  min-width: 0;\n  display: flex;\n  flex: 0 0 auto;\n  align-items: center;\n  gap: 4px;\n}\n\n.blr-native-transcript-return-button,\n.blr-native-transcript-theme-button {\n  -webkit-appearance: none;\n  appearance: none;\n  width: 26px;\n  height: 26px;\n  display: inline-flex;\n  flex: 0 0 26px;\n  align-items: center;\n  justify-content: center;\n  margin: 0;\n  padding: 0;\n  border: 1px solid var(--line_regular, #e3e5e7);\n  border-radius: 50%;\n  background: var(--bg1, #fff);\n  color: var(--text1, #18191c);\n  cursor: pointer;\n}\n\n.blr-native-transcript-return-button svg,\n.blr-native-transcript-theme-button svg {\n  width: 17px;\n  height: 17px;\n}\n\n.blr-native-transcript-return-button:hover,\n.blr-native-transcript-return-button.is-active,\n.blr-native-transcript-theme-button:hover,\n.blr-native-transcript-theme-button.is-active {\n  border-color: var(--brand_blue, #00aeec);\n  color: var(--brand_blue, #00aeec);\n}\n\n.blr-native-transcript-controls select {\n  -webkit-appearance: none;\n  appearance: none;\n  flex: 0 0 auto;\n  height: 28px;\n  min-width: 0;\n  padding: 0 25px 0 8px;\n  box-sizing: border-box;\n  border: 1px solid var(--line_regular, #e3e5e7);\n  border-radius: 5px;\n  background-color: var(--bg1, #fff);\n  background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m3 4.5 3 3 3-3' fill='none' stroke='%2318191c' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\");\n  background-position: right 7px center;\n  background-repeat: no-repeat;\n  background-size: 12px 12px;\n  color: var(--text1, #18191c);\n  font-size: 12px;\n  outline: none;\n}\n\n.blr-native-transcript-controls select:focus {\n  border-color: var(--brand_blue, #00aeec);\n}\n\n#blr-native-transcript-select {\n  width: 72px;\n}\n\n#blr-native-transcript-font-size {\n  width: 56px;\n}\n\n#blr-native-transcript-font-weight {\n  width: 64px;\n}\n\n.blr-native-transcript-arrow-button {\n  -webkit-appearance: none;\n  appearance: none;\n  width: 28px;\n  height: 28px;\n  display: inline-flex;\n  flex: 0 0 28px;\n  align-items: center;\n  justify-content: center;\n  margin: 0;\n  padding: 0;\n  border: 0;\n  border-radius: 4px;\n  background: transparent;\n  color: inherit;\n  cursor: pointer;\n}\n\n.blr-native-transcript-title-button:focus-visible,\n.blr-native-transcript-return-button:focus-visible,\n.blr-native-transcript-theme-button:focus-visible,\n.blr-native-transcript-arrow-button:focus-visible {\n  outline: 2px solid var(--brand_blue, #00aeec);\n  outline-offset: 1px;\n}\n\n.blr-native-transcript-arrow-button:hover {\n  background: rgba(0, 0, 0, 0.06);\n}\n\n.blr-native-transcript-arrow {\n  width: 16px;\n  height: 16px;\n  flex: 0 0 auto;\n  fill: none;\n  stroke: currentColor;\n  stroke-width: 1.6;\n  stroke-linecap: round;\n  stroke-linejoin: round;\n  transform: rotate(90deg);\n  transition: transform 0.18s ease;\n}\n\n#blr-native-transcript-panel.is-folded .blr-native-transcript-arrow {\n  transform: rotate(0deg);\n}\n\n.blr-native-transcript-empty-notice {\n  position: absolute;\n  top: calc(100% - 4px);\n  left: 50%;\n  z-index: 1;\n  transform: translateX(-50%);\n  padding: 4px 8px;\n  border-radius: 8px;\n  background: var(--bg1, #fff);\n  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);\n  color: #00aeec;\n  font-size: 13px;\n  font-weight: 600;\n  line-height: 20px;\n  white-space: nowrap;\n  pointer-events: none;\n  animation: blr-native-transcript-notice-fade 2.2s ease-out forwards;\n}\n\n@keyframes blr-native-transcript-notice-fade {\n  0% { opacity: 0; }\n  8%, 65% { opacity: 1; }\n  100% { opacity: 0; }\n}\n\n.blr-native-transcript-body {\n  height: var(--blr-native-transcript-body-height);\n  min-height: 0;\n  display: flex;\n  flex-direction: column;\n  margin-top: 12px;\n  overflow: hidden;\n  box-sizing: border-box;\n  border: 1px solid var(--blr-native-transcript-border);\n  border-radius: 6px;\n  background: var(--blr-native-transcript-surface);\n  color: var(--blr-native-transcript-text);\n}\n\n#blr-native-transcript-panel[data-theme=\"dark\"] {\n  --blr-native-transcript-surface: #0f172a;\n  --blr-native-transcript-text: #e5eefb;\n  --blr-native-transcript-border: rgba(148, 163, 184, 0.28);\n  --blr-native-transcript-active: rgba(0, 174, 236, 0.16);\n}\n\n#blr-native-transcript-panel[data-theme=\"paper\"] {\n  --blr-native-transcript-surface: #f4eddc;\n  --blr-native-transcript-text: #3b3124;\n  --blr-native-transcript-border: rgba(180, 155, 112, 0.34);\n  --blr-native-transcript-active: rgba(0, 174, 236, 0.14);\n}\n\n.blr-native-transcript-body[hidden] {\n  display: none !important;\n}\n\n.blr-native-transcript-list {\n  overflow-anchor: none;\n  scroll-behavior: auto;\n  min-height: 0;\n  flex: 1 1 auto;\n  overflow-x: hidden;\n  overflow-y: auto;\n  overscroll-behavior: contain;\n  scrollbar-width: thin;\n  scrollbar-color: rgba(148, 153, 160, 0.72) transparent;\n}\n\n.blr-native-transcript-list::-webkit-scrollbar {\n  width: 6px;\n}\n\n.blr-native-transcript-list::-webkit-scrollbar-track {\n  background: transparent;\n}\n\n.blr-native-transcript-list::-webkit-scrollbar-thumb {\n  border-radius: 999px;\n  background: rgba(148, 153, 160, 0.72);\n}\n\n.blr-native-transcript-complete {\n  padding: 12px 14px 36px;\n  color: var(--blr-native-transcript-text);\n  font-size: var(--blr-native-transcript-font-size);\n  font-weight: var(--blr-native-transcript-font-weight);\n  line-height: 1.8;\n  letter-spacing: 0;\n  text-align: left;\n  word-break: break-word;\n}\n\n.blr-native-transcript-segment {\n  -webkit-appearance: none;\n  appearance: none;\n  display: inline;\n  margin: 0;\n  padding: 1px 0;\n  border: 0;\n  border-radius: 2px;\n  background: transparent;\n  color: inherit;\n  font: inherit;\n  letter-spacing: inherit;\n  text-align: inherit;\n  cursor: pointer;\n  user-select: text;\n  -webkit-user-select: text;\n}\n\n.blr-native-transcript-segment:hover {\n  background: rgba(0, 174, 236, 0.1);\n}\n\n.blr-native-transcript-segment.is-active {\n  background: var(--blr-native-transcript-active);\n  text-decoration-line: underline;\n  text-decoration-color: var(--brand_blue, #00aeec);\n  text-decoration-thickness: 2px;\n  text-underline-offset: 4px;\n}\n\n.blr-native-transcript-segment:focus-visible {\n  outline: 2px solid rgba(0, 174, 236, 0.42);\n  outline-offset: 1px;\n}\n\n.blr-native-transcript-state {\n  min-height: 100%;\n  display: flex;\n  flex: 1 1 auto;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  gap: 12px;\n  padding: 24px;\n  box-sizing: border-box;\n  color: var(--text3, #9499a0);\n  font-size: 13px;\n  text-align: center;\n}\n\n.blr-native-transcript-state button {\n  height: 30px;\n  padding: 0 14px;\n  border: 1px solid var(--brand_blue, #00aeec);\n  border-radius: 5px;\n  background: transparent;\n  color: var(--brand_blue, #00aeec);\n  cursor: pointer;\n}\n\n.blr-native-transcript-state button:hover {\n  background: rgba(0, 174, 236, 0.08);\n}\n\n#blr-panel {\n  position: fixed;\n  right: 16px;\n  top: 72px;\n  width: min(420px, calc(100vw - 24px));\n  height: min(820px, calc(100vh - 88px));\n  z-index: 2147483647;\n  background: #f1f1f1;\n  border: 1px solid #d8d8d8;\n  border-radius: 14px;\n  box-shadow: 0 24px 46px rgba(0, 0, 0, 0.24);\n  padding: 12px;\n  box-sizing: border-box;\n  display: none;\n  flex-direction: column;\n  gap: 8px;\n  font-family: -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"PingFang SC\", \"Helvetica Neue\",\n    Arial, sans-serif;\n}\n\n#blr-panel.open {\n  display: flex;\n}\n\n.blr-header {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 0 0 4px;\n}\n\n.blr-header strong {\n  font-size: 17px;\n  font-weight: 600;\n  letter-spacing: 0.01em;\n  color: #3d3d3d;\n}\n\n.blr-header-actions {\n  display: flex;\n  gap: 6px;\n}\n\n.blr-header button {\n  border: 1px solid #cfcfcf;\n  background: #f8f8f8;\n  border-radius: 10px;\n  padding: 7px 10px;\n  cursor: pointer;\n  color: #4a4a4a;\n}\n\n.blr-status {\n  margin: 0;\n  font-size: 12px;\n  color: #555;\n  background: #e8e8e8;\n  border-radius: 8px;\n  padding: 7px 8px;\n}\n\n.blr-props-head {\n  font-size: 15px;\n  font-weight: 600;\n  color: #4a4a4a;\n  margin-top: 0;\n}\n\n.blr-meta {\n  border: 1px solid #d5d5d5;\n  border-radius: 10px;\n  padding: 8px 10px;\n  background: #f7f7f7;\n  display: grid;\n  gap: 6px;\n  font-size: 13px;\n  color: #3f3f3f;\n}\n\n.blr-meta-item {\n  word-break: break-word;\n}\n\n.blr-label {\n  font-size: 12px;\n  font-weight: 600;\n  color: #4d4d4d;\n  margin-top: 2px;\n}\n\n#blr-subtitle-select {\n  height: 36px;\n  border: 1px solid #cfcfcf;\n  border-radius: 8px;\n  padding: 0 10px;\n  background: #fff;\n  color: #2d2d2d;\n}\n\n.blr-player-ai-wrap {\n  align-items: center;\n  background: rgba(20, 24, 32, 0.68);\n  border: 1px solid rgba(255, 255, 255, 0.18);\n  border-radius: 999px;\n  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);\n  display: inline-flex;\n  flex: 0 0 var(--blr-player-ai-action-hit-size, 28px);\n  height: var(--blr-player-ai-action-hit-size, 28px);\n  justify-content: center;\n  margin: 0;\n  min-width: var(--blr-player-ai-action-hit-size, 28px);\n  opacity: 0;\n  overflow: hidden;\n  pointer-events: none;\n  position: absolute;\n  right: 14px;\n  top: 50%;\n  transform: translate(8px, -50%);\n  transition: opacity 0.18s ease, background-color 0.18s ease, transform 0.18s ease;\n  width: var(--blr-player-ai-action-hit-size, 28px);\n  z-index: 30;\n}\n\n.blr-player-ai-wrap.is-active,\n.blr-player-ai-wrap:hover,\n.blr-player-ai-wrap:focus-within {\n  background: rgba(20, 24, 32, 0.78);\n  opacity: 1;\n  pointer-events: auto;\n  transform: translate(0, -50%);\n}\n\n#blr-player-ai-quick-action {\n  -webkit-appearance: none;\n  appearance: none;\n  align-items: center;\n  align-self: center;\n  background: transparent;\n  border: 0;\n  border-radius: 0;\n  box-sizing: border-box;\n  color: var(--blr-player-ai-action-color, currentColor);\n  display: inline-flex;\n  flex: 0 0 auto;\n  justify-content: center;\n  width: 100%;\n  height: 100%;\n  cursor: pointer;\n  line-height: 0;\n  margin-bottom: 0;\n  margin-top: 0;\n  min-width: 0;\n  overflow: hidden;\n  padding: 0;\n  position: relative;\n  top: 0;\n  vertical-align: top;\n  transition: transform 0.16s ease, color 0.16s ease, opacity 0.16s ease;\n}\n\n#blr-player-ai-quick-action svg {\n  width: var(--blr-player-ai-action-icon-size, 24px);\n  height: var(--blr-player-ai-action-icon-size, 24px);\n  display: block;\n  flex: 0 0 auto;\n  stroke: currentColor;\n  fill: none;\n  stroke-linecap: round;\n  stroke-linejoin: round;\n}\n\n#blr-player-ai-quick-action:hover {\n  color: var(--blr-player-ai-action-hover-color, var(--blr-player-ai-action-color, currentColor));\n}\n\n#blr-player-ai-quick-action:disabled {\n  opacity: 0.62;\n  cursor: wait;\n  transform: none;\n}\n\n.blr-confirm-overlay {\n  align-items: center;\n  background: rgba(17, 24, 39, 0.28);\n  display: flex;\n  inset: 0;\n  justify-content: center;\n  padding: 18px;\n  position: fixed;\n  z-index: 2147483647;\n}\n\n.blr-confirm-dialog {\n  background: #ffffff;\n  border: 1px solid #e5e7eb;\n  border-radius: 16px;\n  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.22);\n  color: #111827;\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;\n  max-width: 360px;\n  padding: 18px;\n  width: calc(100vw - 36px);\n}\n\n.blr-confirm-title {\n  font-size: 15px;\n  font-weight: 700;\n  margin-bottom: 8px;\n}\n\n.blr-confirm-body {\n  color: #4b5563;\n  font-size: 13px;\n  margin-bottom: 8px;\n}\n\n.blr-confirm-path {\n  background: #f7f8fb;\n  border: 1px solid #edf0f4;\n  border-radius: 10px;\n  color: #374151;\n  font-size: 12px;\n  line-height: 1.45;\n  max-height: 96px;\n  overflow: auto;\n  padding: 9px 10px;\n  word-break: break-all;\n}\n\n.blr-confirm-actions {\n  display: flex;\n  gap: 8px;\n  justify-content: flex-end;\n  margin-top: 14px;\n}\n\n.blr-confirm-actions button {\n  border: 1px solid #d9dee7;\n  border-radius: 10px;\n  cursor: pointer;\n  font-size: 13px;\n  height: 34px;\n  padding: 0 14px;\n}\n\n.blr-confirm-cancel {\n  background: #ffffff;\n  color: #374151;\n}\n\n.blr-confirm-primary {\n  background: #111827;\n  border-color: #111827 !important;\n  color: #ffffff;\n}\n\n#blr-preview {\n  width: 100%;\n  flex: 1;\n  min-height: 180px;\n  box-sizing: border-box;\n  border: 1px solid #d0d0d0;\n  border-radius: 10px;\n  padding: 10px;\n  resize: vertical;\n  font-size: 13px;\n  line-height: 1.55;\n  background: #fff;\n  color: #2f2f2f;\n  font-family: \"SF Mono\", \"JetBrains Mono\", \"PingFang SC\", Menlo, Monaco, Consolas, monospace;\n}\n\n.blr-actions {\n  display: grid;\n  grid-template-columns: repeat(2, minmax(0, 1fr));\n  gap: 8px;\n  margin-top: 0;\n}\n\n.blr-actions button {\n  border: 1px solid #cfcfcf;\n  background: #f8f8f8;\n  border-radius: 9px;\n  padding: 8px 8px;\n  cursor: pointer;\n  color: #3d3d3d;\n  font-size: 13px;\n}\n\n#blr-send-btn {\n  grid-column: span 2;\n  border: 1px solid #a88fff;\n  background: linear-gradient(180deg, #9c82ff 0%, #8f75ef 100%);\n  color: #fff;\n  font-weight: 600;\n}\n\n.blr-actions button:disabled {\n  cursor: not-allowed;\n  opacity: 0.55;\n}\n\n.blr-message {\n  margin: 0;\n  font-size: 12px;\n  color: #0f766e;\n  min-height: 18px;\n  padding: 0 2px;\n}\n\n#blr-reading-view {\n  position: fixed;\n  left: 16px;\n  right: 16px;\n  bottom: 16px;\n  height: min(76vh, 860px);\n  z-index: 2147483646;\n  display: none;\n  padding: 20px 22px;\n  box-sizing: border-box;\n  background: #fff;\n  border: 1px solid #e5e7eb;\n  border-radius: 18px;\n  box-shadow: 0 28px 60px rgba(15, 23, 42, 0.16);\n  font-family: -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"PingFang SC\", \"Helvetica Neue\",\n    Arial, sans-serif;\n}\n\n#blr-reading-view.open {\n  display: block;\n}\n\n/* Move the player and subtitle panel together while the page dissolves. */\nhtml[data-blr-reader-transition]::view-transition {\n  pointer-events: none;\n}\n\nhtml[data-blr-reader-transition=\"enter\"]::view-transition-group(root),\nhtml[data-blr-reader-transition=\"enter\"]::view-transition-group(blr-reader-player),\nhtml[data-blr-reader-transition=\"enter\"]::view-transition-group(blr-reader-transcript) {\n  animation-duration: 320ms;\n  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);\n}\n\nhtml[data-blr-reader-transition=\"enter\"]::view-transition-old(root) {\n  animation: blr-reader-fade-out 140ms ease-out both;\n}\n\nhtml[data-blr-reader-transition=\"enter\"]::view-transition-new(root) {\n  animation: blr-reader-fade-in 240ms ease-out both;\n}\n\nhtml[data-blr-reader-transition]::view-transition-image-pair(blr-reader-player),\nhtml[data-blr-reader-transition]::view-transition-image-pair(blr-reader-transcript) {\n  isolation: auto;\n}\n\nhtml[data-blr-reader-transition=\"enter\"]::view-transition-old(blr-reader-player),\nhtml[data-blr-reader-transition=\"enter\"]::view-transition-old(blr-reader-transcript) {\n  animation: blr-reader-fade-out 140ms ease-out both;\n}\n\nhtml[data-blr-reader-transition=\"enter\"]::view-transition-new(blr-reader-player),\nhtml[data-blr-reader-transition=\"enter\"]::view-transition-new(blr-reader-transcript) {\n  animation: blr-reader-fade-in 180ms ease-out both;\n}\n\nhtml[data-blr-reader-transition]::view-transition-new(blr-reader-player),\nhtml[data-blr-reader-transition]::view-transition-new(blr-reader-transcript) {\n  mix-blend-mode: normal;\n  height: 100%;\n  object-fit: fill;\n}\n\n/* Ease into and out of the return movement instead of front-loading it. */\nhtml[data-blr-reader-transition=\"exit\"]::view-transition-group(root) {\n  animation: none;\n}\n\nhtml[data-blr-reader-transition=\"exit\"]::view-transition-group(blr-reader-transcript) {\n  animation-duration: 300ms;\n  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n}\n\n/* Translate both page templates without stretching either panel's text. The\n   fixed group accommodates both sizes while their original layouts crossfade. */\nhtml[data-blr-reader-transcript-transition]::view-transition-group(blr-reader-transcript) {\n  width: var(--blr-transcript-width) !important;\n  height: var(--blr-transcript-height) !important;\n  top: 0 !important;\n  left: 0 !important;\n  transform-origin: 0 0 !important;\n  animation-name: blr-reader-transcript-move !important;\n  animation-fill-mode: both !important;\n}\n\nhtml[data-blr-reader-transcript-transition]::view-transition-old(blr-reader-transcript) {\n  width: var(--blr-transcript-from-width) !important;\n  height: var(--blr-transcript-from-height) !important;\n  object-fit: fill;\n  mix-blend-mode: normal;\n}\n\nhtml[data-blr-reader-transcript-transition]::view-transition-new(blr-reader-transcript) {\n  width: var(--blr-transcript-to-width) !important;\n  height: var(--blr-transcript-to-height) !important;\n  object-fit: fill;\n}\n\n@keyframes blr-reader-transcript-move {\n  from { transform: translate(var(--blr-transcript-from-x), var(--blr-transcript-from-y)); }\n  to { transform: translate(var(--blr-transcript-to-x), var(--blr-transcript-to-y)); }\n}\n\n/* Use one transform on a fixed-size bitmap. The default shared-element\n   width/height animation can resize the native video surface a second time. */\nhtml[data-blr-reader-transition=\"exit\"]::view-transition-group(blr-reader-player) {\n  width: var(--blr-exit-player-width) !important;\n  height: var(--blr-exit-player-height) !important;\n  top: 0 !important;\n  left: 0 !important;\n  transform-origin: 0 0 !important;\n  animation: blr-reader-player-return 300ms cubic-bezier(0.4, 0, 0.2, 1) both !important;\n}\n\nhtml[data-blr-reader-transition=\"exit\"]::view-transition-image-pair(blr-reader-player) {\n  width: 100%;\n  height: 100%;\n  animation: none !important;\n}\n\n@keyframes blr-reader-player-return {\n  from {\n    transform: translate(var(--blr-exit-player-from-x), var(--blr-exit-player-from-y)) scale(1);\n  }\n  to {\n    transform: translate(var(--blr-exit-player-to-x), var(--blr-exit-player-to-y))\n      scale(var(--blr-exit-player-scale-x), var(--blr-exit-player-scale-y));\n  }\n}\n\nhtml[data-blr-reader-transition=\"exit\"]::view-transition-old(root) {\n  animation: blr-reader-fade-out 180ms ease-in both;\n}\n\nhtml[data-blr-reader-transition=\"exit\"]::view-transition-new(root) {\n  animation: blr-reader-fade-in 300ms cubic-bezier(0.4, 0, 0.2, 1) both;\n}\n\n/* Move a stable captured frame. The native player's live surface can resize\n   internally during exit and otherwise shrink twice inside the moving group. */\nhtml[data-blr-reader-transition=\"exit\"]::view-transition-old(blr-reader-player) {\n  animation: none !important;\n  transform: none !important;\n  opacity: 1;\n  width: 100%;\n  height: 100%;\n  object-fit: fill;\n  mix-blend-mode: normal;\n}\n\nhtml[data-blr-reader-transition=\"exit\"]::view-transition-new(blr-reader-player) {\n  animation: none;\n  opacity: 0;\n}\n\n/* Native layout changes must finish before the transition captures its target.\n   The shared snapshot handles motion; host-page CSS must not add another one. */\nhtml[data-blr-reader-transition=\"exit\"] :is(\n  .left-container, .scroll-sticky, #playerWrap, .player-wrap, #bilibili-player,\n  .bpx-player-container, .bpx-player-video-area, .bpx-player-primary-area, .bpx-player-inner\n) {\n  transition: none !important;\n  animation: none !important;\n}\n\nhtml[data-blr-reader-transition=\"exit\"]::view-transition-old(blr-reader-transcript) {\n  animation: blr-reader-fade-out 300ms cubic-bezier(0.4, 0, 0.2, 1) both;\n  mix-blend-mode: normal;\n  height: 100%;\n  object-fit: fill;\n}\n\nhtml[data-blr-reader-transition=\"exit\"]::view-transition-new(blr-reader-transcript) {\n  animation: blr-reader-fade-in 300ms cubic-bezier(0.4, 0, 0.2, 1) both;\n}\n\n/* Lightweight entrance on browsers without snapshot transitions. */\nhtml[data-blr-reader-entering=\"1\"] #blr-reading-inline-host,\nhtml[data-blr-reader-entering=\"1\"] #blr-reading-view[data-blr-reader-ready=\"1\"] .blr-reading-topbar {\n  animation: blr-reader-panel-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;\n}\n\n@keyframes blr-reader-fade-in {\n  from { opacity: 0; }\n  to { opacity: 1; }\n}\n\n@keyframes blr-reader-fade-out {\n  from { opacity: 1; }\n  to { opacity: 0; }\n}\n\n@keyframes blr-reader-panel-in {\n  from { opacity: 0; transform: translateY(8px); }\n  to { opacity: 1; transform: translateY(0); }\n}\n\n@media (prefers-reduced-motion: reduce) {\n  html[data-blr-reader-transition]::view-transition-group(*),\n  html[data-blr-reader-transition]::view-transition-old(*),\n  html[data-blr-reader-transition]::view-transition-new(*),\n  html[data-blr-reader-entering=\"1\"] #blr-reading-inline-host,\n  html[data-blr-reader-entering=\"1\"] #blr-reading-view .blr-reading-topbar {\n    animation: none !important;\n  }\n}\n\n#blr-reading-view[data-blr-reader-ready=\"0\"] {\n  opacity: 0;\n  visibility: hidden;\n  pointer-events: none;\n}\n\n.blr-reading-layout {\n  min-height: 0;\n  height: 100%;\n  display: grid;\n  grid-template-columns: 240px minmax(0, 1fr);\n  gap: 28px;\n}\n\n.blr-reading-rail {\n  min-height: 0;\n  display: grid;\n  grid-template-rows: auto auto minmax(0, 1fr);\n  gap: 10px;\n  align-content: start;\n}\n\n.blr-reading-stage {\n  min-height: 0;\n  display: grid;\n  grid-template-rows: auto auto minmax(320px, 1fr) minmax(0, 1fr);\n  gap: 14px;\n}\n\n.blr-reading-header {\n  display: flex;\n  align-items: flex-start;\n  justify-content: space-between;\n  gap: 18px;\n}\n\n.blr-reading-header-copy {\n  min-width: 0;\n}\n\n.blr-reading-eyebrow {\n  font-size: 11px;\n  font-weight: 700;\n  letter-spacing: 0.08em;\n  color: #9ca3af;\n  text-transform: uppercase;\n}\n\n.blr-reading-title {\n  display: block;\n  margin: 0;\n  font-size: 16px;\n  line-height: 1.15;\n  color: #0f172a;\n  word-break: break-word;\n}\n\n.blr-reading-topbar,\n.blr-reading-heading-group {\n  min-width: 0;\n}\n\n.blr-reading-page-title {\n  color: var(--blr-reader-text, #0f172a);\n  display: -webkit-box;\n  font-size: 18px;\n  font-weight: 500;\n  line-height: 1.2;\n  overflow: hidden;\n  overflow-wrap: anywhere;\n  -webkit-box-orient: vertical;\n  -webkit-line-clamp: 2;\n}\n\n.blr-reading-episode-title {\n  color: var(--blr-reader-muted, #64748b);\n  display: -webkit-box;\n  font-size: 14px;\n  font-weight: 600;\n  line-height: 1.3;\n  overflow: hidden;\n  overflow-wrap: anywhere;\n  -webkit-box-orient: vertical;\n  -webkit-line-clamp: 2;\n}\n\n.blr-reading-collection-nav {\n  align-items: flex-start;\n  display: flex;\n  gap: 10px;\n  min-width: 0;\n}\n\n.blr-reading-episode-title[hidden],\n.blr-reading-collection-nav[hidden] {\n  display: none !important;\n}\n\n.blr-reading-collection-list {\n  align-content: flex-start;\n  align-items: center;\n  display: flex;\n  flex: 1 1 auto;\n  flex-wrap: wrap;\n  gap: 6px;\n  height: 70px;\n  min-width: 0;\n  overflow-x: hidden;\n  overflow-y: auto;\n  overscroll-behavior-y: contain;\n  scrollbar-width: none;\n}\n\n.blr-reading-collection-list::-webkit-scrollbar {\n  display: none;\n}\n\n.blr-reading-collection-item {\n  align-items: center;\n  background: transparent;\n  border: 1px solid var(--blr-reader-border, #e2e8f0);\n  border-radius: 999px;\n  color: var(--blr-reader-muted, #64748b);\n  cursor: pointer;\n  display: inline-flex;\n  flex: 0 0 auto;\n  gap: 6px;\n  height: 32px;\n  max-width: 260px;\n  padding: 0 10px 0 7px;\n  font-weight: 600;\n}\n\n.blr-reading-collection-item:hover {\n  border-color: var(--blr-reader-accent, #00aeec);\n  color: var(--blr-reader-text, #0f172a);\n}\n\n.blr-reading-collection-item.is-active {\n  background: var(--blr-reader-accent-soft, rgba(0, 174, 236, 0.12));\n  border-color: var(--blr-reader-accent, #00aeec);\n  color: var(--blr-reader-accent, #00aeec);\n}\n\n.blr-reading-collection-index {\n  align-items: center;\n  background: color-mix(in srgb, currentColor 10%, transparent);\n  border-radius: 999px;\n  display: inline-flex;\n  flex: 0 0 auto;\n  font-size: 10px;\n  font-weight: 700;\n  height: 18px;\n  justify-content: center;\n  min-width: 18px;\n  padding: 0 4px;\n}\n\n.blr-reading-collection-item-title {\n  font-size: 12px;\n  font-weight: 600;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.blr-reading-meta,\n.blr-reading-status {\n  font-size: 14px;\n  line-height: 1.5;\n  color: #6b7280;\n}\n\n.blr-reading-meta {\n  margin-top: 8px;\n}\n\n.blr-reading-actions {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex-wrap: wrap;\n  justify-content: flex-end;\n  transition: opacity 0.2s ease;\n}\n\n.blr-reading-actions[data-blr-icon-hidden=\"1\"] {\n  opacity: 0;\n  pointer-events: none;\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .blr-reading-actions {\n    transition: none;\n  }\n}\n\n.blr-reading-actions button {\n  border: 1px solid #e5e7eb;\n  background: #fff;\n  border-radius: 999px;\n  min-height: 36px;\n  padding: 0 14px;\n  font-size: 13px;\n  color: #1f2937;\n  box-sizing: border-box;\n}\n\n.blr-reading-actions button {\n  cursor: pointer;\n}\n\n\n\n\n\n.blr-reading-icon-btn {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 34px;\n  height: 34px;\n  border: 1px solid #e5e7eb;\n  background: #fff;\n  border-radius: 8px;\n  cursor: pointer;\n  padding: 0;\n  color: #1f2937;\n}\n\n.blr-reading-icon-btn svg {\n  width: 18px;\n  height: 18px;\n  flex: 0 0 auto;\n}\n\n.blr-reading-icon-btn:hover {\n  background: #f3f4f6;\n  border-color: #d1d5db;\n}\n\n.blr-reading-icon-btn.is-active {\n  background: var(--blr-reader-accent-soft);\n  border-color: var(--blr-reader-accent);\n  color: var(--blr-reader-accent);\n}\n\n\n\n\n\n\n\n\n\n\n\n.blr-reading-list,\n.blr-reading-transcript {\n  min-height: 0;\n  overflow: auto;\n}\n\n.blr-reading-list {\n  padding-right: 6px;\n}\n\n.blr-reading-player-shell {\n  min-height: 0;\n  display: flex;\n  justify-content: center;\n  align-items: flex-start;\n  pointer-events: none;\n}\n\n.blr-reading-player-slot {\n  width: min(100%, 960px);\n  aspect-ratio: 16 / 9;\n  max-height: 100%;\n  min-height: 0;\n  overflow: hidden;\n  background: #fff;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  pointer-events: none;\n}\n\n.blr-reading-player-slot > * {\n  width: 100% !important;\n  max-width: 100% !important;\n  height: 100% !important;\n}\n\n.blr-reading-player-slot > video {\n  width: 100% !important;\n  height: 100% !important;\n  display: block;\n  background: #000;\n  object-fit: contain;\n}\n\n.blr-reading-player-slot #bilibili-player,\n.blr-reading-player-slot .bpx-player-container,\n.blr-reading-player-slot .bpx-player-video-area,\n.blr-reading-player-slot .bpx-player-primary-area,\n.blr-reading-player-slot .bpx-player-inner {\n  width: 100% !important;\n  height: 100% !important;\n}\n\n.blr-reading-main {\n  min-height: 0;\n  overflow: hidden;\n  display: flex;\n  justify-content: center;\n  pointer-events: auto;\n}\n\n.blr-reading-transcript {\n  width: min(100%, 960px);\n  height: 100%;\n  max-height: 100%;\n  margin: 0 auto;\n  padding: 6px 8px 12px;\n  overflow-x: hidden;\n  overflow-y: auto;\n  pointer-events: auto;\n}\n\n.blr-reading-chapter {\n  width: 100%;\n  border: 0;\n  background: transparent;\n  border-radius: 14px;\n  text-align: left;\n  cursor: pointer;\n  user-select: text;\n  -webkit-user-select: text;\n}\n\n.blr-reading-chapter {\n  display: grid;\n  gap: 4px;\n  padding: 8px 10px;\n  color: #4b5563;\n}\n\n\n\n.blr-reading-chapter:hover {\n  background: #f9fafb;\n}\n\n.blr-reading-chapter.is-active {\n  background: transparent;\n  box-shadow: none;\n}\n\n.blr-reading-chapter-time {\n  font-size: var(--blr-reader-transcript-font-size);\n  font-weight: 600;\n  color: var(--blr-reader-accent, #00aeec);\n  padding-top: 2px;\n  line-height: 1.4;\n}\n\n.blr-reading-chapter-title {\n  font-size: 13px;\n  line-height: 1.45;\n  color: inherit;\n}\n\n.blr-reading-chapter.is-active .blr-reading-chapter-title {\n  text-decoration-line: underline;\n  text-decoration-color: var(--blr-reader-accent, #00aeec);\n  text-decoration-thickness: 2px;\n  text-underline-offset: 3px;\n}\n\n\n\n.blr-reading-empty {\n  padding: 12px 4px;\n  font-size: 14px;\n  color: #94a3b8;\n}\n\n@media (max-width: 1100px) {\n  #blr-reading-view {\n    left: 12px;\n    right: 12px;\n    bottom: 12px;\n    padding: 18px;\n  }\n\n  .blr-reading-layout {\n    grid-template-columns: 210px minmax(0, 1fr);\n    gap: 20px;\n  }\n\n  .blr-reading-title {\n    font-size: 16px;\n  }\n}\n\n@media (max-width: 760px) {\n  #blr-reading-view {\n    top: 72px;\n    height: auto;\n  }\n\n  .blr-reading-layout {\n    grid-template-columns: 1fr;\n    gap: 18px;\n  }\n\n  .blr-reading-stage {\n    grid-template-rows: auto auto minmax(220px, auto) minmax(0, 1fr);\n  }\n\n  .blr-reading-header {\n    flex-direction: column;\n    align-items: stretch;\n  }\n\n  .blr-reading-actions {\n    justify-content: flex-start;\n  }\n\n  .blr-reading-title {\n    font-size: 16px;\n  }\n\n\n\n\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] {\n  margin: 0 !important;\n  padding: 0 !important;\n  width: 100% !important;\n  min-height: 100% !important;\n  background: #fff !important;\n  overflow-x: hidden !important;\n  overflow-y: auto !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-root {\n  position: absolute;\n  inset: 0;\n  z-index: 2147483646;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-panel {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view {\n  position: absolute;\n  inset: 0;\n  width: auto;\n  max-width: none;\n  height: 100vh;\n  display: none;\n  margin: 0;\n  padding: 0;\n  box-sizing: border-box;\n  border: 0;\n  border-radius: 0;\n  box-shadow: none;\n  background: transparent;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view.open {\n  display: block;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-ready=\"0\"] {\n  opacity: 0;\n  visibility: hidden;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-header-copy,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-status {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #viewbox_report,\nbody[data-blr-reader-mode=\"1\"] .video-info-container,\nbody[data-blr-reader-mode=\"1\"] .video-info-title,\nbody[data-blr-reader-mode=\"1\"] .video-info-title-inner {\n  margin: 0 !important;\n  padding: 0 !important;\n  row-gap: 0 !important;\n  column-gap: 0 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #viewbox_report,\nbody[data-blr-reader-mode=\"1\"] .video-info-container {\n  margin-bottom: 4px !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .left-container,\nbody[data-blr-reader-mode=\"1\"] .scroll-sticky {\n  row-gap: 8px !important;\n  padding-top: 0 !important;\n  overflow: visible !important;\n  transition: none !important;\n  animation: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap,\nbody[data-blr-reader-mode=\"1\"] .player-wrap,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n  transition: none !important;\n  animation: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .video-info-detail,\nbody[data-blr-reader-mode=\"1\"] .video-info-meta,\nbody[data-blr-reader-mode=\"1\"] .video-data {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-follow=\"manual\"] .blr-reading-main,\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-follow=\"manual\"] .blr-reading-rail {\n  border-color: rgba(148, 163, 184, 0.8);\n  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-follow=\"manual\"] .blr-reading-eyebrow::after {\n  content: \"手动浏览中\";\n  display: inline-block;\n  margin-left: 8px;\n  font-size: 11px;\n  font-weight: 500;\n  color: #94a3b8;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reader-player-host {\n  background: #000 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap {\n  position: static !important;\n  top: auto !important;\n  z-index: auto !important;\n  background: transparent !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .player-wrap,\nbody[data-blr-reader-mode=\"1\"] .scroll-sticky {\n  position: static !important;\n  top: auto !important;\n  z-index: auto !important;\n  background: transparent !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] [data-blr-reader-player-reset=\"1\"] {\n  position: static !important;\n  inset: auto !important;\n  width: auto !important;\n  height: auto !important;\n  transform: none !important;\n  margin: 0 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .strip-ad-inner,\nbody[data-blr-reader-mode=\"1\"] .inside-wrp,\nbody[data-blr-reader-mode=\"1\"] .inside-bg,\nbody[data-blr-reader-mode=\"1\"] .hinter-msg,\nbody[data-blr-reader-mode=\"1\"] .slide,\nbody[data-blr-reader-mode=\"1\"] .cover.b-img,\nbody[data-blr-reader-mode=\"1\"] .cover.b-img.sleepy,\nbody[data-blr-reader-mode=\"1\"] .b-img.clickable {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] [data-blr-reader-hidden=\"1\"] {\n  display: none !important;\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"],\n#blr-reading-view {\n  --blr-reader-page-bg: #f4f6f8;\n  --blr-reader-surface: #ffffff;\n  --blr-reader-surface-2: #f7f9fc;\n  --blr-reader-surface-3: #edf2f7;\n  --blr-reader-border: rgba(15, 23, 42, 0.1);\n  --blr-reader-text: #0f172a;\n  --blr-reader-muted: #64748b;\n  --blr-reader-accent: var(--brand_blue, #00aeec);\n  --blr-reader-accent-soft: rgba(0, 174, 236, 0.12);\n  --blr-reader-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);\n  --blr-reader-transcript-font-size: 14px;\n  --blr-reader-transcript-font-weight: 500;\n  --blr-reader-transcript-line-height: 1.5;\n  --blr-reader-letter-spacing: 0em;\n  --blr-reader-content-max: 980px;\n  color: var(--blr-reader-text);\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"dark\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"dark\"],\n#blr-reading-view[data-theme=\"dark\"] {\n  --blr-reader-page-bg: #09111f;\n  --blr-reader-surface: #0f172a;\n  --blr-reader-surface-2: #132038;\n  --blr-reader-surface-3: #1a2a46;\n  --blr-reader-border: rgba(148, 163, 184, 0.22);\n  --blr-reader-text: #e5eefb;\n  --blr-reader-muted: #9fb0c8;\n  --blr-reader-accent: var(--brand_blue, #00aeec);\n  --blr-reader-accent-soft: rgba(0, 174, 236, 0.14);\n  --blr-reader-shadow: 0 18px 42px rgba(2, 6, 23, 0.42);\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"paper\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"paper\"],\n#blr-reading-view[data-theme=\"paper\"] {\n  --blr-reader-page-bg: #f4eddc;\n  --blr-reader-surface: #f4eddc;\n  --blr-reader-surface-2: #f4eddc;\n  --blr-reader-surface-3: #f4eddc;\n  --blr-reader-border: rgba(180, 155, 112, 0.22);\n  --blr-reader-text: #3b3124;\n  --blr-reader-muted: #756653;\n  --blr-reader-accent: var(--brand_blue, #00aeec);\n  --blr-reader-accent-soft: rgba(0, 174, 236, 0.12);\n  --blr-reader-shadow: 0 18px 40px rgba(112, 93, 64, 0.12);\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"s\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"s\"],\n#blr-reading-view[data-font-scale=\"s\"] {\n  --blr-reader-transcript-font-size: 12.8px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xs\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xs\"],\n#blr-reading-view[data-font-scale=\"xs\"] {\n  --blr-reader-transcript-font-size: 11.6px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"l\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"l\"],\n#blr-reading-view[data-font-scale=\"l\"] {\n  --blr-reader-transcript-font-size: 16.4px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xl\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xl\"],\n#blr-reading-view[data-font-scale=\"xl\"] {\n  --blr-reader-transcript-font-size: 18.8px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"light\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"light\"],\n#blr-reading-view[data-font-weight=\"light\"] {\n  --blr-reader-transcript-font-weight: 300;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"regular\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"regular\"],\n#blr-reading-view[data-font-weight=\"regular\"] {\n  --blr-reader-transcript-font-weight: 400;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"semibold\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"semibold\"],\n#blr-reading-view[data-font-weight=\"semibold\"] {\n  --blr-reader-transcript-font-weight: 600;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"bold\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"bold\"],\n#blr-reading-view[data-font-weight=\"bold\"] {\n  --blr-reader-transcript-font-weight: 700;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tighter\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tighter\"],\n#blr-reading-view[data-letter-spacing=\"tighter\"] {\n  --blr-reader-letter-spacing: -0.072em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tight\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tight\"],\n#blr-reading-view[data-letter-spacing=\"tight\"] {\n  --blr-reader-letter-spacing: -0.036em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"relaxed\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"relaxed\"],\n#blr-reading-view[data-letter-spacing=\"relaxed\"] {\n  --blr-reader-letter-spacing: 0.036em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"loose\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"loose\"],\n#blr-reading-view[data-letter-spacing=\"loose\"] {\n  --blr-reader-letter-spacing: 0.072em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"compact\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"compact\"],\n#blr-reading-view[data-content-width=\"compact\"] {\n  --blr-reader-content-max: 720px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"narrow\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"narrow\"],\n#blr-reading-view[data-content-width=\"narrow\"] {\n  --blr-reader-content-max: 820px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"],\n#blr-reading-view[data-content-width=\"wide\"] {\n  --blr-reader-content-max: 1120px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"full\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"full\"],\n#blr-reading-view[data-content-width=\"full\"] {\n  --blr-reader-content-max: 1280px;\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] #app,\nbody[data-blr-reader-mode=\"1\"] .left-container,\nbody[data-blr-reader-mode=\"1\"] .right-container,\nbody[data-blr-reader-mode=\"1\"] .right-container-inner,\nbody[data-blr-reader-mode=\"1\"] .video-info-container,\nbody[data-blr-reader-mode=\"1\"] .video-info-detail,\nbody[data-blr-reader-mode=\"1\"] .video-sections-content-list,\nbody[data-blr-reader-mode=\"1\"] .video-container-v1,\nbody[data-blr-reader-mode=\"1\"] .video-container-v3 {\n  background: var(--blr-reader-page-bg) !important;\n  color: var(--blr-reader-text);\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] #app {\n  min-height: 100vh !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #app {\n  min-width: 0 !important;\n  width: 100% !important;\n  max-width: none !important;\n}\n\n#blr-reading-view,\n#blr-reading-view .blr-reading-meta,\n#blr-reading-view .blr-reading-status,\n#blr-reading-view .blr-reading-chapter {\n  color: var(--blr-reader-text);\n}\n\n#blr-reading-view .blr-reading-layout {\n  gap: 22px;\n}\n\n#blr-reading-view .blr-reading-stage {\n  display: grid;\n  gap: 16px;\n}\n\n#blr-reading-view .blr-reading-header {\n  align-items: flex-start;\n}\n\n#blr-reading-view .blr-reading-title {\n  font-size: 20px;\n  color: var(--blr-reader-text);\n  margin-top: 10px;\n}\n\n#blr-reading-view .blr-reading-meta,\n#blr-reading-view .blr-reading-status {\n  font-size: 14px;\n  color: var(--blr-reader-muted);\n}\n\n#blr-reading-view .blr-reading-actions {\n  gap: 10px;\n}\n\n#blr-reading-view .blr-reading-actions button {\n  border: 1px solid var(--blr-reader-border);\n  background: var(--blr-reader-surface);\n  color: var(--blr-reader-text);\n  box-shadow: none;\n}\n\n#blr-reading-view .blr-reading-actions button.is-active {\n  background: var(--blr-reader-accent-soft);\n  color: var(--blr-reader-accent);\n}\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n#blr-reading-view .blr-reading-main {\n  justify-content: center;\n  background: transparent;\n}\n\n#blr-reading-view .blr-reading-transcript {\n  width: min(100%, var(--blr-reader-content-max));\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-transcript-visible=\"0\"] #blr-reading-view .blr-reading-main,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-transcript-visible=\"0\"] #blr-reading-view .blr-reading-main,\n#blr-reading-view[data-transcript-visible=\"0\"] .blr-reading-main {\n  display: none !important;\n}\n\n#blr-reading-view[data-transcript-visible=\"0\"] #blr-reading-inline-host {\n  border: none;\n  background: transparent;\n}\n\n\n\n#blr-reading-view .blr-reading-chapter:hover {\n  background: var(--blr-reader-surface-2);\n}\n\n#blr-reading-view .blr-reading-chapter.is-active {\n  background: var(--blr-reader-accent-soft);\n}\n\n#blr-reading-view .blr-reading-chapter-time {\n  color: var(--blr-reader-accent);\n}\n\n\n\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-subtitle-wrap,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-subtitle-panel,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-subtitle-container,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bilibili-player-video-subtitle,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .subtitle-wrap,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host [class*=\"subtitle\"],\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-sending-bar,\nbody[data-blr-reading-active=\"1\"] .bpx-player-sending-bar {\n  display: none !important;\n}\n\nbody[data-blr-reading-active=\"1\"] [data-blr-reader-fading] {\n  visibility: hidden !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view {\n  background: transparent;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-header {\n  left: auto;\n  right: 24px;\n  max-width: min(1100px, calc(100vw - 48px));\n  gap: 14px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-actions {\n  pointer-events: auto;\n  justify-content: flex-end;\n}\n\n\n\n/* Simplified reader layout: player in normal flow, transcript box below with its own scroll. */\nbody[data-blr-reader-mode=\"1\"] .blr-reading-player-shell {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-layout,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-stage {\n  display: block;\n  height: auto;\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] {\n  --blr-reader-page-padding: clamp(16px, 2.8vw, 32px);\n  --blr-reader-layout-gap: clamp(16px, 2vw, 24px);\n  --blr-reader-rail-target-width: clamp(168px, 15vw, 220px);\n  --blr-reader-main-width: min(\n    var(--blr-reader-content-max),\n    calc(100vw - (var(--blr-reader-page-padding) * 2))\n  );\n  --blr-reader-rail-width: min(\n    var(--blr-reader-rail-target-width),\n    max(\n      0px,\n      calc(\n        ((100vw - var(--blr-reader-main-width)) / 2) - var(--blr-reader-page-padding) - var(--blr-reader-layout-gap)\n      )\n    )\n  );\n  --blr-reader-transcript-line-height: 1.404;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"compact\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"compact\"],\n#blr-reading-view[data-line-height=\"compact\"] {\n  --blr-reader-transcript-line-height: 1.32;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"tight\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"tight\"],\n#blr-reading-view[data-line-height=\"tight\"] {\n  --blr-reader-transcript-line-height: 1.404;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"normal\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"normal\"],\n#blr-reading-view[data-line-height=\"normal\"] {\n  --blr-reader-transcript-line-height: 1.5;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"relaxed\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"relaxed\"],\n#blr-reading-view[data-line-height=\"relaxed\"] {\n  --blr-reader-transcript-line-height: 1.596;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"loose\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"loose\"],\n#blr-reading-view[data-line-height=\"loose\"] {\n  --blr-reader-transcript-line-height: 1.692;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-actions {\n  gap: 12px;\n  margin-right: -20px;\n  margin-top: -8px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-header {\n  position: fixed;\n  top: 18px;\n  right: var(--blr-reader-page-padding);\n  left: auto;\n  max-width: calc(100vw - (var(--blr-reader-page-padding) * 2));\n  margin-bottom: 0;\n  z-index: 2147483646;\n  pointer-events: auto;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-topbar {\n  display: grid;\n  gap: clamp(12px, 1.2vw, 20px);\n  grid-template-columns: clamp(300px, 28vw, 520px) minmax(0, 1fr);\n  height: 84px;\n  left: var(--blr-reader-page-padding);\n  min-width: 0;\n  overflow: hidden;\n  pointer-events: auto;\n  position: fixed;\n  right: 174px;\n  top: 6px;\n  z-index: 2147483646;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-heading-group {\n  align-content: center;\n  display: grid;\n  gap: 2px;\n  max-height: 84px;\n  overflow: hidden;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-page-title {\n  font-size: clamp(16px, 1.05vw, 19px);\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-collection-nav {\n  align-self: center;\n  height: 70px;\n  min-width: 0;\n  pointer-events: auto;\n  position: static;\n}\n\n@media (max-width: 1000px) {\n  body[data-blr-reader-mode=\"1\"] .blr-reading-topbar {\n    grid-template-columns: clamp(240px, 34vw, 330px) minmax(0, 1fr);\n  }\n}\n\n@media (max-width: 760px) {\n  body[data-blr-reader-mode=\"1\"] .blr-reading-topbar {\n    grid-template-columns: minmax(190px, 42vw) minmax(0, 1fr);\n    right: 150px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-page-title {\n    font-size: 15px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-episode-title {\n    font-size: 12px;\n  }\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n  position: fixed;\n  display: grid !important;\n  left: var(--blr-reader-page-padding) !important;\n  top: 112px !important;\n  width: var(--blr-reader-rail-width) !important;\n  max-height: calc(100vh - 136px) !important;\n  padding: 12px;\n  box-sizing: border-box;\n  background: var(--blr-reader-surface);\n  border: 1px solid var(--blr-reader-border);\n  border-radius: 14px;\n  box-shadow: var(--blr-reader-shadow);\n  pointer-events: auto;\n  z-index: 2147483646;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-chapter-visibility=\"hide\"] .blr-reading-rail,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-chapter-visibility=\"hide\"] .blr-reading-rail,\n#blr-reading-view[data-chapter-visibility=\"hide\"] .blr-reading-rail,\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-chapter-visibility=\"auto\"][data-blr-reader-has-chapters=\"0\"] .blr-reading-rail,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-chapter-visibility=\"auto\"][data-blr-reader-has-chapters=\"0\"] .blr-reading-rail,\n#blr-reading-view[data-chapter-visibility=\"auto\"][data-has-chapters=\"0\"] .blr-reading-rail {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .left-container,\nbody[data-blr-reader-mode=\"1\"] .scroll-sticky,\nbody[data-blr-reader-mode=\"1\"] #playerWrap,\nbody[data-blr-reader-mode=\"1\"] .player-wrap,\nbody[data-blr-reader-mode=\"1\"] h1.video-title,\nbody[data-blr-reader-mode=\"1\"] .video-info-container,\nbody[data-blr-reader-mode=\"1\"] #viewbox_report,\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n  width: min(\n    var(--blr-reader-main-width),\n    var(--blr-reader-player-rendered-width, var(--blr-reader-main-width))\n  ) !important;\n  max-width: min(\n    var(--blr-reader-main-width),\n    var(--blr-reader-player-rendered-width, var(--blr-reader-main-width))\n  ) !important;\n  margin-left: auto !important;\n  margin-right: auto !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n  overflow-anchor: none;\n  scroll-behavior: auto;\n  min-height: 100vh;\n  margin-top: -1px;\n  padding: 0;\n  border: 1px solid var(--blr-reader-border);\n  border-top: 0;\n  border-radius: 0 0 20px 20px;\n  background: var(--blr-reader-surface-2);\n  box-shadow: var(--blr-reader-shadow);\n  box-sizing: border-box;\n  overflow: auto;\n  height: 100vh;\n  scrollbar-width: thin;\n  scrollbar-color: rgba(100, 116, 139, 0.1) transparent;\n  position: relative;\n  isolation: isolate;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap,\nbody[data-blr-reader-mode=\"1\"] .player-wrap {\n  border: 0;\n  border-radius: 0;\n  background: var(--blr-reader-surface);\n  box-shadow: var(--blr-reader-shadow);\n  box-sizing: border-box;\n  overflow: visible !important;\n  margin-top: -35px !important;\n  height: var(--blr-reader-player-rendered-height, auto) !important;\n  max-height: var(--blr-reader-player-rendered-height, none) !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap > *,\nbody[data-blr-reader-mode=\"1\"] .player-wrap > *,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-container,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-video-area,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-primary-area,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-inner,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-container,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-video-area,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-primary-area,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-inner {\n  width: 100% !important;\n  max-width: 100% !important;\n  height: 100% !important;\n  max-height: 100% !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .bpx-player-video-wrap video {\n  width: 100% !important;\n  height: 100% !important;\n  object-fit: contain !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-main {\n  overflow: visible;\n  display: block;\n  width: 100%;\n  background: transparent;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-transcript,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-chapter-title,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-empty {\n  color: var(--blr-reader-text) !important;\n}\n\n\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-tail-spacer {\n  width: 100%;\n  min-height: 320px;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-status {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] h1.video-title {\n  display: -webkit-box !important;\n  margin-top: 8px !important;\n  color: transparent !important;\n  font-size: clamp(16px, 1.05vw, 20px) !important;\n  line-height: 1.2 !important;\n  padding: 0 !important;\n  height: auto !important;\n  max-height: 48px !important;\n  overflow: hidden !important;\n  overflow-wrap: anywhere !important;\n  pointer-events: none !important;\n  user-select: none !important;\n  visibility: hidden !important;\n  -webkit-box-orient: vertical !important;\n  -webkit-line-clamp: 2 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar {\n  width: 6px;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar-track {\n  background: transparent;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar-thumb {\n  background: rgba(100, 116, 139, 0.1);\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar-thumb:hover {\n  background: rgba(100, 116, 139, 0.16);\n}\n\n@media (max-width: 1320px) {\n  html[data-blr-reader-mode=\"1\"],\n  body[data-blr-reader-mode=\"1\"] {\n    --blr-reader-layout-gap: clamp(12px, 1.4vw, 16px);\n    --blr-reader-rail-target-width: clamp(144px, 12vw, 168px);\n  }\n}\n\n@media (max-width: 1320px) {\n  html[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"] .blr-reading-rail,\n  body[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"] .blr-reading-rail,\n  #blr-reading-view[data-content-width=\"wide\"] .blr-reading-rail {\n    display: none !important;\n  }\n}\n\n@media (max-width: 1180px) {\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n    display: none !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .left-container,\n  body[data-blr-reader-mode=\"1\"] .scroll-sticky,\n  body[data-blr-reader-mode=\"1\"] #playerWrap,\n  body[data-blr-reader-mode=\"1\"] .player-wrap,\n  body[data-blr-reader-mode=\"1\"] h1.video-title,\n  body[data-blr-reader-mode=\"1\"] .video-info-container,\n  body[data-blr-reader-mode=\"1\"] #viewbox_report,\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n    margin-left: auto !important;\n    margin-right: auto !important;\n  }\n}\n\nbody[data-blr-reader-mode=\"1\"] .bpx-player-mini-warp,\nbody[data-blr-reader-mode=\"1\"] .bpx-player-mini-close,\nbody[data-blr-reader-mode=\"1\"] .bpx-player-ending-panel,\nbody[data-blr-reader-mode=\"1\"] .bpx-player-ending-related,\nbody[data-blr-reader-mode=\"1\"] .ad-report,\nbody[data-blr-reader-mode=\"1\"] [class*=\"ad-report\"],\nbody[data-blr-reader-mode=\"1\"] [class*=\"mini-player\"],\nbody[data-blr-reader-mode=\"1\"] [class*=\"picture-in-picture\"] {\n  display: none !important;\n}\n\n\n\n\n\n.blr-reading-complete {\n  padding: 12px 10px 20px;\n  font-size: var(--blr-reader-transcript-font-size);\n  font-weight: var(--blr-reader-transcript-font-weight);\n  line-height: var(--blr-reader-transcript-line-height);\n  letter-spacing: var(--blr-reader-letter-spacing);\n  color: var(--blr-reader-text);\n  text-align: left;\n}\n\n.blr-reading-complete-segment {\n  display: inline;\n  margin: 0;\n  padding: 1px 0;\n  border: 0;\n  border-radius: 2px;\n  background: transparent;\n  color: inherit;\n  font: inherit;\n  letter-spacing: inherit;\n  text-align: inherit;\n  cursor: pointer;\n  user-select: text;\n  -webkit-user-select: text;\n}\n\n.blr-reading-complete-segment:hover {\n  background: rgba(0, 174, 236, 0.1);\n}\n\n.blr-reading-complete-segment.is-active {\n  background: var(--blr-reader-accent-soft);\n  box-shadow: 0 0 0 2px var(--blr-reader-accent-soft);\n  -webkit-box-decoration-break: clone;\n  box-decoration-break: clone;\n  text-decoration-line: underline;\n  text-decoration-color: var(--blr-reader-accent);\n  text-decoration-thickness: 2px;\n  text-underline-offset: 4px;\n}\n\n/* Desktop reader: title/player with chapters below | transcript. */\n@media (min-width: 1181px) {\n  html[data-blr-reader-mode=\"1\"],\n  body[data-blr-reader-mode=\"1\"] {\n    --blr-reader-three-column-gap: clamp(16px, 1.4vw, 24px);\n    --blr-reader-three-column-half-gap: clamp(8px, 0.7vw, 12px);\n    --blr-reader-rail-width: clamp(176px, 13vw, 220px);\n    --blr-reader-transcript-width: clamp(320px, 24vw, 440px);\n    --blr-reader-center-offset: clamp(-110px, -5.5vw, -72px);\n    --blr-reader-main-width: max(\n      420px,\n      calc(\n        100vw - (var(--blr-reader-page-padding) * 2) - var(--blr-reader-transcript-width) -\n          var(--blr-reader-three-column-gap)\n      )\n    );\n    overflow: hidden !important;\n  }\n\n  /* Watch Later centers its own player column; align it with the reader's fixed transcript. */\n  body[data-blr-reader-mode=\"1\"] #app.playlist-app #mirror-vdcon {\n    box-sizing: border-box;\n    justify-content: flex-start !important;\n    padding-left: var(--blr-reader-page-padding) !important;\n    padding-right: var(--blr-reader-page-padding) !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #app.playlist-app .playlist-container--left {\n    flex: 0 0 var(--blr-reader-main-width) !important;\n    min-width: 0 !important;\n    width: var(--blr-reader-main-width) !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n    left: var(--blr-reader-player-left, var(--blr-reader-page-padding)) !important;\n    top: calc(var(--blr-reader-player-bottom, 72vh) + 12px) !important;\n    bottom: auto !important;\n    width: var(--blr-reader-player-width, var(--blr-reader-main-width)) !important;\n    height: min(112px, calc(100vh - var(--blr-reader-player-bottom, 72vh) - 36px)) !important;\n    min-height: 72px;\n    max-height: none !important;\n    grid-template-rows: auto minmax(0, 1fr);\n    gap: 6px;\n    padding: 10px 12px;\n    border-radius: 10px;\n    overflow: hidden;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail .blr-reading-list {\n    display: flex;\n    align-items: stretch;\n    gap: 8px;\n    min-width: 0;\n    padding: 0 0 4px;\n    overflow-x: auto;\n    overflow-y: hidden;\n    scrollbar-width: thin;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail .blr-reading-chapter {\n    flex: 0 0 auto;\n    width: auto;\n    min-width: 120px;\n    max-width: 190px;\n    padding: 6px 10px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .left-container,\n  body[data-blr-reader-mode=\"1\"] .scroll-sticky,\n  body[data-blr-reader-mode=\"1\"] h1.video-title,\n  body[data-blr-reader-mode=\"1\"] .video-info-container,\n  body[data-blr-reader-mode=\"1\"] #viewbox_report {\n    width: var(--blr-reader-main-width) !important;\n    max-width: var(--blr-reader-main-width) !important;\n    margin-left: auto !important;\n    margin-right: auto !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .left-container {\n    transform: translateX(var(--blr-reader-center-offset)) !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] h1.video-title {\n    margin-top: 28px !important;\n    margin-bottom: 14px !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #playerWrap,\n  body[data-blr-reader-mode=\"1\"] .player-wrap {\n    margin-top: 0 !important;\n    border: 0;\n    border-radius: 4px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n    position: fixed !important;\n    top: var(--blr-reader-player-top, 98px) !important;\n    right: var(--blr-reader-page-padding) !important;\n    bottom: 24px !important;\n    left: auto !important;\n    width: var(--blr-reader-transcript-width) !important;\n    max-width: var(--blr-reader-transcript-width) !important;\n    min-height: 0 !important;\n    height: auto !important;\n    margin: 0 !important;\n    padding: 0 !important;\n    border: 1px solid var(--blr-reader-border) !important;\n    border-radius: 0 !important;\n    background: var(--blr-reader-surface-2) !important;\n    box-shadow: var(--blr-reader-shadow) !important;\n    overflow-y: auto !important;\n    scroll-padding-top: 46px;\n    z-index: 2147483645;\n  }\n\n  html[data-blr-reader-mode=\"1\"][data-blr-reader-transcript-visible=\"0\"]\n    #blr-reading-inline-host,\n  body[data-blr-reader-mode=\"1\"][data-blr-reader-transcript-visible=\"0\"]\n    #blr-reading-inline-host {\n    display: none !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-transcript-heading {\n    position: sticky;\n    top: 0;\n    display: flex;\n    align-items: center;\n    height: 38px;\n    margin: 0;\n    justify-content: space-between;\n    gap: 6px;\n    padding: 0 6px 0 10px;\n    box-sizing: border-box;\n    color: var(--blr-reader-muted);\n    background: var(--blr-reader-surface-2);\n    border-bottom: 1px solid var(--blr-reader-border);\n    font-size: 12px;\n    font-weight: 700;\n    letter-spacing: 0.08em;\n    z-index: 3;\n    pointer-events: auto;\n    user-select: none;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-heading-title {\n    min-width: 24px;\n    flex: 1 1 auto;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-heading-controls {\n    display: flex;\n    flex: 0 0 auto;\n    align-items: center;\n    gap: 4px;\n    letter-spacing: 0;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-tool-button {\n    -webkit-appearance: none;\n    appearance: none;\n    width: 26px;\n    height: 26px;\n    display: inline-flex;\n    flex: 0 0 26px;\n    align-items: center;\n    justify-content: center;\n    margin: 0;\n    padding: 0;\n    border: 1px solid var(--blr-reader-border);\n    border-radius: 50%;\n    background: var(--blr-reader-surface);\n    color: var(--blr-reader-text);\n    cursor: pointer;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-tool-button svg {\n    width: 17px;\n    height: 17px;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-tool-button:hover,\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-tool-button.is-active {\n    border-color: var(--blr-reader-accent);\n    color: var(--blr-reader-accent);\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-heading-controls\n    select {\n    -webkit-appearance: none;\n    appearance: none;\n    height: 26px;\n    flex: 0 0 auto;\n    padding: 0 23px 0 7px;\n    box-sizing: border-box;\n    border: 1px solid var(--blr-reader-border);\n    border-radius: 5px;\n    background-color: var(--blr-reader-surface);\n    background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m3 4.5 3 3 3-3' fill='none' stroke='%2364748b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\");\n    background-position: right 6px center;\n    background-repeat: no-repeat;\n    background-size: 12px 12px;\n    color: var(--blr-reader-text);\n    font-size: 12px;\n    font-weight: 500;\n    line-height: 1;\n    outline: none;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-heading-controls\n    select:focus {\n    border-color: var(--blr-reader-accent);\n  }\n\n  #blr-reading-transcript-language {\n    width: 72px;\n  }\n\n  #blr-reading-transcript-font-size {\n    width: 56px;\n  }\n\n  #blr-reading-transcript-font-weight {\n    width: 64px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-main,\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-transcript {\n    width: 100% !important;\n    max-width: none !important;\n    height: auto !important;\n    margin: 0 !important;\n    box-sizing: border-box;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-transcript {\n    padding: 8px 10px 24px;\n    overflow: visible;\n  }\n\n\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-tail-spacer {\n    min-height: 45vh;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle {\n    position: fixed;\n    top: var(--blr-reader-player-top, 88px);\n    bottom: 24px;\n    width: 14px;\n    z-index: 2147483646;\n    cursor: col-resize;\n    pointer-events: auto;\n    touch-action: none;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle::before {\n    content: \"\";\n    position: absolute;\n    top: 0;\n    bottom: 0;\n    left: 6px;\n    width: 2px;\n    border-radius: 999px;\n    background: transparent;\n    transition: background 0.16s ease, box-shadow 0.16s ease;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle:hover::before,\n  body[data-blr-reader-resizing] .blr-reading-resize-handle::before {\n    background: var(--blr-reader-accent);\n    box-shadow: 0 0 0 3px var(--blr-reader-accent-soft);\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle-right {\n    right: calc(\n      var(--blr-reader-page-padding) + var(--blr-reader-transcript-width) +\n        var(--blr-reader-three-column-half-gap) - 7px\n    );\n  }\n\n  body[data-blr-reader-resizing=\"transcript\"],\n  body[data-blr-reader-resizing=\"transcript\"] * {\n    cursor: col-resize !important;\n    user-select: none !important;\n  }\n\n  body[data-blr-reader-transcript-visible=\"0\"] .blr-reading-resize-handle-right {\n    display: none !important;\n  }\n}\n\n@media (max-width: 1180px) {\n  .blr-reading-resize-handle {\n    display: none !important;\n  }\n}\n\n/* Timestamp-free transcript rows must not retain the desktop time column. */\n");
+  GM_addStyle("#blr-native-transcript-panel {\n  --blr-native-transcript-body-height: 439px;\n  --blr-native-transcript-font-size: 14px;\n  --blr-native-transcript-font-weight: 500;\n  --blr-native-transcript-surface: var(--bg1, #fff);\n  --blr-native-transcript-text: var(--text1, #18191c);\n  --blr-native-transcript-border: var(--line_regular, #e3e5e7);\n  --blr-native-transcript-active: rgba(0, 174, 236, 0.12);\n  width: 100%;\n  min-width: 0;\n  position: relative;\n  z-index: 20;\n  margin: 0 0 12px;\n  box-sizing: border-box;\n  isolation: isolate;\n  pointer-events: auto;\n  color: var(--text1, #18191c);\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", sans-serif;\n}\n\n#blr-native-transcript-panel button,\n#blr-native-transcript-panel select,\n#blr-native-transcript-panel .blr-native-transcript-body,\n#blr-native-transcript-panel .blr-native-transcript-list {\n  pointer-events: auto;\n}\n\n.blr-native-transcript-header {\n  width: 100%;\n  height: 44px;\n  display: flex;\n  align-items: center;\n  gap: 4px;\n  margin: 0;\n  padding: 0 6px 0 10px;\n  box-sizing: border-box;\n  border-radius: 6px;\n  background: var(--bg2, #f1f2f3);\n  color: var(--text1, #18191c);\n  font: inherit;\n}\n\n.blr-native-transcript-title-button {\n  -webkit-appearance: none;\n  appearance: none;\n  min-width: 32px;\n  flex: 0 0 auto;\n  align-self: stretch;\n  margin: 0;\n  padding: 0;\n  overflow: hidden;\n  border: 0;\n  background: transparent;\n  color: inherit;\n  font: inherit;\n  font-size: 15px;\n  font-weight: 500;\n  line-height: 1;\n  text-align: left;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  cursor: pointer;\n}\n\n.blr-native-transcript-controls {\n  min-width: 0;\n  display: flex;\n  flex: 1 1 auto;\n  flex-wrap: nowrap;\n  align-items: center;\n  gap: 4px;\n}\n\n.blr-native-transcript-reader-button,\n.blr-native-transcript-return-button,\n.blr-native-transcript-theme-button {\n  -webkit-appearance: none;\n  appearance: none;\n  width: 26px;\n  height: 26px;\n  display: inline-flex;\n  flex: 0 0 26px;\n  align-items: center;\n  justify-content: center;\n  margin: 0;\n  padding: 0;\n  border: 1px solid var(--line_regular, #e3e5e7);\n  border-radius: 50%;\n  background: var(--bg1, #fff);\n  color: var(--text1, #18191c);\n  cursor: pointer;\n}\n\n.blr-native-transcript-reader-button svg,\n.blr-native-transcript-return-button svg,\n.blr-native-transcript-theme-button svg {\n  width: 17px;\n  height: 17px;\n}\n\n.blr-native-transcript-reader-button:hover,\n.blr-native-transcript-return-button:hover,\n.blr-native-transcript-return-button.is-active,\n.blr-native-transcript-theme-button:hover,\n.blr-native-transcript-theme-button.is-active {\n  border-color: var(--brand_blue, #00aeec);\n  color: var(--brand_blue, #00aeec);\n}\n\n.blr-native-transcript-reader-button:focus-visible {\n  outline: 2px solid var(--brand_blue, #00aeec);\n  outline-offset: 2px;\n}\n\n.blr-native-transcript-reader-button:disabled {\n  opacity: 0.6;\n  cursor: wait;\n}\n\n.blr-native-transcript-controls select {\n  -webkit-appearance: none;\n  appearance: none;\n  flex: 0 0 auto;\n  height: 28px;\n  min-width: 0;\n  padding: 0 25px 0 8px;\n  box-sizing: border-box;\n  border: 1px solid var(--line_regular, #e3e5e7);\n  border-radius: 5px;\n  background-color: var(--bg1, #fff);\n  background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m3 4.5 3 3 3-3' fill='none' stroke='%2318191c' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\");\n  background-position: right 7px center;\n  background-repeat: no-repeat;\n  background-size: 12px 12px;\n  color: var(--text1, #18191c);\n  font-size: 12px;\n  outline: none;\n}\n\n.blr-native-transcript-controls select:focus {\n  border-color: var(--brand_blue, #00aeec);\n}\n\n#blr-native-transcript-select {\n  width: auto;\n  max-width: 100%;\n  flex: 1 1 auto;\n  min-width: 0;\n}\n\n#blr-native-transcript-font-size {\n  width: 52px;\n}\n\n#blr-native-transcript-font-weight {\n  width: 60px;\n}\n\n.blr-native-transcript-arrow-button {\n  -webkit-appearance: none;\n  appearance: none;\n  width: 28px;\n  height: 28px;\n  display: inline-flex;\n  flex: 0 0 28px;\n  align-items: center;\n  justify-content: center;\n  margin: 0;\n  padding: 0;\n  border: 0;\n  border-radius: 4px;\n  background: transparent;\n  color: inherit;\n  cursor: pointer;\n}\n\n.blr-native-transcript-title-button:focus-visible,\n.blr-native-transcript-return-button:focus-visible,\n.blr-native-transcript-theme-button:focus-visible,\n.blr-native-transcript-arrow-button:focus-visible {\n  outline: 2px solid var(--brand_blue, #00aeec);\n  outline-offset: 1px;\n}\n\n.blr-native-transcript-arrow-button:hover {\n  background: rgba(0, 0, 0, 0.06);\n}\n\n.blr-native-transcript-arrow {\n  width: 16px;\n  height: 16px;\n  flex: 0 0 auto;\n  fill: none;\n  stroke: currentColor;\n  stroke-width: 1.6;\n  stroke-linecap: round;\n  stroke-linejoin: round;\n  transform: rotate(90deg);\n  transition: transform 0.18s ease;\n}\n\n#blr-native-transcript-panel.is-folded .blr-native-transcript-arrow {\n  transform: rotate(0deg);\n}\n\n.blr-native-transcript-empty-notice {\n  position: absolute;\n  top: calc(100% - 4px);\n  left: 50%;\n  z-index: 1;\n  transform: translateX(-50%);\n  padding: 4px 8px;\n  border-radius: 8px;\n  background: var(--bg1, #fff);\n  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);\n  color: #00aeec;\n  font-size: 13px;\n  font-weight: 600;\n  line-height: 20px;\n  white-space: nowrap;\n  pointer-events: none;\n  animation: blr-native-transcript-notice-fade 2.2s ease-out forwards;\n}\n\n@keyframes blr-native-transcript-notice-fade {\n  0% { opacity: 0; }\n  8%, 65% { opacity: 1; }\n  100% { opacity: 0; }\n}\n\n.blr-native-transcript-body {\n  height: var(--blr-native-transcript-body-height);\n  min-height: 0;\n  display: flex;\n  flex-direction: column;\n  margin-top: 12px;\n  overflow: hidden;\n  box-sizing: border-box;\n  border: 1px solid var(--blr-native-transcript-border);\n  border-radius: 6px;\n  background: var(--blr-native-transcript-surface);\n  color: var(--blr-native-transcript-text);\n}\n\n#blr-native-transcript-panel[data-theme=\"dark\"] {\n  --blr-native-transcript-surface: #0f172a;\n  --blr-native-transcript-text: #e5eefb;\n  --blr-native-transcript-border: rgba(148, 163, 184, 0.28);\n  --blr-native-transcript-active: rgba(0, 174, 236, 0.16);\n}\n\n#blr-native-transcript-panel[data-theme=\"paper\"] {\n  --blr-native-transcript-surface: #f4eddc;\n  --blr-native-transcript-text: #3b3124;\n  --blr-native-transcript-border: rgba(180, 155, 112, 0.34);\n  --blr-native-transcript-active: rgba(0, 174, 236, 0.14);\n}\n\n.blr-native-transcript-body[hidden] {\n  display: none !important;\n}\n\n.blr-native-transcript-list {\n  overflow-anchor: none;\n  scroll-behavior: auto;\n  min-height: 0;\n  flex: 1 1 auto;\n  overflow-x: hidden;\n  overflow-y: auto;\n  overscroll-behavior: contain;\n  scrollbar-width: thin;\n  scrollbar-color: rgba(148, 153, 160, 0.72) transparent;\n}\n\n.blr-native-transcript-list::-webkit-scrollbar {\n  width: 6px;\n}\n\n.blr-native-transcript-list::-webkit-scrollbar-track {\n  background: transparent;\n}\n\n.blr-native-transcript-list::-webkit-scrollbar-thumb {\n  border-radius: 999px;\n  background: rgba(148, 153, 160, 0.72);\n}\n\n.blr-native-transcript-complete {\n  padding: 12px 14px 36px;\n  color: var(--blr-native-transcript-text);\n  font-size: var(--blr-native-transcript-font-size);\n  font-weight: var(--blr-native-transcript-font-weight);\n  line-height: 1.8;\n  letter-spacing: 0;\n  text-align: left;\n  word-break: break-word;\n}\n\n.blr-native-transcript-segment {\n  -webkit-appearance: none;\n  appearance: none;\n  display: inline;\n  margin: 0;\n  padding: 1px 0;\n  border: 0;\n  border-radius: 2px;\n  background: transparent;\n  color: inherit;\n  font: inherit;\n  letter-spacing: inherit;\n  text-align: inherit;\n  cursor: pointer;\n  user-select: text;\n  -webkit-user-select: text;\n}\n\n.blr-native-transcript-segment:hover {\n  background: rgba(0, 174, 236, 0.1);\n}\n\n.blr-native-transcript-segment.is-active {\n  background: var(--blr-native-transcript-active);\n  text-decoration-line: underline;\n  text-decoration-color: var(--brand_blue, #00aeec);\n  text-decoration-thickness: 2px;\n  text-underline-offset: 4px;\n}\n\n.blr-native-transcript-segment:focus-visible {\n  outline: 2px solid rgba(0, 174, 236, 0.42);\n  outline-offset: 1px;\n}\n\n.blr-native-transcript-state {\n  min-height: 100%;\n  display: flex;\n  flex: 1 1 auto;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  gap: 12px;\n  padding: 24px;\n  box-sizing: border-box;\n  color: var(--text3, #9499a0);\n  font-size: 13px;\n  text-align: center;\n}\n\n.blr-native-transcript-state button {\n  height: 30px;\n  padding: 0 14px;\n  border: 1px solid var(--brand_blue, #00aeec);\n  border-radius: 5px;\n  background: transparent;\n  color: var(--brand_blue, #00aeec);\n  cursor: pointer;\n}\n\n.blr-native-transcript-state button:hover {\n  background: rgba(0, 174, 236, 0.08);\n}\n\n/* The YouTube panel sits above recommendations in the secondary column,\n   which also handles narrow screens and theater mode without moving the player. */\n#blr-native-transcript-panel[data-platform=\"youtube\"][data-theme=\"light\"] {\n  --blr-native-transcript-surface: var(--yt-spec-base-background, #fff);\n  --blr-native-transcript-text: var(--yt-spec-text-primary, #0f0f0f);\n  --blr-native-transcript-border: var(--yt-spec-10-percent-layer, #e5e5e5);\n  color: var(--yt-spec-text-primary, #0f0f0f);\n}\n\n#blr-native-transcript-panel[data-platform=\"youtube\"] .blr-native-transcript-header {\n  gap: 4px;\n  padding: 0 6px 0 10px;\n  background: var(--yt-spec-badge-chip-background, #f2f2f2);\n  color: var(--yt-spec-text-primary, #0f0f0f);\n  border-radius: 12px;\n}\n\n#blr-native-transcript-panel[data-platform=\"youtube\"] .blr-native-transcript-title-button {\n  flex: 0 0 auto;\n}\n\n#blr-native-transcript-panel[data-platform=\"youtube\"] .blr-native-transcript-controls {\n  flex: 1 1 auto;\n  flex-wrap: nowrap;\n  gap: 4px;\n}\n\n#blr-native-transcript-panel[data-platform=\"youtube\"] #blr-native-transcript-select {\n  width: auto;\n  max-width: 100%;\n  flex: 1 1 auto;\n  min-width: 0;\n}\n\n#blr-native-transcript-panel[data-platform=\"youtube\"] #blr-native-transcript-font-size {\n  width: 52px;\n}\n\n#blr-native-transcript-panel[data-platform=\"youtube\"] #blr-native-transcript-font-weight {\n  width: 60px;\n}\n\n#blr-native-transcript-panel[data-platform=\"youtube\"] .blr-native-transcript-body {\n  margin-top: 8px;\n  border-radius: 12px;\n}\n\n[data-blr-youtube-transcript-open] > ytd-engagement-panel-section-list-renderer[target-id=\"PAmodern_transcript_view\"],\n[data-blr-youtube-transcript-open] > ytd-engagement-panel-section-list-renderer[target-id=\"engagement-panel-searchable-transcript\"] {\n  display: none !important;\n}\n#blr-reading-view {\n  position: fixed;\n  left: 16px;\n  right: 16px;\n  bottom: 16px;\n  height: min(76vh, 860px);\n  z-index: 2147483646;\n  display: none;\n  padding: 20px 22px;\n  box-sizing: border-box;\n  background: #fff;\n  border: 1px solid #e5e7eb;\n  border-radius: 18px;\n  box-shadow: 0 28px 60px rgba(15, 23, 42, 0.16);\n  font-family: -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"PingFang SC\", \"Helvetica Neue\",\n    Arial, sans-serif;\n}\n\n#blr-reading-view.open {\n  display: block;\n}\n\n/* Move the player and subtitle panel together while the page dissolves. */\nhtml[data-blr-reader-transition]::view-transition {\n  pointer-events: none;\n}\n\nhtml[data-blr-reader-transition]::view-transition-image-pair(blr-reader-player),\nhtml[data-blr-reader-transition]::view-transition-image-pair(blr-reader-transcript) {\n  isolation: auto;\n}\n\nhtml[data-blr-reader-transition]::view-transition-new(blr-reader-player),\nhtml[data-blr-reader-transition]::view-transition-new(blr-reader-transcript) {\n  mix-blend-mode: normal;\n  height: 100%;\n  object-fit: fill;\n}\n\n/* Both directions share the return movement's duration and easing. */\nhtml[data-blr-reader-transition]::view-transition-group(root) {\n  animation: none;\n}\n\nhtml[data-blr-reader-transition]::view-transition-group(blr-reader-transcript) {\n  animation-duration: 300ms;\n  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n}\n\n/* Translate both page templates without stretching either panel's text. The\n   fixed group accommodates both sizes while their original layouts crossfade. */\nhtml[data-blr-reader-transcript-transition]::view-transition-group(blr-reader-transcript) {\n  width: var(--blr-transcript-width) !important;\n  height: var(--blr-transcript-height) !important;\n  top: 0 !important;\n  left: 0 !important;\n  transform-origin: 0 0 !important;\n  animation-name: blr-reader-transcript-move !important;\n  animation-fill-mode: both !important;\n}\n\nhtml[data-blr-reader-transcript-transition]::view-transition-old(blr-reader-transcript) {\n  width: var(--blr-transcript-from-width) !important;\n  height: var(--blr-transcript-from-height) !important;\n  object-fit: fill;\n  mix-blend-mode: normal;\n}\n\nhtml[data-blr-reader-transcript-transition]::view-transition-new(blr-reader-transcript) {\n  width: var(--blr-transcript-to-width) !important;\n  height: var(--blr-transcript-to-height) !important;\n  object-fit: fill;\n}\n\n@keyframes blr-reader-transcript-move {\n  from { transform: translate(var(--blr-transcript-from-x), var(--blr-transcript-from-y)); }\n  to { transform: translate(var(--blr-transcript-to-x), var(--blr-transcript-to-y)); }\n}\n\n/* Use one transform on a fixed-size bitmap. The default shared-element\n   width/height animation can resize the native video surface a second time. */\nhtml[data-blr-reader-transition]::view-transition-group(blr-reader-player) {\n  width: var(--blr-transition-player-width) !important;\n  height: var(--blr-transition-player-height) !important;\n  top: 0 !important;\n  left: 0 !important;\n  transform-origin: 0 0 !important;\n  animation: blr-reader-player-move 300ms cubic-bezier(0.4, 0, 0.2, 1) both !important;\n}\n\nhtml[data-blr-reader-transition]::view-transition-image-pair(blr-reader-player) {\n  width: 100%;\n  height: 100%;\n  animation: none !important;\n}\n\n@keyframes blr-reader-player-move {\n  from {\n    transform: translate(var(--blr-transition-player-from-x), var(--blr-transition-player-from-y)) scale(1);\n  }\n  to {\n    transform: translate(var(--blr-transition-player-to-x), var(--blr-transition-player-to-y))\n      scale(var(--blr-transition-player-scale-x), var(--blr-transition-player-scale-y));\n  }\n}\n\nhtml[data-blr-reader-transition]::view-transition-old(root) {\n  animation: blr-reader-fade-out 180ms ease-in both;\n}\n\nhtml[data-blr-reader-transition]::view-transition-new(root) {\n  animation: blr-reader-fade-in 300ms cubic-bezier(0.4, 0, 0.2, 1) both;\n}\n\n/* Move a stable captured frame. The native player's live surface can resize\n   internally during a mode switch and otherwise scale twice in the group. */\nhtml[data-blr-reader-transition]::view-transition-old(blr-reader-player) {\n  animation: none !important;\n  transform: none !important;\n  opacity: 1;\n  width: 100%;\n  height: 100%;\n  object-fit: fill;\n  mix-blend-mode: normal;\n}\n\nhtml[data-blr-reader-transition]::view-transition-new(blr-reader-player) {\n  animation: none;\n  opacity: 0;\n}\n\n/* Native layout changes must finish before the transition captures its target.\n   The shared snapshot handles motion; host-page CSS must not add another one. */\nhtml[data-blr-reader-transition] :is(\n  .left-container, .scroll-sticky, #playerWrap, .player-wrap, #bilibili-player,\n  .bpx-player-container, .bpx-player-video-area, .bpx-player-primary-area, .bpx-player-inner\n) {\n  transition: none !important;\n  animation: none !important;\n}\n\nhtml[data-blr-reader-transition]::view-transition-old(blr-reader-transcript) {\n  animation: blr-reader-fade-out 300ms cubic-bezier(0.4, 0, 0.2, 1) both;\n  mix-blend-mode: normal;\n  height: 100%;\n  object-fit: fill;\n}\n\nhtml[data-blr-reader-transition]::view-transition-new(blr-reader-transcript) {\n  animation: blr-reader-fade-in 300ms cubic-bezier(0.4, 0, 0.2, 1) both;\n}\n\n/* Lightweight entrance on browsers without snapshot transitions. */\nhtml[data-blr-reader-entering=\"1\"] #blr-reading-inline-host,\nhtml[data-blr-reader-entering=\"1\"] #blr-reading-view[data-blr-reader-ready=\"1\"] .blr-reading-topbar {\n  animation: blr-reader-panel-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;\n}\n\n@keyframes blr-reader-fade-in {\n  from { opacity: 0; }\n  to { opacity: 1; }\n}\n\n@keyframes blr-reader-fade-out {\n  from { opacity: 1; }\n  to { opacity: 0; }\n}\n\n@keyframes blr-reader-panel-in {\n  from { opacity: 0; transform: translateY(8px); }\n  to { opacity: 1; transform: translateY(0); }\n}\n\n@media (prefers-reduced-motion: reduce) {\n  html[data-blr-reader-transition]::view-transition-group(*),\n  html[data-blr-reader-transition]::view-transition-old(*),\n  html[data-blr-reader-transition]::view-transition-new(*),\n  html[data-blr-reader-entering=\"1\"] #blr-reading-inline-host,\n  html[data-blr-reader-entering=\"1\"] #blr-reading-view .blr-reading-topbar {\n    animation: none !important;\n  }\n}\n\n#blr-reading-view[data-blr-reader-ready=\"0\"] {\n  opacity: 0;\n  visibility: hidden;\n  pointer-events: none;\n}\n\n.blr-reading-layout {\n  min-height: 0;\n  height: 100%;\n  display: grid;\n  grid-template-columns: 240px minmax(0, 1fr);\n  gap: 28px;\n}\n\n.blr-reading-rail {\n  min-height: 0;\n  display: grid;\n  grid-template-rows: auto auto minmax(0, 1fr);\n  gap: 10px;\n  align-content: start;\n}\n\n.blr-reading-stage {\n  min-height: 0;\n  display: grid;\n  grid-template-rows: auto auto minmax(320px, 1fr) minmax(0, 1fr);\n  gap: 14px;\n}\n\n.blr-reading-header {\n  display: flex;\n  align-items: flex-start;\n  justify-content: space-between;\n  gap: 18px;\n}\n\n.blr-reading-header-copy {\n  min-width: 0;\n}\n\n.blr-reading-eyebrow {\n  font-size: 11px;\n  font-weight: 700;\n  letter-spacing: 0.08em;\n  color: #9ca3af;\n  text-transform: uppercase;\n}\n\n.blr-reading-title {\n  display: block;\n  margin: 0;\n  font-size: 16px;\n  line-height: 1.15;\n  color: #0f172a;\n  word-break: break-word;\n}\n\n.blr-reading-topbar,\n.blr-reading-heading-group {\n  min-width: 0;\n}\n\n.blr-reading-page-title {\n  color: var(--blr-reader-text, #0f172a);\n  display: -webkit-box;\n  font-size: 18px;\n  font-weight: 500;\n  line-height: 1.2;\n  overflow: hidden;\n  overflow-wrap: anywhere;\n  -webkit-box-orient: vertical;\n  -webkit-line-clamp: 2;\n}\n\n.blr-reading-episode-title {\n  color: var(--blr-reader-muted, #64748b);\n  display: -webkit-box;\n  font-size: 14px;\n  font-weight: 600;\n  line-height: 1.3;\n  overflow: hidden;\n  overflow-wrap: anywhere;\n  -webkit-box-orient: vertical;\n  -webkit-line-clamp: 2;\n}\n\n.blr-reading-collection-nav {\n  align-items: flex-start;\n  display: flex;\n  gap: 10px;\n  min-width: 0;\n}\n\n.blr-reading-episode-title[hidden],\n.blr-reading-collection-nav[hidden] {\n  display: none !important;\n}\n\n.blr-reading-collection-list {\n  align-content: flex-start;\n  align-items: center;\n  display: flex;\n  flex: 1 1 auto;\n  flex-wrap: wrap;\n  gap: 6px;\n  height: 70px;\n  min-width: 0;\n  overflow-x: hidden;\n  overflow-y: auto;\n  overscroll-behavior-y: contain;\n  scrollbar-width: none;\n}\n\n.blr-reading-collection-list::-webkit-scrollbar {\n  display: none;\n}\n\n.blr-reading-collection-item {\n  align-items: center;\n  background: transparent;\n  border: 1px solid var(--blr-reader-border, #e2e8f0);\n  border-radius: 999px;\n  color: var(--blr-reader-muted, #64748b);\n  cursor: pointer;\n  display: inline-flex;\n  flex: 0 0 auto;\n  gap: 6px;\n  height: 32px;\n  max-width: 260px;\n  padding: 0 10px 0 7px;\n  font-weight: 600;\n}\n\n.blr-reading-collection-item:hover {\n  border-color: var(--blr-reader-accent, #00aeec);\n  color: var(--blr-reader-text, #0f172a);\n}\n\n.blr-reading-collection-item.is-active {\n  background: var(--blr-reader-accent-soft, rgba(0, 174, 236, 0.12));\n  border-color: var(--blr-reader-accent, #00aeec);\n  color: var(--blr-reader-accent, #00aeec);\n}\n\n.blr-reading-collection-index {\n  align-items: center;\n  background: color-mix(in srgb, currentColor 10%, transparent);\n  border-radius: 999px;\n  display: inline-flex;\n  flex: 0 0 auto;\n  font-size: 10px;\n  font-weight: 700;\n  height: 18px;\n  justify-content: center;\n  min-width: 18px;\n  padding: 0 4px;\n}\n\n.blr-reading-collection-item-title {\n  font-size: 12px;\n  font-weight: 600;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.blr-reading-meta,\n.blr-reading-status {\n  font-size: 14px;\n  line-height: 1.5;\n  color: #6b7280;\n}\n\n.blr-reading-meta {\n  margin-top: 8px;\n}\n\n.blr-reading-actions {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex-wrap: wrap;\n  justify-content: flex-end;\n  transition: opacity 0.2s ease;\n}\n\n.blr-reading-actions[data-blr-icon-hidden=\"1\"] {\n  opacity: 0;\n  pointer-events: none;\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .blr-reading-actions {\n    transition: none;\n  }\n}\n\n.blr-reading-actions button {\n  border: 1px solid #e5e7eb;\n  background: #fff;\n  border-radius: 999px;\n  min-height: 36px;\n  padding: 0 14px;\n  font-size: 13px;\n  color: #1f2937;\n  box-sizing: border-box;\n  cursor: pointer;\n}\n\n.blr-reading-icon-btn {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 34px;\n  height: 34px;\n  border: 1px solid #e5e7eb;\n  background: #fff;\n  border-radius: 8px;\n  cursor: pointer;\n  padding: 0;\n  color: #1f2937;\n}\n\n.blr-reading-icon-btn svg {\n  width: 18px;\n  height: 18px;\n  flex: 0 0 auto;\n}\n\n.blr-reading-icon-btn:hover {\n  background: #f3f4f6;\n  border-color: #d1d5db;\n}\n\n.blr-reading-list,\n.blr-reading-transcript {\n  min-height: 0;\n  overflow: auto;\n}\n\n.blr-reading-list {\n  padding-right: 6px;\n}\n\n.blr-reading-main {\n  min-height: 0;\n  overflow: hidden;\n  display: flex;\n  justify-content: center;\n  pointer-events: auto;\n}\n\n.blr-reading-transcript {\n  width: min(100%, 960px);\n  height: 100%;\n  max-height: 100%;\n  margin: 0 auto;\n  padding: 6px 8px 12px;\n  overflow-x: hidden;\n  overflow-y: auto;\n  pointer-events: auto;\n}\n\n.blr-reading-chapter {\n  width: 100%;\n  border: 0;\n  background: transparent;\n  border-radius: 14px;\n  text-align: left;\n  cursor: pointer;\n  user-select: text;\n  -webkit-user-select: text;\n  display: grid;\n  gap: 4px;\n  padding: 8px 10px;\n  color: #4b5563;\n}\n\n.blr-reading-chapter:hover {\n  background: #f9fafb;\n}\n\n.blr-reading-chapter.is-active {\n  background: transparent;\n  box-shadow: none;\n}\n\n.blr-reading-chapter-time {\n  font-size: var(--blr-reader-transcript-font-size);\n  font-weight: 600;\n  color: var(--blr-reader-accent, #00aeec);\n  padding-top: 2px;\n  line-height: 1.4;\n}\n\n.blr-reading-chapter-title {\n  font-size: 13px;\n  line-height: 1.45;\n  color: inherit;\n}\n\n.blr-reading-chapter.is-active .blr-reading-chapter-title {\n  text-decoration-line: underline;\n  text-decoration-color: var(--blr-reader-accent, #00aeec);\n  text-decoration-thickness: 2px;\n  text-underline-offset: 3px;\n}\n\n.blr-reading-empty {\n  padding: 12px 4px;\n  font-size: 14px;\n  color: #94a3b8;\n}\n\n@media (max-width: 1100px) {\n  #blr-reading-view {\n    left: 12px;\n    right: 12px;\n    bottom: 12px;\n    padding: 18px;\n  }\n\n  .blr-reading-layout {\n    grid-template-columns: 210px minmax(0, 1fr);\n    gap: 20px;\n  }\n\n  .blr-reading-title {\n    font-size: 16px;\n  }\n}\n\n@media (max-width: 760px) {\n  #blr-reading-view {\n    top: 72px;\n    height: auto;\n  }\n\n  .blr-reading-layout {\n    grid-template-columns: 1fr;\n    gap: 18px;\n  }\n\n  .blr-reading-stage {\n    grid-template-rows: auto auto minmax(220px, auto) minmax(0, 1fr);\n  }\n\n  .blr-reading-header {\n    flex-direction: column;\n    align-items: stretch;\n  }\n\n  .blr-reading-actions {\n    justify-content: flex-start;\n  }\n\n  .blr-reading-title {\n    font-size: 16px;\n  }\n\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] {\n  margin: 0 !important;\n  padding: 0 !important;\n  width: 100% !important;\n  min-height: 100% !important;\n  background: #fff !important;\n  overflow-x: hidden !important;\n  overflow-y: auto !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-root {\n  position: absolute;\n  inset: 0;\n  z-index: 2147483646;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view {\n  position: absolute;\n  inset: 0;\n  width: auto;\n  max-width: none;\n  height: 100vh;\n  display: none;\n  margin: 0;\n  padding: 0;\n  box-sizing: border-box;\n  border: 0;\n  border-radius: 0;\n  box-shadow: none;\n  background: transparent;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view.open {\n  display: block;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-ready=\"0\"] {\n  opacity: 0;\n  visibility: hidden;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-header-copy,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-status {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #viewbox_report,\nbody[data-blr-reader-mode=\"1\"] .video-info-container,\nbody[data-blr-reader-mode=\"1\"] .video-info-title,\nbody[data-blr-reader-mode=\"1\"] .video-info-title-inner {\n  margin: 0 !important;\n  padding: 0 !important;\n  row-gap: 0 !important;\n  column-gap: 0 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #viewbox_report,\nbody[data-blr-reader-mode=\"1\"] .video-info-container {\n  margin-bottom: 4px !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .left-container,\nbody[data-blr-reader-mode=\"1\"] .scroll-sticky {\n  row-gap: 8px !important;\n  padding-top: 0 !important;\n  overflow: visible !important;\n  transition: none !important;\n  animation: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap,\nbody[data-blr-reader-mode=\"1\"] .player-wrap,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n  transition: none !important;\n  animation: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .video-info-detail,\nbody[data-blr-reader-mode=\"1\"] .video-info-meta,\nbody[data-blr-reader-mode=\"1\"] .video-data {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-follow=\"manual\"] .blr-reading-main,\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-follow=\"manual\"] .blr-reading-rail {\n  border-color: rgba(148, 163, 184, 0.8);\n  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view[data-blr-reader-follow=\"manual\"] .blr-reading-eyebrow::after {\n  content: \"手动浏览中\";\n  display: inline-block;\n  margin-left: 8px;\n  font-size: 11px;\n  font-weight: 500;\n  color: #94a3b8;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reader-player-host {\n  background: #000 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap {\n  position: static !important;\n  top: auto !important;\n  z-index: auto !important;\n  background: transparent !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .player-wrap,\nbody[data-blr-reader-mode=\"1\"] .scroll-sticky {\n  position: static !important;\n  top: auto !important;\n  z-index: auto !important;\n  background: transparent !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] [data-blr-reader-player-reset=\"1\"] {\n  position: static !important;\n  inset: auto !important;\n  width: auto !important;\n  height: auto !important;\n  transform: none !important;\n  margin: 0 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .strip-ad-inner,\nbody[data-blr-reader-mode=\"1\"] .inside-wrp,\nbody[data-blr-reader-mode=\"1\"] .inside-bg,\nbody[data-blr-reader-mode=\"1\"] .hinter-msg,\nbody[data-blr-reader-mode=\"1\"] .slide,\nbody[data-blr-reader-mode=\"1\"] .cover.b-img,\nbody[data-blr-reader-mode=\"1\"] .cover.b-img.sleepy,\nbody[data-blr-reader-mode=\"1\"] .b-img.clickable {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] [data-blr-reader-hidden=\"1\"] {\n  display: none !important;\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"],\n#blr-reading-view {\n  --blr-reader-page-bg: #f4f6f8;\n  --blr-reader-surface: #ffffff;\n  --blr-reader-surface-2: #f7f9fc;\n  --blr-reader-border: rgba(15, 23, 42, 0.1);\n  --blr-reader-text: #0f172a;\n  --blr-reader-muted: #64748b;\n  --blr-reader-accent: var(--brand_blue, #00aeec);\n  --blr-reader-accent-soft: rgba(0, 174, 236, 0.12);\n  --blr-reader-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);\n  --blr-reader-transcript-font-size: 14px;\n  --blr-reader-transcript-font-weight: 500;\n  --blr-reader-transcript-line-height: 1.5;\n  --blr-reader-letter-spacing: 0em;\n  --blr-reader-content-max: 980px;\n  color: var(--blr-reader-text);\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"dark\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"dark\"],\n#blr-reading-view[data-theme=\"dark\"] {\n  --blr-reader-page-bg: #09111f;\n  --blr-reader-surface: #0f172a;\n  --blr-reader-surface-2: #132038;\n  --blr-reader-border: rgba(148, 163, 184, 0.22);\n  --blr-reader-text: #e5eefb;\n  --blr-reader-muted: #9fb0c8;\n  --blr-reader-accent: var(--brand_blue, #00aeec);\n  --blr-reader-accent-soft: rgba(0, 174, 236, 0.14);\n  --blr-reader-shadow: 0 18px 42px rgba(2, 6, 23, 0.42);\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"paper\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-theme=\"paper\"],\n#blr-reading-view[data-theme=\"paper\"] {\n  --blr-reader-page-bg: #f4eddc;\n  --blr-reader-surface: #f4eddc;\n  --blr-reader-surface-2: #f4eddc;\n  --blr-reader-border: rgba(180, 155, 112, 0.22);\n  --blr-reader-text: #3b3124;\n  --blr-reader-muted: #756653;\n  --blr-reader-accent: var(--brand_blue, #00aeec);\n  --blr-reader-accent-soft: rgba(0, 174, 236, 0.12);\n  --blr-reader-shadow: 0 18px 40px rgba(112, 93, 64, 0.12);\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"s\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"s\"],\n#blr-reading-view[data-font-scale=\"s\"] {\n  --blr-reader-transcript-font-size: 12.8px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xs\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xs\"],\n#blr-reading-view[data-font-scale=\"xs\"] {\n  --blr-reader-transcript-font-size: 11.6px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"l\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"l\"],\n#blr-reading-view[data-font-scale=\"l\"] {\n  --blr-reader-transcript-font-size: 16.4px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xl\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-scale=\"xl\"],\n#blr-reading-view[data-font-scale=\"xl\"] {\n  --blr-reader-transcript-font-size: 18.8px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"light\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"light\"],\n#blr-reading-view[data-font-weight=\"light\"] {\n  --blr-reader-transcript-font-weight: 300;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"regular\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"regular\"],\n#blr-reading-view[data-font-weight=\"regular\"] {\n  --blr-reader-transcript-font-weight: 400;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"semibold\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"semibold\"],\n#blr-reading-view[data-font-weight=\"semibold\"] {\n  --blr-reader-transcript-font-weight: 600;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"bold\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-font-weight=\"bold\"],\n#blr-reading-view[data-font-weight=\"bold\"] {\n  --blr-reader-transcript-font-weight: 700;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tighter\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tighter\"],\n#blr-reading-view[data-letter-spacing=\"tighter\"] {\n  --blr-reader-letter-spacing: -0.072em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tight\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"tight\"],\n#blr-reading-view[data-letter-spacing=\"tight\"] {\n  --blr-reader-letter-spacing: -0.036em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"relaxed\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"relaxed\"],\n#blr-reading-view[data-letter-spacing=\"relaxed\"] {\n  --blr-reader-letter-spacing: 0.036em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"loose\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-letter-spacing=\"loose\"],\n#blr-reading-view[data-letter-spacing=\"loose\"] {\n  --blr-reader-letter-spacing: 0.072em;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"compact\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"compact\"],\n#blr-reading-view[data-content-width=\"compact\"] {\n  --blr-reader-content-max: 720px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"narrow\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"narrow\"],\n#blr-reading-view[data-content-width=\"narrow\"] {\n  --blr-reader-content-max: 820px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"],\n#blr-reading-view[data-content-width=\"wide\"] {\n  --blr-reader-content-max: 1120px;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"full\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"full\"],\n#blr-reading-view[data-content-width=\"full\"] {\n  --blr-reader-content-max: 1280px;\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] #app,\nbody[data-blr-reader-mode=\"1\"] .left-container,\nbody[data-blr-reader-mode=\"1\"] .right-container,\nbody[data-blr-reader-mode=\"1\"] .right-container-inner,\nbody[data-blr-reader-mode=\"1\"] .video-info-container,\nbody[data-blr-reader-mode=\"1\"] .video-info-detail,\nbody[data-blr-reader-mode=\"1\"] .video-sections-content-list,\nbody[data-blr-reader-mode=\"1\"] .video-container-v1,\nbody[data-blr-reader-mode=\"1\"] .video-container-v3 {\n  background: var(--blr-reader-page-bg) !important;\n  color: var(--blr-reader-text);\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] #app {\n  min-height: 100vh !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #app {\n  min-width: 0 !important;\n  width: 100% !important;\n  max-width: none !important;\n}\n\n#blr-reading-view,\n#blr-reading-view .blr-reading-meta,\n#blr-reading-view .blr-reading-status,\n#blr-reading-view .blr-reading-chapter {\n  color: var(--blr-reader-text);\n}\n\n#blr-reading-view .blr-reading-layout {\n  gap: 22px;\n}\n\n#blr-reading-view .blr-reading-stage {\n  display: grid;\n  gap: 16px;\n}\n\n#blr-reading-view .blr-reading-header {\n  align-items: flex-start;\n}\n\n#blr-reading-view .blr-reading-title {\n  font-size: 20px;\n  color: var(--blr-reader-text);\n  margin-top: 10px;\n}\n\n#blr-reading-view .blr-reading-meta,\n#blr-reading-view .blr-reading-status {\n  font-size: 14px;\n  color: var(--blr-reader-muted);\n}\n\n#blr-reading-view .blr-reading-actions {\n  gap: 10px;\n}\n\n#blr-reading-view .blr-reading-actions button {\n  border: 1px solid var(--blr-reader-border);\n  background: var(--blr-reader-surface);\n  color: var(--blr-reader-text);\n  box-shadow: none;\n}\n\n#blr-reading-view .blr-reading-main {\n  justify-content: center;\n  background: transparent;\n}\n\n#blr-reading-view .blr-reading-transcript {\n  width: min(100%, var(--blr-reader-content-max));\n}\n\n#blr-reading-view .blr-reading-chapter:hover {\n  background: var(--blr-reader-surface-2);\n}\n\n#blr-reading-view .blr-reading-chapter.is-active {\n  background: var(--blr-reader-accent-soft);\n}\n\n#blr-reading-view .blr-reading-chapter-time {\n  color: var(--blr-reader-accent);\n}\n\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-subtitle-wrap,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-subtitle-panel,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-subtitle-container,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bilibili-player-video-subtitle,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .subtitle-wrap,\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host [class*=\"subtitle\"],\nbody[data-blr-reading-active=\"1\"] .blr-reader-player-host .bpx-player-sending-bar,\nbody[data-blr-reading-active=\"1\"] .bpx-player-sending-bar {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-view {\n  background: transparent;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-header {\n  left: auto;\n  right: 24px;\n  max-width: min(1100px, calc(100vw - 48px));\n  gap: 14px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-actions {\n  pointer-events: auto;\n  justify-content: flex-end;\n}\n\n/* The native player stays in normal flow; the transcript uses its own scroll. */\nbody[data-blr-reader-mode=\"1\"] .blr-reading-layout,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-stage {\n  display: block;\n  height: auto;\n}\n\nhtml[data-blr-reader-mode=\"1\"],\nbody[data-blr-reader-mode=\"1\"] {\n  --blr-reader-page-padding: clamp(16px, 2.8vw, 32px);\n  --blr-reader-layout-gap: clamp(16px, 2vw, 24px);\n  --blr-reader-rail-target-width: clamp(168px, 15vw, 220px);\n  --blr-reader-main-width: min(\n    var(--blr-reader-content-max),\n    calc(100vw - (var(--blr-reader-page-padding) * 2))\n  );\n  --blr-reader-rail-width: min(\n    var(--blr-reader-rail-target-width),\n    max(\n      0px,\n      calc(\n        ((100vw - var(--blr-reader-main-width)) / 2) - var(--blr-reader-page-padding) - var(--blr-reader-layout-gap)\n      )\n    )\n  );\n  --blr-reader-transcript-line-height: 1.404;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"compact\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"compact\"],\n#blr-reading-view[data-line-height=\"compact\"] {\n  --blr-reader-transcript-line-height: 1.32;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"tight\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"tight\"],\n#blr-reading-view[data-line-height=\"tight\"] {\n  --blr-reader-transcript-line-height: 1.404;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"normal\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"normal\"],\n#blr-reading-view[data-line-height=\"normal\"] {\n  --blr-reader-transcript-line-height: 1.5;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"relaxed\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"relaxed\"],\n#blr-reading-view[data-line-height=\"relaxed\"] {\n  --blr-reader-transcript-line-height: 1.596;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"loose\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-line-height=\"loose\"],\n#blr-reading-view[data-line-height=\"loose\"] {\n  --blr-reader-transcript-line-height: 1.692;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-actions {\n  gap: 12px;\n  margin-right: -20px;\n  margin-top: -8px;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-header {\n  position: fixed;\n  top: 18px;\n  right: var(--blr-reader-page-padding);\n  left: auto;\n  max-width: calc(100vw - (var(--blr-reader-page-padding) * 2));\n  margin-bottom: 0;\n  z-index: 2147483646;\n  pointer-events: auto;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-topbar {\n  display: grid;\n  gap: clamp(12px, 1.2vw, 20px);\n  grid-template-columns: clamp(300px, 28vw, 520px) minmax(0, 1fr);\n  height: 84px;\n  left: var(--blr-reader-page-padding);\n  min-width: 0;\n  overflow: hidden;\n  pointer-events: auto;\n  position: fixed;\n  right: 174px;\n  top: 6px;\n  z-index: 2147483646;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-heading-group {\n  align-content: center;\n  display: grid;\n  gap: 2px;\n  max-height: 84px;\n  overflow: hidden;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-page-title {\n  font-size: clamp(16px, 1.05vw, 19px);\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-collection-nav {\n  align-self: center;\n  height: 70px;\n  min-width: 0;\n  pointer-events: auto;\n  position: static;\n}\n\n@media (max-width: 1000px) {\n  body[data-blr-reader-mode=\"1\"] .blr-reading-topbar {\n    grid-template-columns: clamp(240px, 34vw, 330px) minmax(0, 1fr);\n  }\n}\n\n@media (max-width: 760px) {\n  body[data-blr-reader-mode=\"1\"] .blr-reading-topbar {\n    grid-template-columns: minmax(190px, 42vw) minmax(0, 1fr);\n    right: 150px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-page-title {\n    font-size: 15px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-episode-title {\n    font-size: 12px;\n  }\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n  position: fixed;\n  display: grid !important;\n  left: var(--blr-reader-page-padding) !important;\n  top: 112px !important;\n  width: var(--blr-reader-rail-width) !important;\n  max-height: calc(100vh - 136px) !important;\n  padding: 12px;\n  box-sizing: border-box;\n  background: var(--blr-reader-surface);\n  border: 1px solid var(--blr-reader-border);\n  border-radius: 14px;\n  box-shadow: var(--blr-reader-shadow);\n  pointer-events: auto;\n  z-index: 2147483646;\n}\n\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-has-chapters=\"0\"] .blr-reading-rail,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-has-chapters=\"0\"] .blr-reading-rail,\n#blr-reading-view[data-has-chapters=\"0\"] .blr-reading-rail {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .left-container,\nbody[data-blr-reader-mode=\"1\"] .scroll-sticky,\nbody[data-blr-reader-mode=\"1\"] #playerWrap,\nbody[data-blr-reader-mode=\"1\"] .player-wrap,\nbody[data-blr-reader-mode=\"1\"] h1.video-title,\nbody[data-blr-reader-mode=\"1\"] .video-info-container,\nbody[data-blr-reader-mode=\"1\"] #viewbox_report,\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n  width: min(\n    var(--blr-reader-main-width),\n    var(--blr-reader-player-rendered-width, var(--blr-reader-main-width))\n  ) !important;\n  max-width: min(\n    var(--blr-reader-main-width),\n    var(--blr-reader-player-rendered-width, var(--blr-reader-main-width))\n  ) !important;\n  margin-left: auto !important;\n  margin-right: auto !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n  overflow-anchor: none;\n  scroll-behavior: auto;\n  min-height: 100vh;\n  margin-top: -1px;\n  padding: 0;\n  border: 1px solid var(--blr-reader-border);\n  border-top: 0;\n  border-radius: 0 0 20px 20px;\n  background: var(--blr-reader-surface-2);\n  box-shadow: var(--blr-reader-shadow);\n  box-sizing: border-box;\n  overflow: auto;\n  height: 100vh;\n  scrollbar-width: thin;\n  scrollbar-color: rgba(100, 116, 139, 0.1) transparent;\n  position: relative;\n  isolation: isolate;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap,\nbody[data-blr-reader-mode=\"1\"] .player-wrap {\n  border: 0;\n  border-radius: 0;\n  background: var(--blr-reader-surface);\n  box-shadow: var(--blr-reader-shadow);\n  box-sizing: border-box;\n  overflow: visible !important;\n  margin-top: -35px !important;\n  height: var(--blr-reader-player-rendered-height, auto) !important;\n  max-height: var(--blr-reader-player-rendered-height, none) !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #playerWrap > *,\nbody[data-blr-reader-mode=\"1\"] .player-wrap > *,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-container,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-video-area,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-primary-area,\nbody[data-blr-reader-mode=\"1\"] #playerWrap .bpx-player-inner,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-container,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-video-area,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-primary-area,\nbody[data-blr-reader-mode=\"1\"] .player-wrap .bpx-player-inner {\n  width: 100% !important;\n  max-width: 100% !important;\n  height: 100% !important;\n  max-height: 100% !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .bpx-player-video-wrap video {\n  width: 100% !important;\n  height: 100% !important;\n  object-fit: contain !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-main {\n  overflow: visible;\n  display: block;\n  width: 100%;\n  background: transparent;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-transcript,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-chapter-title,\nbody[data-blr-reader-mode=\"1\"] .blr-reading-empty {\n  color: var(--blr-reader-text) !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-tail-spacer {\n  width: 100%;\n  min-height: 320px;\n  pointer-events: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] .blr-reading-status {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] h1.video-title {\n  display: -webkit-box !important;\n  margin-top: 8px !important;\n  color: transparent !important;\n  font-size: clamp(16px, 1.05vw, 20px) !important;\n  line-height: 1.2 !important;\n  padding: 0 !important;\n  height: auto !important;\n  max-height: 48px !important;\n  overflow: hidden !important;\n  overflow-wrap: anywhere !important;\n  pointer-events: none !important;\n  user-select: none !important;\n  visibility: hidden !important;\n  -webkit-box-orient: vertical !important;\n  -webkit-line-clamp: 2 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar {\n  width: 6px;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar-track {\n  background: transparent;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar-thumb {\n  background: rgba(100, 116, 139, 0.1);\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host::-webkit-scrollbar-thumb:hover {\n  background: rgba(100, 116, 139, 0.16);\n}\n\n@media (max-width: 1320px) {\n  html[data-blr-reader-mode=\"1\"],\n  body[data-blr-reader-mode=\"1\"] {\n    --blr-reader-layout-gap: clamp(12px, 1.4vw, 16px);\n    --blr-reader-rail-target-width: clamp(144px, 12vw, 168px);\n  }\n}\n\n@media (max-width: 1320px) {\n  html[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"] .blr-reading-rail,\n  body[data-blr-reader-mode=\"1\"][data-blr-reader-content-width=\"wide\"] .blr-reading-rail,\n  #blr-reading-view[data-content-width=\"wide\"] .blr-reading-rail {\n    display: none !important;\n  }\n}\n\n@media (max-width: 1180px) {\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n    display: none !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .left-container,\n  body[data-blr-reader-mode=\"1\"] .scroll-sticky,\n  body[data-blr-reader-mode=\"1\"] #playerWrap,\n  body[data-blr-reader-mode=\"1\"] .player-wrap,\n  body[data-blr-reader-mode=\"1\"] h1.video-title,\n  body[data-blr-reader-mode=\"1\"] .video-info-container,\n  body[data-blr-reader-mode=\"1\"] #viewbox_report,\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n    margin-left: auto !important;\n    margin-right: auto !important;\n  }\n}\n\nbody[data-blr-reader-mode=\"1\"] .bpx-player-mini-warp,\nbody[data-blr-reader-mode=\"1\"] .bpx-player-mini-close,\nbody[data-blr-reader-mode=\"1\"] .bpx-player-ending-panel,\nbody[data-blr-reader-mode=\"1\"] .bpx-player-ending-related,\nbody[data-blr-reader-mode=\"1\"] .ad-report,\nbody[data-blr-reader-mode=\"1\"] [class*=\"ad-report\"],\nbody[data-blr-reader-mode=\"1\"] [class*=\"mini-player\"],\nbody[data-blr-reader-mode=\"1\"] [class*=\"picture-in-picture\"] {\n  display: none !important;\n}\n\n.blr-reading-complete {\n  padding: 12px 10px 20px;\n  font-size: var(--blr-reader-transcript-font-size);\n  font-weight: var(--blr-reader-transcript-font-weight);\n  line-height: var(--blr-reader-transcript-line-height);\n  letter-spacing: var(--blr-reader-letter-spacing);\n  color: var(--blr-reader-text);\n  text-align: left;\n}\n\n.blr-reading-complete-segment {\n  display: inline;\n  margin: 0;\n  padding: 1px 0;\n  border: 0;\n  border-radius: 2px;\n  background: transparent;\n  color: inherit;\n  font: inherit;\n  letter-spacing: inherit;\n  text-align: inherit;\n  cursor: pointer;\n  user-select: text;\n  -webkit-user-select: text;\n}\n\n.blr-reading-complete-segment:hover {\n  background: rgba(0, 174, 236, 0.1);\n}\n\n.blr-reading-complete-segment.is-active {\n  background: var(--blr-reader-accent-soft);\n  box-shadow: 0 0 0 2px var(--blr-reader-accent-soft);\n  -webkit-box-decoration-break: clone;\n  box-decoration-break: clone;\n  text-decoration-line: underline;\n  text-decoration-color: var(--blr-reader-accent);\n  text-decoration-thickness: 2px;\n  text-underline-offset: 4px;\n}\n\n/* Desktop reader: title/player with chapters below | transcript. */\n@media (min-width: 1181px) {\n  html[data-blr-reader-mode=\"1\"],\n  body[data-blr-reader-mode=\"1\"] {\n    --blr-reader-three-column-gap: clamp(16px, 1.4vw, 24px);\n    --blr-reader-three-column-half-gap: clamp(8px, 0.7vw, 12px);\n    --blr-reader-rail-width: clamp(176px, 13vw, 220px);\n    --blr-reader-transcript-width: clamp(320px, 24vw, 440px);\n    --blr-reader-center-offset: clamp(-110px, -5.5vw, -72px);\n    --blr-reader-main-width: max(\n      420px,\n      calc(\n        100vw - (var(--blr-reader-page-padding) * 2) - var(--blr-reader-transcript-width) -\n          var(--blr-reader-three-column-gap)\n      )\n    );\n    overflow: hidden !important;\n  }\n\n  /* Watch Later centers its own player column; align it with the reader's fixed transcript. */\n  body[data-blr-reader-mode=\"1\"] #app.playlist-app #mirror-vdcon {\n    box-sizing: border-box;\n    justify-content: flex-start !important;\n    padding-left: var(--blr-reader-page-padding) !important;\n    padding-right: var(--blr-reader-page-padding) !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #app.playlist-app .playlist-container--left {\n    flex: 0 0 var(--blr-reader-main-width) !important;\n    min-width: 0 !important;\n    width: var(--blr-reader-main-width) !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail {\n    left: var(--blr-reader-player-left, var(--blr-reader-page-padding)) !important;\n    top: calc(var(--blr-reader-player-bottom, 72vh) + 12px) !important;\n    bottom: auto !important;\n    width: var(--blr-reader-player-width, var(--blr-reader-main-width)) !important;\n    height: min(112px, calc(100vh - var(--blr-reader-player-bottom, 72vh) - 36px)) !important;\n    min-height: 72px;\n    max-height: none !important;\n    grid-template-rows: auto minmax(0, 1fr);\n    gap: 6px;\n    padding: 10px 12px;\n    border-radius: 10px;\n    overflow: hidden;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail .blr-reading-list {\n    display: flex;\n    align-items: stretch;\n    gap: 8px;\n    min-width: 0;\n    padding: 0 0 4px;\n    overflow-x: auto;\n    overflow-y: hidden;\n    scrollbar-width: thin;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-rail .blr-reading-chapter {\n    flex: 0 0 auto;\n    width: auto;\n    min-width: 120px;\n    max-width: 190px;\n    padding: 6px 10px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .left-container,\n  body[data-blr-reader-mode=\"1\"] .scroll-sticky,\n  body[data-blr-reader-mode=\"1\"] h1.video-title,\n  body[data-blr-reader-mode=\"1\"] .video-info-container,\n  body[data-blr-reader-mode=\"1\"] #viewbox_report {\n    width: var(--blr-reader-main-width) !important;\n    max-width: var(--blr-reader-main-width) !important;\n    margin-left: auto !important;\n    margin-right: auto !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .left-container {\n    transform: translateX(var(--blr-reader-center-offset)) !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] h1.video-title {\n    margin-top: 28px !important;\n    margin-bottom: 14px !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #playerWrap,\n  body[data-blr-reader-mode=\"1\"] .player-wrap {\n    margin-top: 0 !important;\n    border: 0;\n    border-radius: 4px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host {\n    position: fixed !important;\n    top: var(--blr-reader-player-top, 98px) !important;\n    right: var(--blr-reader-page-padding) !important;\n    bottom: 24px !important;\n    left: auto !important;\n    width: var(--blr-reader-transcript-width) !important;\n    max-width: var(--blr-reader-transcript-width) !important;\n    min-height: 0 !important;\n    height: auto !important;\n    margin: 0 !important;\n    padding: 0 !important;\n    border: 1px solid var(--blr-reader-border) !important;\n    border-radius: 0 !important;\n    background: var(--blr-reader-surface-2) !important;\n    box-shadow: var(--blr-reader-shadow) !important;\n    overflow-y: auto !important;\n    scroll-padding-top: 46px;\n    z-index: 2147483645;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-transcript-heading {\n    position: sticky;\n    top: 0;\n    display: flex;\n    align-items: center;\n    height: 38px;\n    margin: 0;\n    justify-content: space-between;\n    gap: 6px;\n    padding: 0 6px 0 10px;\n    box-sizing: border-box;\n    color: var(--blr-reader-muted);\n    background: var(--blr-reader-surface-2);\n    border-bottom: 1px solid var(--blr-reader-border);\n    font-size: 12px;\n    font-weight: 700;\n    letter-spacing: 0.08em;\n    z-index: 3;\n    pointer-events: auto;\n    user-select: none;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-heading-title {\n    min-width: 24px;\n    flex: 1 1 auto;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-heading-controls {\n    display: flex;\n    flex: 0 0 auto;\n    align-items: center;\n    gap: 4px;\n    letter-spacing: 0;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-tool-button {\n    -webkit-appearance: none;\n    appearance: none;\n    width: 26px;\n    height: 26px;\n    display: inline-flex;\n    flex: 0 0 26px;\n    align-items: center;\n    justify-content: center;\n    margin: 0;\n    padding: 0;\n    border: 1px solid var(--blr-reader-border);\n    border-radius: 50%;\n    background: var(--blr-reader-surface);\n    color: var(--blr-reader-text);\n    cursor: pointer;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-tool-button svg {\n    width: 17px;\n    height: 17px;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-tool-button:hover,\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-tool-button.is-active {\n    border-color: var(--blr-reader-accent);\n    color: var(--blr-reader-accent);\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-heading-controls\n    select {\n    -webkit-appearance: none;\n    appearance: none;\n    height: 26px;\n    flex: 0 0 auto;\n    padding: 0 23px 0 7px;\n    box-sizing: border-box;\n    border: 1px solid var(--blr-reader-border);\n    border-radius: 5px;\n    background-color: var(--blr-reader-surface);\n    background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m3 4.5 3 3 3-3' fill='none' stroke='%2364748b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\");\n    background-position: right 6px center;\n    background-repeat: no-repeat;\n    background-size: 12px 12px;\n    color: var(--blr-reader-text);\n    font-size: 12px;\n    font-weight: 500;\n    line-height: 1;\n    outline: none;\n  }\n\n  body[data-blr-reader-mode=\"1\"]\n    #blr-reading-inline-host\n    .blr-reading-transcript-heading-controls\n    select:focus {\n    border-color: var(--blr-reader-accent);\n  }\n\n  #blr-reading-transcript-language {\n    width: 72px;\n  }\n\n  #blr-reading-transcript-font-size {\n    width: 56px;\n  }\n\n  #blr-reading-transcript-font-weight {\n    width: 64px;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-main,\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-transcript {\n    width: 100% !important;\n    max-width: none !important;\n    height: auto !important;\n    margin: 0 !important;\n    box-sizing: border-box;\n  }\n\n  body[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-transcript {\n    padding: 8px 10px 24px;\n    overflow: visible;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-tail-spacer {\n    min-height: 45vh;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle {\n    position: fixed;\n    top: var(--blr-reader-player-top, 88px);\n    bottom: 24px;\n    width: 14px;\n    z-index: 2147483646;\n    cursor: col-resize;\n    pointer-events: auto;\n    touch-action: none;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle::before {\n    content: \"\";\n    position: absolute;\n    top: 0;\n    bottom: 0;\n    left: 6px;\n    width: 2px;\n    border-radius: 999px;\n    background: transparent;\n    transition: background 0.16s ease, box-shadow 0.16s ease;\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle:hover::before,\n  body[data-blr-reader-resizing] .blr-reading-resize-handle::before {\n    background: var(--blr-reader-accent);\n    box-shadow: 0 0 0 3px var(--blr-reader-accent-soft);\n  }\n\n  body[data-blr-reader-mode=\"1\"] .blr-reading-resize-handle-right {\n    right: calc(\n      var(--blr-reader-page-padding) + var(--blr-reader-transcript-width) +\n        var(--blr-reader-three-column-half-gap) - 7px\n    );\n  }\n\n  body[data-blr-reader-resizing=\"transcript\"],\n  body[data-blr-reader-resizing=\"transcript\"] * {\n    cursor: col-resize !important;\n    user-select: none !important;\n  }\n\n}\n\n@media (max-width: 1180px) {\n  .blr-reading-resize-handle {\n    display: none !important;\n  }\n}\n\n/* YouTube reader: keep the native player mounted and let it own its controls. */\nhtml[data-blr-reader-mode=\"1\"][data-blr-reader-platform=\"youtube\"],\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-platform=\"youtube\"] {\n  overflow: hidden !important;\n}\n\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-platform=\"youtube\"] :is(\n  ytd-app, #content.ytd-app, ytd-page-manager, ytd-watch-flexy,\n  #full-bleed-container.ytd-watch-flexy, #player-full-bleed-container.ytd-watch-flexy,\n  #columns.ytd-watch-flexy,\n  #primary.ytd-watch-flexy, #primary-inner.ytd-watch-flexy,\n  #player.ytd-watch-flexy, #player-container-outer.ytd-watch-flexy,\n  #player-container-inner.ytd-watch-flexy, #player-container.ytd-watch-flexy,\n  ytd-player, #container.ytd-player\n) {\n  transform: none !important;\n  contain: none !important;\n  overflow: visible !important;\n  /* Keep the docking hosts visible without painting YouTube's theater\n     backdrop across the reader. The video keeps its own player background. */\n  background: transparent !important;\n  box-shadow: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-platform=\"youtube\"] :is(\n  #full-bleed-container.ytd-watch-flexy, #player-full-bleed-container.ytd-watch-flexy\n)::before,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-platform=\"youtube\"] :is(\n  #full-bleed-container.ytd-watch-flexy, #player-full-bleed-container.ytd-watch-flexy\n)::after {\n  background: transparent !important;\n  box-shadow: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-platform=\"youtube\"] #cinematics {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-platform=\"youtube\"] #movie_player:not(.ytp-fullscreen):not(:fullscreen):not(:fullscreen *) {\n  position: fixed !important;\n  inset: auto !important;\n  top: var(--blr-reader-player-top, 98px) !important;\n  left: var(--blr-reader-player-left, var(--blr-reader-page-padding)) !important;\n  width: var(--blr-reader-player-rendered-width) !important;\n  height: var(--blr-reader-player-rendered-height) !important;\n  max-width: none !important;\n  max-height: none !important;\n  margin: 0 !important;\n  transform: none !important;\n  z-index: 100 !important;\n}\n\n/* Fullscreen can belong to the player itself or one of YouTube's wrappers.\n   Fill that viewport instead of falling back to stale native inline sizes,\n   and paint letterboxing black rather than exposing the reader page. */\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-platform=\"youtube\"] :is(\n  #movie_player.ytp-fullscreen, #movie_player:fullscreen, :fullscreen #movie_player\n) {\n  position: fixed !important;\n  inset: 0 !important;\n  width: 100% !important;\n  height: 100% !important;\n  max-width: none !important;\n  max-height: none !important;\n  margin: 0 !important;\n  transform: none !important;\n  background: #000 !important;\n  z-index: 100 !important;\n}\n\n/* A fullscreen docking host overrides its transparent theater background. */\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-platform=\"youtube\"] :fullscreen:has(#movie_player),\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-platform=\"youtube\"] :fullscreen:has(#movie_player)::backdrop,\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-platform=\"youtube\"] #movie_player:fullscreen::backdrop {\n  background: #000 !important;\n}\n\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-platform=\"youtube\"]:has(\n  #movie_player.ytp-fullscreen, #movie_player:fullscreen, :fullscreen #movie_player\n) :is(#blr-root, #blr-reading-inline-host) {\n  display: none !important;\n}\n\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-platform=\"youtube\"] #movie_player :is(.html5-video-container, video) {\n  width: 100% !important;\n  height: 100% !important;\n  top: 0 !important;\n  left: 0 !important;\n  object-fit: contain !important;\n}\n\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-platform=\"youtube\"] #movie_player .ytp-chrome-bottom {\n  width: calc(100% - 24px) !important;\n  left: 12px !important;\n}\n\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-platform=\"youtube\"] .blr-reading-topbar {\n  grid-template-columns: minmax(0, 1fr);\n  right: 76px;\n}\n\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-platform=\"youtube\"] .blr-reading-actions {\n  margin: 0;\n  opacity: 1;\n  visibility: visible;\n  pointer-events: auto;\n}\n\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-platform=\"youtube\"] #blr-reading-view[data-blr-reader-ready=\"0\"] {\n  opacity: 1;\n  visibility: visible;\n}\n\n/* Keep the title and all controls on one line, including the 280px column. */\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-transcript-heading {\n  flex-wrap: nowrap;\n  gap: 4px;\n  padding-left: 4px;\n  padding-right: 4px;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-transcript-heading-title {\n  flex: 0 0 auto;\n  min-width: 0;\n  overflow: visible;\n  white-space: nowrap;\n  letter-spacing: 0;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-transcript-heading-controls {\n  display: flex;\n  flex: 1 1 0;\n  flex-wrap: nowrap;\n  min-width: 0;\n  gap: 2px;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-transcript-tool-button {\n  flex: 0 0 26px;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-transcript-tool-button:disabled {\n  opacity: 0.6;\n  cursor: wait;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host .blr-reading-transcript-heading-controls select {\n  padding-left: 5px;\n  padding-right: 20px;\n  background-position: right 5px center;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host #blr-reading-transcript-language {\n  flex: 1 1 72px;\n  width: 72px;\n  min-width: 0;\n  max-width: none;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host #blr-reading-transcript-font-size {\n  flex: 0 0 46px;\n  width: 46px;\n  min-width: 0;\n}\n\nbody[data-blr-reader-mode=\"1\"] #blr-reading-inline-host #blr-reading-transcript-font-weight {\n  flex: 0 0 52px;\n  width: 52px;\n  min-width: 0;\n}\n\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-platform=\"youtube\"][data-blr-reader-has-chapters=\"1\"] .blr-reading-rail {\n  display: grid !important;\n  top: calc(var(--blr-reader-player-bottom) + 12px) !important;\n  left: var(--blr-reader-player-left) !important;\n  bottom: auto !important;\n  width: var(--blr-reader-player-width) !important;\n  height: 112px !important;\n  min-height: 0;\n  max-height: none !important;\n  grid-template-rows: auto minmax(0, 1fr);\n  gap: 6px;\n  padding: 10px 12px;\n  overflow: hidden;\n}\n\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-platform=\"youtube\"] .blr-reading-rail .blr-reading-list {\n  display: flex;\n  align-items: stretch;\n  gap: 8px;\n  min-width: 0;\n  overflow-x: auto;\n  overflow-y: hidden;\n}\n\nbody[data-blr-reader-mode=\"1\"][data-blr-reader-platform=\"youtube\"] .blr-reading-rail .blr-reading-chapter {\n  flex: 0 0 auto;\n  width: auto;\n  min-width: 120px;\n  max-width: 190px;\n  padding: 6px 10px;\n}\n\n@media (max-width: 1180px) {\n  body[data-blr-reader-mode=\"1\"][data-blr-reader-platform=\"youtube\"] #blr-reading-inline-host {\n    position: fixed !important;\n    top: calc(var(--blr-reader-player-bottom, 40vh) + 16px) !important;\n    right: var(--blr-reader-page-padding) !important;\n    bottom: 16px !important;\n    left: var(--blr-reader-page-padding) !important;\n    width: auto !important;\n    max-width: none !important;\n    min-height: 0 !important;\n    height: auto !important;\n    margin: 0 !important;\n    border: 1px solid var(--blr-reader-border);\n    border-radius: 12px;\n    scroll-padding-top: 46px;\n    z-index: 2147483645;\n  }\n\n  body[data-blr-reader-mode=\"1\"][data-blr-reader-platform=\"youtube\"][data-blr-reader-has-chapters=\"1\"] #blr-reading-inline-host {\n    top: calc(var(--blr-reader-player-bottom) + 144px) !important;\n  }\n\n  body[data-blr-reader-mode=\"1\"][data-blr-reader-platform=\"youtube\"] #blr-reading-inline-host .blr-reading-transcript {\n    height: auto;\n    overflow: visible;\n  }\n\n  body[data-blr-reader-mode=\"1\"][data-blr-reader-platform=\"youtube\"] .blr-reading-transcript-heading {\n    position: sticky;\n    top: 0;\n    display: flex;\n    align-items: center;\n    gap: 8px;\n    min-height: 44px;\n    padding: 6px 10px;\n    box-sizing: border-box;\n    border-bottom: 1px solid var(--blr-reader-border);\n    background: var(--blr-reader-surface-2);\n    color: var(--blr-reader-text);\n    font-size: 12px;\n    font-weight: 700;\n    z-index: 3;\n  }\n\n  body[data-blr-reader-mode=\"1\"][data-blr-reader-platform=\"youtube\"] .blr-reading-transcript-heading-controls {\n    display: flex;\n    flex: 1 1 auto;\n    flex-wrap: nowrap;\n    align-items: center;\n    justify-content: flex-end;\n    gap: 4px;\n    min-width: 0;\n  }\n\n  body[data-blr-reader-mode=\"1\"][data-blr-reader-platform=\"youtube\"] .blr-reading-transcript-tool-button {\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    width: 26px;\n    height: 26px;\n    padding: 0;\n    border: 1px solid var(--blr-reader-border);\n    border-radius: 50%;\n    background: var(--blr-reader-surface);\n    color: var(--blr-reader-text);\n    cursor: pointer;\n  }\n\n  body[data-blr-reader-mode=\"1\"][data-blr-reader-platform=\"youtube\"] .blr-reading-transcript-tool-button svg {\n    width: 17px;\n    height: 17px;\n  }\n\n  body[data-blr-reader-mode=\"1\"][data-blr-reader-platform=\"youtube\"] .blr-reading-transcript-heading-controls select {\n    height: 26px;\n    max-width: 130px;\n    border: 1px solid var(--blr-reader-border);\n    border-radius: 5px;\n    background: var(--blr-reader-surface);\n    color: var(--blr-reader-text);\n    font-size: 12px;\n  }\n\n  body[data-blr-reader-mode=\"1\"][data-blr-reader-platform=\"youtube\"] .blr-reading-transcript-tool-button:hover,\n  body[data-blr-reader-mode=\"1\"][data-blr-reader-platform=\"youtube\"] .blr-reading-transcript-tool-button:focus-visible {\n    border-color: var(--blr-reader-accent);\n    color: var(--blr-reader-accent);\n  }\n}\n");
 
   const chrome = {
     runtime: {
-      lastError: null,
       onMessage: {
         addListener(listener) {
           runtimeListeners.push(listener);
-        },
-        removeListener(listener) {
-          const index = runtimeListeners.indexOf(listener);
-          if (index >= 0) runtimeListeners.splice(index, 1);
         }
       },
       sendMessage(message, callback) {
@@ -62,10 +61,6 @@
       onChanged: {
         addListener(listener) {
           storageListeners.push(listener);
-        },
-        removeListener(listener) {
-          const index = storageListeners.indexOf(listener);
-          if (index >= 0) storageListeners.splice(index, 1);
         }
       },
       local: {
@@ -111,47 +106,73 @@
       storageListeners.forEach((listener) => listener(changes, "sync"));
       return { ok: true };
     }
-    if (message?.type === "fetch-json") {
-      return { ok: true, data: await requestJson(String(message.url || "")) };
+    if (message?.type === "fetch-json" || message?.type === "fetch-text") {
+      return { ok: true, data: await requestResource(String(message.url || ""), message.type === "fetch-text") };
     }
     return { ok: false, error: "此功能在独立阅读脚本中不可用" };
   }
 
-  async function requestJson(url) {
+  async function requestResource(url, asText = false) {
     if (!url) throw new Error("缺少请求地址");
     const normalizedUrl = url.startsWith("//") ? `https:${url}` : url;
+    const parsedUrl = new URL(normalizedUrl);
+    const isYouTubeSubtitle = asText && /(^|\.)youtube\.com$/.test(parsedUrl.hostname) &&
+      parsedUrl.pathname === "/api/timedtext";
+    const deadline = Date.now() + (isYouTubeSubtitle ? 3500 : 20000);
+    const controller = new AbortController();
+    let timeout = 0;
     let directError = null;
     try {
       const pageFetch =
         typeof unsafeWindow !== "undefined" && typeof unsafeWindow.fetch === "function"
           ? unsafeWindow.fetch.bind(unsafeWindow)
           : fetch;
-      const response = await pageFetch(normalizedUrl, {
-        method: "GET",
-        credentials: "include",
-        cache: "no-store",
-        headers: { Accept: "application/json, text/plain, */*" }
-      });
-      if (response.ok) return await response.json();
-      directError = new Error(`页面请求 HTTP ${response.status}`);
+      return await Promise.race([
+        (async () => {
+          const response = await pageFetch(normalizedUrl, {
+            method: "GET",
+            credentials: "include",
+            cache: "no-store",
+            headers: { Accept: "application/json, text/plain, */*" },
+            signal: controller.signal
+          });
+          if (!response.ok) throw new Error(`页面请求 HTTP ${response.status}`);
+          return asText ? response.text() : response.json();
+        })(),
+        new Promise((_, reject) => {
+          timeout = window.setTimeout(() => {
+            reject(new Error("页面请求超时"));
+            controller.abort();
+          }, isYouTubeSubtitle ? 1500 : 5000);
+        })
+      ]);
     } catch (error) {
       directError = error;
+    } finally {
+      window.clearTimeout(timeout);
     }
 
-    return requestJsonWithUserscriptApi(normalizedUrl, directError);
+    return requestJsonWithUserscriptApi(normalizedUrl, directError, Math.max(1, deadline - Date.now()), asText);
   }
 
-  function requestJsonWithUserscriptApi(url, directError = null) {
+  function requestJsonWithUserscriptApi(url, directError, timeoutMs, asText = false) {
     return new Promise((resolve, reject) => {
       let settled = false;
+      let timeout = 0;
+      let request = null;
       const finish = (handler, value) => {
         if (settled) return;
         settled = true;
+        window.clearTimeout(timeout);
         handler(value);
       };
       const onload = (response) => {
         if (response.status < 200 || response.status >= 300) {
           finish(reject, new Error(`HTTP ${response.status}`));
+          return;
+        }
+        if (asText) {
+          finish(resolve, response.responseText || response.response || "");
           return;
         }
         try {
@@ -178,12 +199,13 @@
         headers: {
           Accept: "application/json, text/plain, */*",
           "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
-          Referer: "https://www.bilibili.com/"
+          Referer: /(^|\.)youtube\.com$/.test(new URL(url).hostname)
+            ? "https://www.youtube.com/" : "https://www.bilibili.com/"
         },
         responseType: "text",
         anonymous: false,
         withCredentials: true,
-        timeout: 20000,
+        timeout: timeoutMs,
         onload,
         ontimeout() { finish(reject, new Error("请求超时")); },
         onerror
@@ -199,7 +221,11 @@
         return;
       }
       try {
-        const request = requestApi(requestOptions);
+        timeout = window.setTimeout(() => {
+          finish(reject, new Error("请求超时"));
+          try { request?.abort?.(); } catch {}
+        }, timeoutMs);
+        request = requestApi(requestOptions);
         if (request && typeof request.then === "function") {
           request.then(onload).catch(onerror);
         }
@@ -229,7 +255,8 @@
     });
   }
 
-  GM_registerMenuCommand("进入阅读模式", () => {
+  const isYouTube = ["www.youtube.com", "youtube.com"].includes(location.hostname);
+  GM_registerMenuCommand(isYouTube ? "展开 YouTube 字幕" : "进入阅读模式", () => {
     const readerUrl = new URL(location.href);
     readerUrl.searchParams.set("bilibli_reader", "1");
     dispatchRuntimeMessage({
@@ -238,11 +265,15 @@
     });
   });
 
-  GM_registerMenuCommand("退出阅读模式", () => {
+  GM_registerMenuCommand(isYouTube ? "收起 YouTube 字幕" : "退出阅读模式", () => {
+    if (isYouTube) {
+      const panel = document.getElementById("blr-native-transcript-panel");
+      if (panel && !panel.classList.contains("is-folded")) panel.querySelector("[data-native-transcript-toggle]")?.click();
+      return;
+    }
     const closeButton = document.getElementById("blr-reading-close-btn");
     if (closeButton) closeButton.click();
   });
-
 (() => {
 if (globalThis.__BILIBLI_READER_CONTENT_SCRIPT_BOOTSTRAPPED__) {
   return;
@@ -250,16 +281,6 @@ if (globalThis.__BILIBLI_READER_CONTENT_SCRIPT_BOOTSTRAPPED__) {
 globalThis.__BILIBLI_READER_CONTENT_SCRIPT_BOOTSTRAPPED__ = true;
 
 const DEFAULT_SETTINGS = {
-  noteFolder: "Clippings/Bilibili",
-  obsidianApiBaseUrl: "http://127.0.0.1:27123",
-  obsidianApiKey: "",
-  tags: "clippings,bilibili",
-  downloadFormat: "srt",
-  includeDateInFilename: true,
-  includeHotCommentsInNote: false,
-  enablePlayerAiQuickAction: false,
-  playerAiQuickPrompt: "整理这期视频的内容，输出结构化总结：主题、核心观点、关键细节、结论与可执行启发。",
-  includeTimestampInBody: true,
   enableDebugLogs: false,
   readerTheme: "light",
   readerFontScale: "xl",
@@ -269,35 +290,17 @@ const DEFAULT_SETTINGS = {
   readerContentWidth: "medium",
   readerChapterWidthPx: 220,
   readerTranscriptWidthPx: 440,
-  readerVideoHeightPx: 0,
-  readerChapterVisibility: "show",
-  readerTranscriptVisible: true,
-  readerTimestampVisible: true,
   nativeTranscriptTheme: "light",
   nativeTranscriptFontSize: 14,
   nativeTranscriptFontWeight: 500,
-  readerDefaultsVersion: 3,
-  frontmatterFields: [
-    "title",
-    "url",
-    "bvid",
-    "cid",
-    "author",
-    "upload_date",
-    "subtitle_lang",
-    "created",
-    "tags"
-  ],
-  fixedFrontmatterProperties: [],
-  notePlaceholderSections: []
+  readerDefaultsVersion: 3
 };
-const PLAYER_AI_ICON_VARIANT = "badge";
 
-const READER_VERSION = "0.0.9";
+const READER_VERSION = "0.0.10";
 const CACHE_KEY_PREFIX = "bilibli_reader_subtitle_cache_";
 globalThis.__BILIBLI_READER_CONTENT_SCRIPT_LOADED__ = READER_VERSION;
-const state = {
-  currentUrl: location.href,
+// Data and request identity for the current video.
+const clipState = {
   fetchRunId: 0,
   fetchClipSignature: "",
   bvid: "",
@@ -309,7 +312,6 @@ const state = {
   pageTitle: "",
   collection: null,
   videoDuration: 0,
-  description: "",
   title: "",
   author: "",
   uploadDate: "",
@@ -318,93 +320,98 @@ const state = {
   selectedSubtitleUrl: "",
   selectedSubtitleLang: "",
   subtitleBody: [],
+  subtitleRevision: 0,
   subtitleFetchState: "idle",
   chapters: [],
-  hotComments: [],
-  markdown: "",
-  srt: "",
-  txt: "",
-  readingViewOpen: false,
-  readingModeTransition: null,
-  readingViewClosing: false,
-  readingNativePageMode: false,
-  readingAutoScroll: true,
-  readingTheme: "light",
-  readingFontScale: "m",
-  readingFontWeight: "normal",
-  readingLetterSpacing: "normal",
-  readingLineHeight: "tight",
-  readingContentWidth: "medium",
-  readingChapterWidthPx: 220,
-  readingTranscriptWidthPx: 440,
-  readingTranscriptAutoWidth: false,
-  readingChapterVisible: true,
-  readingTranscriptVisible: true,
-  readingTimestampVisible: true,
-  readingActiveSubtitleIndex: -1,
-  readingActiveChapterIndex: -1,
-  readingNextScrollBehavior: "smooth",
-  readingSyncTimer: 0,
-  currentClipSignature: "",
-  readingVideoEl: null,
-  readingPlayerHost: null,
-  readingMainOriginalParent: null,
-  readingMainOriginalNextSibling: null,
-  readingPlayerAdjustedNodes: [],
-  readingPlayerObserver: null,
-  readingPlayerMountTimer: 0,
-  readingPlayerRetryTimer: 0,
-  readingMiniDismissTimer: 0,
-  readingControlsHideTimer: 0,
-  readingControlsRecoveryTimer: 0,
-  readingControlsRecoveryInFlight: false,
-  readingControlsLastRecoverAt: 0,
-  readingControlsHoverHost: null,
-  readingHeaderHoverHost: null,
-  readingHeaderHideTimer: 0,
-  readingVideoEventsBound: false,
-  readingLayoutBound: false,
+  currentClipSignature: ""
+};
+
+// Transient reader lifecycle, playback following, and layout scheduling.
+const readerSessionState = {
+  open: false,
+  id: 0,
+  mountTask: null,
+  layoutFrame: 0,
+  layoutDirty: false,
+  resizeObserver: null,
+  observedPlayer: null,
+  resizeCleanup: null,
+  transition: null,
+  closing: false,
+  transcriptAutoWidth: false,
+  activeSubtitleIndex: -1,
+  activeChapterIndex: -1,
+  nextScrollBehavior: "smooth",
+  syncTimer: 0,
+  playerMountTimer: 0,
+  playerRetryTimer: 0,
+  manualScrollPauseUntil: 0,
+  programmaticScrollUntil: 0,
+  collectionSwitchInFlight: false,
+  ready: false
+};
+
+// Persisted settings and their normalized presentation values.
+const readerPreferences = {
+  theme: "light",
+  fontScale: "m",
+  fontWeight: "normal",
+  letterSpacing: "normal",
+  lineHeight: "tight",
+  contentWidth: "medium",
+  chapterWidthPx: 220,
+  transcriptWidthPx: 440,
+  nativeTheme: "light",
+  nativeFontSize: 14,
+  nativeFontWeight: 500,
+  settings: { ...DEFAULT_SETTINGS }
+};
+
+// Native player references and compatibility resources owned by the reader.
+const readerPlayerState = {
+  videoEl: null,
+  host: null,
+  adjustedNodes: [],
+  observer: null,
+  miniDismissTimer: 0,
+  controlsHideTimer: 0,
+  controlsRecoveryTimer: 0,
+  controlsRecoveryInFlight: false,
+  controlsLastRecoverAt: 0,
+  controlsHoverHost: null,
+  videoEventsBound: false,
+  layoutBound: false
+};
+
+// Normal-page transcript panel lifecycle and playback following.
+const nativeTranscriptState = {
+  observer: null,
+  syncTimer: 0,
+  resizeObserver: null,
+  observedPlayer: null,
+  playbackTimer: 0,
+  loadPromise: null,
+  loadSignature: "",
+  loadedSignature: "",
+  displaySignature: "",
+  open: true,
+  activeIndex: -1,
+  manualScrollPauseUntil: 0,
+  programmaticScrollUntil: 0
+};
+
+// Page-level bindings, entry controls, and the reader DOM presentation.
+const uiState = {
+  mainOriginalParent: null,
+  mainOriginalNextSibling: null,
+  headerHoverHost: null,
+  headerHideTimer: 0,
   uiEventsBound: false,
   runtimeEventsBound: false,
   settingsWatcherBound: false,
   normalPageStateGuardBound: false,
   urlWatcherStarted: false,
-  playerAiQuickActionObserver: null,
-  playerAiQuickActionLayoutBound: false,
-  playerAiQuickActionSyncTimer: 0,
-  playerAiQuickActionRevealTimer: 0,
-  playerAiQuickActionHideTimer: 0,
-  playerAiQuickActionCursorHideTimer: 0,
-  playerAiQuickActionSubmitting: false,
-  playerAiQuickActionSuppressedUntil: 0,
-  pageReaderEntryObserver: null,
-  pageReaderEntrySyncTimer: 0,
-  nativeTranscriptObserver: null,
-  nativeTranscriptSyncTimer: 0,
-  nativeTranscriptResizeObserver: null,
-  nativeTranscriptObservedPlayer: null,
-  nativeTranscriptPlaybackTimer: 0,
-  nativeTranscriptLoadPromise: null,
-  nativeTranscriptLoadSignature: "",
-  nativeTranscriptLoadedSignature: "",
-  nativeTranscriptDisplaySignature: "",
-  nativeTranscriptAutoFoldedSignature: "",
-  nativeTranscriptRenderedKey: "",
-  nativeTranscriptOpen: true,
-  nativeTranscriptTheme: "light",
-  nativeTranscriptFontSize: 14,
-  nativeTranscriptFontWeight: 500,
-  nativeTranscriptActiveIndex: -1,
-  nativeTranscriptManualScrollPauseUntil: 0,
-  nativeTranscriptProgrammaticScrollUntil: 0,
-  normalPageStateObserver: null,
-  readingManualScrollPauseUntil: 0,
-  readingProgrammaticScrollUntil: 0,
-  readingCollectionSwitchInFlight: false,
-  readingViewReady: false,
-  statusText: "准备就绪，点击“刷新抓取”开始。",
-  messageText: "",
-  settings: { ...DEFAULT_SETTINGS }
+  collectionSnapshot: null
 };
 
 function formatLocalDate(value = Date.now()) {
@@ -413,6 +420,7 @@ function formatLocalDate(value = Date.now()) {
 }
 
 function isReaderMode(url = location.href) {
+  if (isYouTubePage(url) && !extractYouTubeVideoId(url)) return false;
   try {
     return new URL(url).searchParams.get("bilibli_reader") === "1";
   } catch {
@@ -438,8 +446,8 @@ function replaceReaderModeUrl(nextUrl) {
 
   try {
     history.replaceState(history.state, "", targetUrl);
-    state.currentUrl = location.href;
-    state.currentClipSignature = computeCurrentClipSignature(location.href);
+    clipState.currentClipSignature = computeCurrentClipSignature(location.href);
+    refreshReaderPageScopes();
   } catch (error) {
     logWarn("[BOC] failed to replace reader mode url", error);
   }
@@ -451,209 +459,6 @@ function isWatchlaterPage(url = location.href) {
   } catch {
     return false;
   }
-}
-
-function getReaderContentMaxPx() {
-  if (state.readingContentWidth === "compact") {
-    return 720;
-  }
-  if (state.readingContentWidth === "narrow") {
-    return 820;
-  }
-  if (state.readingContentWidth === "wide") {
-    return 1120;
-  }
-  if (state.readingContentWidth === "full") {
-    return 1280;
-  }
-  return 980;
-}
-
-function getReaderPagePaddingPx() {
-  return Math.min(32, Math.max(16, window.innerWidth * 0.028));
-}
-
-function getReaderMainWidthLimit() {
-  const pagePadding = getReaderPagePaddingPx();
-  if (window.innerWidth > 1180) {
-    const { transcriptWidth, gap } = getEffectiveReaderColumnWidths();
-    const availableWidth = window.innerWidth - pagePadding * 2 - transcriptWidth - gap;
-    // Fit against the real video ratio and player top in layoutReaderPlayerHost.
-    return Math.max(1, availableWidth);
-  }
-  return Math.max(320, Math.min(getReaderContentMaxPx(), window.innerWidth - pagePadding * 2));
-}
-
-function getReaderPlayerMaxHeightPx(playerTop) {
-  const isDesktop = window.innerWidth > 1180;
-  const hasChapterRail = isDesktop && state.readingChapterVisible &&
-    normalizeChapters(state.chapters || []).length > 0;
-  // Only visible chapters reserve space below the video.
-  const bottomSpace = hasChapterRail ? 148 : 0;
-  let playerBottomLimit = window.innerHeight - bottomSpace;
-  if (isDesktop && state.readingTranscriptVisible) {
-    const transcriptRect = document.getElementById("blr-reading-inline-host")?.getBoundingClientRect();
-    // Before the transcript mounts, use its desktop CSS bottom inset (24px).
-    const transcriptBottom = transcriptRect?.width > 0 && transcriptRect.height > 0
-      ? transcriptRect.bottom
-      : window.innerHeight - 24;
-    playerBottomLimit = Math.min(playerBottomLimit, transcriptBottom);
-  }
-  return Math.max(1, playerBottomLimit - playerTop);
-}
-
-function normalizeReaderColumnWidth(value, fallback, min, max) {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? Math.round(Math.min(max, Math.max(min, parsed))) : fallback;
-}
-
-function getReaderVideoAspectRatio() {
-  const video = state.readingVideoEl || getRuntimeVideoElement();
-  return Number(video?.videoWidth) > 0 && Number(video?.videoHeight) > 0
-    ? Number(video.videoWidth) / Number(video.videoHeight)
-    : 16 / 9;
-}
-
-function getEffectiveReaderColumnWidths() {
-  const pagePadding = getReaderPagePaddingPx();
-  const gap = Math.min(24, Math.max(16, window.innerWidth * 0.014));
-  const minChapterWidth = 140;
-  let minTranscriptWidth = 280;
-  const minVideoWidth = 420;
-  const chapterWidth = normalizeReaderColumnWidth(state.readingChapterWidthPx, 220, minChapterWidth, 360);
-  let maxTranscriptWidth = Math.max(
-    minTranscriptWidth,
-    window.innerWidth - pagePadding * 2 - gap - minVideoWidth
-  );
-  if (state.readingViewOpen && window.innerWidth > 1180) {
-    const video = state.readingVideoEl || getRuntimeVideoElement();
-    const playerHost = state.readingPlayerHost || findReaderPlayerHost(video);
-    const playerNode = getReaderPlayerWrapNode(playerHost) || playerHost;
-    const playerTop = playerNode?.getBoundingClientRect?.().top ?? 98;
-    const maxHeight = getReaderPlayerMaxHeightPx(playerTop);
-    const availableWidth = window.innerWidth - pagePadding * 2 - gap;
-    // Give the video its largest complete frame first, then use the remaining
-    // horizontal space for subtitles instead of reserving a fixed-width panel.
-    const videoWidth = Math.min(availableWidth - 280, maxHeight * getReaderVideoAspectRatio());
-    minTranscriptWidth = Math.max(280, Math.ceil(availableWidth - videoWidth));
-    maxTranscriptWidth = Math.max(
-      minTranscriptWidth, Math.floor(availableWidth - Math.min(minVideoWidth, videoWidth))
-    );
-  }
-  const transcriptWidth = state.readingViewOpen && window.innerWidth > 1180 && state.readingTranscriptAutoWidth
-    ? minTranscriptWidth
-    : normalizeReaderColumnWidth(state.readingTranscriptWidthPx, 440, minTranscriptWidth, maxTranscriptWidth);
-
-  return {
-    chapterWidth: Math.round(chapterWidth),
-    transcriptWidth: Math.round(transcriptWidth),
-    minTranscriptWidth,
-    maxTranscriptWidth,
-    gap
-  };
-}
-
-function applyReaderColumnLayout() {
-  const readingView = byId(ids.readingView);
-  if (!readingView) return;
-  const { chapterWidth, transcriptWidth, minTranscriptWidth, maxTranscriptWidth, gap } = getEffectiveReaderColumnWidths();
-  const mainWidth = getReaderMainWidthLimit();
-  const centerOffset = Math.round(-(transcriptWidth + gap) / 2);
-  [document.documentElement, document.body, readingView].forEach((node) => {
-    node.style.setProperty("--blr-reader-rail-width", `${chapterWidth}px`);
-    node.style.setProperty("--blr-reader-transcript-width", `${transcriptWidth}px`);
-    node.style.setProperty("--blr-reader-center-offset", `${centerOffset}px`);
-    node.style.setProperty("--blr-reader-main-width", `${Math.round(mainWidth)}px`);
-  });
-  const resizeHandle = document.getElementById(ids.readingTranscriptResizeHandle);
-  resizeHandle?.setAttribute("aria-valuenow", String(transcriptWidth));
-  resizeHandle?.setAttribute("aria-valuemin", String(minTranscriptWidth));
-  resizeHandle?.setAttribute("aria-valuemax", String(maxTranscriptWidth));
-}
-
-function updateReaderChapterRailPosition(rect = null) {
-  const readingView = document.getElementById(ids.readingView);
-  if (!readingView || window.innerWidth <= 1180) return;
-
-  const playerNode = getReaderPlayerWrapNode() || state.readingPlayerHost;
-  const playerRect = rect || playerNode?.getBoundingClientRect?.();
-  if (!playerRect || !(playerRect.width > 0) || !(playerRect.height > 0)) return;
-
-  [document.documentElement, document.body, readingView].forEach((node) => {
-    node.style.setProperty("--blr-reader-player-left", `${Math.round(playerRect.left)}px`);
-    node.style.setProperty("--blr-reader-player-top", `${Math.round(playerRect.top)}px`);
-    node.style.setProperty("--blr-reader-player-bottom", `${Math.round(playerRect.bottom)}px`);
-    node.style.setProperty("--blr-reader-player-width", `${Math.round(playerRect.width)}px`);
-  });
-}
-
-function clearNativeReaderFloatingStyles(playerHost = state.readingPlayerHost) {
-  if (!state.readingNativePageMode || !playerHost) {
-    return;
-  }
-
-  const targets = [];
-  let current = playerHost;
-  let depth = 0;
-  while (current && current !== document.body && depth < 8) {
-    if (
-      current.matches?.(
-        ".bpx-player-container, .bpx-docker, .bpx-player-video-area, .bpx-player-primary-area, #bilibili-player, #playerWrap, .player-wrap"
-      )
-    ) {
-      targets.push(current);
-    }
-    if (current.id === "playerWrap") {
-      break;
-    }
-    current = current.parentElement;
-    depth += 1;
-  }
-
-  targets.forEach((node) => {
-    node.style.removeProperty("position");
-    node.style.removeProperty("inset");
-    node.style.removeProperty("left");
-    node.style.removeProperty("top");
-    node.style.removeProperty("right");
-    node.style.removeProperty("bottom");
-    node.style.removeProperty("transform");
-    node.style.removeProperty("width");
-    node.style.removeProperty("height");
-    node.style.removeProperty("max-width");
-    node.style.removeProperty("max-height");
-    node.style.removeProperty("margin");
-    node.style.removeProperty("z-index");
-  });
-}
-
-function getReaderPlayerWrapNode(playerHost = state.readingPlayerHost) {
-  return (
-    playerHost?.closest?.("#playerWrap") ||
-    playerHost?.closest?.(".player-wrap") ||
-    document.getElementById("playerWrap") ||
-    document.querySelector(".player-wrap")
-  );
-}
-
-function hasNativeReaderPlayerLayoutIssue(playerHost = state.readingPlayerHost) {
-  if (!state.readingNativePageMode || !playerHost) {
-    return false;
-  }
-
-  const playerStyle = window.getComputedStyle(playerHost);
-  if (playerStyle.position === "fixed" || playerStyle.position === "sticky") {
-    return true;
-  }
-
-  const playerRect = playerHost.getBoundingClientRect();
-  const wrapNode = getReaderPlayerWrapNode(playerHost);
-  if (!wrapNode) {
-    return false;
-  }
-
-  const wrapRect = wrapNode.getBoundingClientRect();
-  return wrapRect.height <= 8 && playerRect.height > 120;
 }
 
 function normalizeReaderTheme(value) {
@@ -673,10 +478,6 @@ function normalizeNativeTranscriptFontSize(value) {
   return [12, 14, 16, 18, 20, 22].includes(size) ? size : 14;
 }
 
-function normalizeNativeTranscriptTheme(value) {
-  return ["light", "dark", "paper"].includes(value) ? value : "light";
-}
-
 function normalizeNativeTranscriptFontWeight(value) {
   const weight = Number(value);
   return [300, 400, 500, 600, 700].includes(weight) ? weight : 500;
@@ -694,16 +495,8 @@ function normalizeReaderContentWidth(value) {
   return ["compact", "narrow", "medium", "wide", "full"].includes(value) ? value : "medium";
 }
 
-function normalizeReaderTranscriptVisible(value) {
-  return value !== false;
-}
-
-function normalizeReaderTimestampVisible(value) {
-  return value !== false;
-}
-
 function shouldDebugLog() {
-  return Boolean(state.settings?.enableDebugLogs);
+  return Boolean(readerPreferences.settings?.enableDebugLogs);
 }
 
 function logInfo(...args) {
@@ -729,32 +522,19 @@ function installReaderDebugHelpers() {
 
 const ids = {
   root: "blr-root",
-  panel: "blr-panel",
-  status: "blr-status",
-  meta: "blr-meta",
-  subtitleSelect: "blr-subtitle-select",
-  preview: "blr-preview",
-  message: "blr-message",
-  copyBtn: "blr-copy-btn",
-  downloadBtn: "blr-download-btn",
-  sendBtn: "blr-send-btn",
-  refreshBtn: "blr-refresh-btn",
-  closeBtn: "blr-close-btn",
-  settingsBtn: "blr-settings-btn",
   readingView: "blr-reading-view",
   readingPageTitle: "blr-reading-page-title",
   readingEpisodeTitle: "blr-reading-episode-title",
   readingCollectionNav: "blr-reading-collection-nav",
   readingCollectionList: "blr-reading-collection-list",
-  readingPlayerSlot: "blr-reading-player-slot",
   readingStatus: "blr-reading-status",
   readingCloseBtn: "blr-reading-close-btn",
-  readingRefreshBtn: "blr-reading-refresh-btn",
   readingTranscriptResizeHandle: "blr-reading-transcript-resize-handle",
   readingMeta: "blr-reading-meta",
   readingChapterList: "blr-reading-chapters",
   readingTranscriptList: "blr-reading-transcript",
   readingTranscriptTailSpacer: "blr-reading-tail-spacer",
+  readingTranscriptReaderButton: "blr-reading-transcript-reader",
   readingTranscriptReturnButton: "blr-reading-transcript-return",
   readingTranscriptThemeButton: "blr-reading-transcript-theme",
   readingTranscriptQuickSubtitleSelect: "blr-reading-transcript-language",
@@ -764,6 +544,7 @@ const ids = {
   nativeTranscriptHeader: "blr-native-transcript-header",
   nativeTranscriptBody: "blr-native-transcript-body",
   nativeTranscriptControls: "blr-native-transcript-controls",
+  nativeTranscriptReaderButton: "blr-native-transcript-reader",
   nativeTranscriptReturnButton: "blr-native-transcript-return",
   nativeTranscriptThemeButton: "blr-native-transcript-theme",
   nativeTranscriptSelect: "blr-native-transcript-select",
@@ -772,7 +553,6 @@ const ids = {
   nativeTranscriptList: "blr-native-transcript-list"
 };
 
-init();
 
 function init() {
   // document-idle 不代表 B 站已完成异步挂载；提前插入节点会破坏 Vue 的 SSR hydration。
@@ -788,6 +568,12 @@ function init() {
     return;
   }
 
+  // A full reload starts in the native view. Preserve other query parameters,
+  // the hash and history state, without navigating or restoring a reader session.
+  if (isReaderMode() && performance.getEntriesByType("navigation")[0]?.type === "reload") {
+    history.replaceState(history.state, "", stripReaderModeUrl());
+  }
+
   logInfo(`[Bilibili Reader] content script loaded, version=${READER_VERSION}`);
   ensureUiReady({ forceRecreate: true });
   installReaderDebugHelpers();
@@ -797,23 +583,21 @@ function init() {
     document.documentElement.setAttribute("data-blr-reader-mode", "1");
     document.body.setAttribute("data-blr-reader-mode", "1");
   } else {
-    clearReaderModePageState();
+    clearReaderPresentationAttributes();
   }
 
   bindRuntimeEvents();
   bindSettingsWatcher();
   bindNormalPageStateGuard();
-  bindPlayerAiQuickActionLayoutEvents();
-  startPageReaderEntryObserver();
+
   startNativeTranscriptPanelObserver();
   startUrlWatcher();
   getSettings().then((settings) => {
-    state.settings = settings;
+    readerPreferences.settings = settings;
     hydrateReaderStateFromSettings(settings);
     hydrateNativeTranscriptSettings(settings);
     applyReadingViewPresentation();
-    startPlayerAiQuickActionObserver();
-    schedulePlayerAiQuickActionSync();
+
     scheduleNativeTranscriptPanelSync(0);
     if (shouldEnterReaderMode) {
       enterReaderMode().catch((error) => {
@@ -827,114 +611,39 @@ function ensureUiReady({ forceRecreate = false } = {}) {
   const existingRoot = document.getElementById(ids.root);
   if (existingRoot && forceRecreate) {
     existingRoot.remove();
-    state.uiEventsBound = false;
+    uiState.uiEventsBound = false;
   }
 
   let root = document.getElementById(ids.root);
   if (!root) {
     root = document.createElement("div");
     root.id = ids.root;
-    root.innerHTML = buildUiHtml();
+    root.innerHTML = readerHtml(buildUiHtml());
     document.body.appendChild(root);
-    state.uiEventsBound = false;
+    uiState.uiEventsBound = false;
   }
 
-  if (!state.uiEventsBound) {
+  if (!uiState.uiEventsBound) {
     bindUiEvents();
-    state.uiEventsBound = true;
+    uiState.uiEventsBound = true;
   }
 }
 
-function clearReaderModePageState() {
-  document.documentElement.removeAttribute("data-blr-reader-mode");
-  document.documentElement.removeAttribute("data-blr-reader-line-height");
-  document.documentElement.removeAttribute("data-blr-reader-theme");
-  document.documentElement.removeAttribute("data-blr-reader-font-scale");
-  document.documentElement.removeAttribute("data-blr-reader-font-weight");
-  document.documentElement.removeAttribute("data-blr-reader-letter-spacing");
-  document.documentElement.removeAttribute("data-blr-reader-content-width");
-  document.documentElement.removeAttribute("data-blr-reader-chapter-visibility");
-  document.documentElement.removeAttribute("data-blr-reader-has-chapters");
-  document.documentElement.removeAttribute("data-blr-reader-transcript-visible");
-  document.documentElement.removeAttribute("data-blr-reader-timestamp-visible");
-  document.documentElement.removeAttribute("data-blr-reader-transcript-mode");
-  document.body.removeAttribute("data-blr-reader-mode");
-  document.body.removeAttribute("data-blr-reader-line-height");
-  document.body.removeAttribute("data-blr-reader-font-weight");
-  document.body.removeAttribute("data-blr-reader-transcript-visible");
-  document.body.removeAttribute("data-blr-reader-timestamp-visible");
-  document.body.removeAttribute("data-blr-reader-transcript-mode");
+function clearReaderPresentationAttributes() {
+  const attributes = [
+    "mode", "platform", "theme", "font-scale", "font-weight", "letter-spacing", "line-height",
+    "content-width", "has-chapters", "resizing"
+  ];
+  [document.documentElement, document.body].forEach((node) => {
+    attributes.forEach((name) => node.removeAttribute(`data-blr-reader-${name}`));
+  });
   document.body.removeAttribute("data-blr-reading-active");
 }
 
-function startPageReaderEntryObserver() {
-  ensurePageReaderEntryButton();
-  if (state.pageReaderEntryObserver) {
-    return;
-  }
-
-  state.pageReaderEntryObserver = new MutationObserver(() => {
-    schedulePageReaderEntrySync();
-  });
-  state.pageReaderEntryObserver.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
-}
-
-function schedulePageReaderEntrySync(delayMs = 120) {
-  if (state.pageReaderEntrySyncTimer) {
-    return;
-  }
-  state.pageReaderEntrySyncTimer = window.setTimeout(() => {
-    state.pageReaderEntrySyncTimer = 0;
-    ensurePageReaderEntryButton();
-  }, delayMs);
-}
-
-function ensurePageReaderEntryButton() {
-  if (!extractBvid(location.href) && !isWatchlaterPage()) {
-    return;
-  }
-
-  const host = document.querySelector(
-    "#viewbox_report, .video-info-container, .video-info-title"
-  );
-  if (!host) {
-    return;
-  }
-
-  let button = document.getElementById("blr-page-reader-entry");
-  if (button && button.parentElement === host) {
-    return;
-  }
-  if (button) {
-    button.parentElement?.classList.remove("blr-page-reader-entry-host");
-    button.remove();
-  }
-
-  host.classList.add("blr-page-reader-entry-host");
-  button = document.createElement("button");
-  button.id = "blr-page-reader-entry";
-  button.type = "button";
-  button.title = "进入 Bilibili Reader 阅读模式";
-  button.setAttribute("aria-label", "进入阅读模式");
-  button.innerHTML = `
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M4.5 5.5A2.5 2.5 0 0 1 7 3h4a3 3 0 0 1 3 3v13a3 3 0 0 0-3-3H7a2.5 2.5 0 0 0-2.5 2.5z"></path>
-      <path d="M19.5 5.5A2.5 2.5 0 0 0 17 3h-1"></path>
-      <path d="M19.5 5.5v13A2.5 2.5 0 0 0 17 16h-1"></path>
-    </svg>
-    <span>阅读</span>
-  `;
-  button.addEventListener("click", onPageReaderEntryClick);
-  host.appendChild(button);
-}
-
-function onPageReaderEntryClick(event) {
+function onTranscriptReaderEntryClick(event) {
   event.preventDefault();
   event.stopPropagation();
-  if (state.readingViewOpen) {
+  if (readerSessionState.open) {
     return;
   }
 
@@ -944,2089 +653,683 @@ function onPageReaderEntryClick(event) {
   ensureUiReady();
 
   enterReaderMode({ animate: true }).catch((error) => {
+    if (readerSessionState.open) {
+      readerSessionState.transition?.cancel();
+      replaceReaderModeUrl(stripReaderModeUrl());
+      closeReadingView();
+    }
     button.disabled = false;
     button.classList.remove("is-loading");
-    logWarn("[Bilibili Reader] page entry failed", error);
+    logWarn("[Bilibili Reader] transcript entry failed", error);
     renderReadingStatus(`阅读视图启动失败：${getErrorMessage(error)}`);
   });
 }
-function startNativeTranscriptPanelObserver() {
-  if (state.nativeTranscriptObserver || !document.body) {
-    return;
-  }
-
-  state.nativeTranscriptObserver = new MutationObserver(() => {
-    scheduleNativeTranscriptPanelSync();
-  });
-  state.nativeTranscriptObserver.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
-  window.addEventListener("resize", () => scheduleNativeTranscriptPanelSync(60), {
-    passive: true
-  });
-  startNativeTranscriptPlaybackSync();
-  scheduleNativeTranscriptPanelSync(0);
+// YouTube uses its native player and shares transcript data with the reader.
+function isYouTubePage(url = location.href) {
+  try { return ["www.youtube.com", "youtube.com"].includes(new URL(url).hostname); }
+  catch { return false; }
 }
 
-function scheduleNativeTranscriptPanelSync(delayMs = 120) {
-  if (state.nativeTranscriptSyncTimer) {
-    return;
-  }
-  state.nativeTranscriptSyncTimer = window.setTimeout(() => {
-    state.nativeTranscriptSyncTimer = 0;
-    // closeReadingView restores the panel before the exit snapshot. Keep
-    // observer-driven refreshes out of the animation; completion syncs again.
-    if (state.readingModeTransition?.direction === "exit") return;
-    ensureNativeTranscriptPanel();
-  }, Math.max(0, Number(delayMs) || 0));
-}
-
-function shouldShowNativeTranscriptPanel() {
-  return Boolean(extractBvid(location.href)) && !isReaderMode() && !state.readingViewOpen;
-}
-
-function findNativeTranscriptAnchor() {
-  const danmaku = document.getElementById("danmukuBox") || document.querySelector(".danmaku-box");
-  const rightContainer = danmaku?.closest(".right-container-inner");
-  const collaborationPanel = rightContainer?.querySelector(
-    ":scope > .up-panel-container .members-info-container"
-  );
-  const collaborationAnchor = collaborationPanel?.closest(".up-panel-container");
-  return collaborationAnchor || danmaku;
-}
-
-function ensureNativeTranscriptPanel() {
-  const existing = document.getElementById(ids.nativeTranscriptPanel);
-  if (!shouldShowNativeTranscriptPanel()) {
-    existing?.remove();
-    state.nativeTranscriptRenderedKey = "";
-    return null;
-  }
-
-  const anchor = findNativeTranscriptAnchor();
-  if (!anchor?.parentElement) {
-    return null;
-  }
-
-  let panel = existing;
-  const created = !panel;
-  if (!panel) {
-    panel = document.createElement("section");
-    panel.id = ids.nativeTranscriptPanel;
-    panel.className = "blr-native-transcript-panel";
-    panel.setAttribute("data-blr-extension-node", "native-transcript");
-    panel.innerHTML = `
-      <div id="${ids.nativeTranscriptHeader}" class="blr-native-transcript-header">
-        <button
-          class="blr-native-transcript-title-button"
-          type="button"
-          data-native-transcript-toggle
-          aria-controls="${ids.nativeTranscriptBody}"
-          aria-expanded="true"
-        >字幕</button>
-        <div id="${ids.nativeTranscriptControls}" class="blr-native-transcript-controls">
-          <button
-            id="${ids.nativeTranscriptReturnButton}"
-            class="blr-native-transcript-return-button"
-            type="button"
-            title="回到当前字幕"
-            aria-label="回到当前字幕"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
-          </button>
-          <button
-            id="${ids.nativeTranscriptThemeButton}"
-            class="blr-native-transcript-theme-button"
-            type="button"
-            title="切换字幕主题"
-            aria-label="切换字幕主题"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-          </button>
-          <select id="${ids.nativeTranscriptSelect}" aria-label="字幕语言" title="字幕语言" disabled>
-            <option value="">字幕</option>
-          </select>
-          <select id="${ids.nativeTranscriptFontSizeSelect}" aria-label="字幕字号" title="字幕字号">
-            ${[12, 14, 16, 18, 20, 22]
-              .map((value) => `<option value="${value}">${value}</option>`)
-              .join("")}
-          </select>
-          <select id="${ids.nativeTranscriptFontWeightSelect}" aria-label="字幕字重" title="字幕字重">
-            ${[300, 400, 500, 600, 700]
-              .map((value) => `<option value="${value}">${value}</option>`)
-              .join("")}
-          </select>
-        </div>
-        <button
-          class="blr-native-transcript-arrow-button"
-          type="button"
-          data-native-transcript-toggle
-          aria-label="折叠字幕"
-          aria-controls="${ids.nativeTranscriptBody}"
-          aria-expanded="true"
-        >
-          <svg class="blr-native-transcript-arrow" viewBox="0 0 16 16" aria-hidden="true">
-            <path d="m6 3.75 4.25 4.25L6 12.25"></path>
-          </svg>
-        </button>
-      </div>
-      <div id="${ids.nativeTranscriptBody}" class="blr-native-transcript-body">
-        <div class="blr-native-transcript-state">正在加载字幕...</div>
-      </div>
-    `;
-    bindNativeTranscriptPanelEvents(panel);
-  }
-
-  if (panel.parentElement !== anchor.parentElement || panel.nextElementSibling !== anchor) {
-    anchor.insertAdjacentElement("beforebegin", panel);
-  }
-
-  panel.classList.toggle(
-    "is-collaboration-layout",
-    anchor.matches(".up-panel-container") && Boolean(anchor.querySelector(".members-info-container"))
-  );
-
-  setNativeTranscriptExpanded(panel, state.nativeTranscriptOpen);
-  bindNativeTranscriptPanelResize();
-  syncNativeTranscriptPanelAlignment();
-  syncNativeTranscriptPanelHeight();
-  ensureNativeTranscriptLoaded();
-  renderNativeTranscriptPanel({ force: created });
-  return panel;
-}
-
-function bindNativeTranscriptPanelEvents(panel) {
-  const body = panel.querySelector(`#${ids.nativeTranscriptBody}`);
-  const returnButton = panel.querySelector(`#${ids.nativeTranscriptReturnButton}`);
-  const themeButton = panel.querySelector(`#${ids.nativeTranscriptThemeButton}`);
-  const toggle = () => {
-    if (isNativeTranscriptEmpty()) {
-      autoFoldNativeTranscriptIfEmpty();
-      showNativeTranscriptEmptyNotice(panel);
-      return;
-    }
-    state.nativeTranscriptOpen = !state.nativeTranscriptOpen;
-    setNativeTranscriptExpanded(panel, state.nativeTranscriptOpen);
-    if (state.nativeTranscriptOpen) {
-      ensureNativeTranscriptLoaded();
-      syncNativeTranscriptPlayback(true);
-    }
-  };
-  panel.querySelectorAll("[data-native-transcript-toggle]").forEach((button) => {
-    button.addEventListener("click", toggle);
-  });
-  returnButton?.addEventListener("click", () => {
-    if (isNativeTranscriptEmpty()) {
-      autoFoldNativeTranscriptIfEmpty();
-      showNativeTranscriptEmptyNotice(panel);
-      return;
-    }
-    state.nativeTranscriptManualScrollPauseUntil = 0;
-    if (!state.nativeTranscriptOpen) {
-      state.nativeTranscriptOpen = true;
-      setNativeTranscriptExpanded(panel, true);
-      ensureNativeTranscriptLoaded().then(() => syncNativeTranscriptPlayback(true));
-    } else {
-      syncNativeTranscriptPlayback(true);
-    }
-    returnButton.classList.add("is-active");
-    window.setTimeout(() => returnButton.classList.remove("is-active"), 300);
-  });
-  themeButton?.addEventListener("click", () => {
-    const themes = ["light", "dark", "paper"];
-    const nextIndex = (themes.indexOf(state.nativeTranscriptTheme) + 1) % themes.length;
-    updateNativeTranscriptTheme(themes[nextIndex]);
-    themeButton.classList.add("is-active");
-    window.setTimeout(() => themeButton.classList.remove("is-active"), 300);
-  });
-  body?.addEventListener("click", onNativeTranscriptClick);
-  panel.addEventListener("change", onNativeTranscriptChange);
-  const noteManualScroll = () => {
-    if (Date.now() <= state.nativeTranscriptProgrammaticScrollUntil) {
-      return;
-    }
-    state.nativeTranscriptManualScrollPauseUntil = Date.now() + 3000;
-  };
-  body?.addEventListener("scroll", noteManualScroll, true);
-  body?.addEventListener("wheel", noteManualScroll, { passive: true });
-  body?.addEventListener("pointerdown", noteManualScroll, { passive: true });
-}
-
-function isNativeTranscriptEmpty() {
-  return (
-    state.fetchClipSignature === computeCurrentClipSignature() &&
-    state.subtitleFetchState === "empty"
-  );
-}
-
-function clearNativeTranscriptEmptyNotice(panel) {
-  panel?.querySelector(".blr-native-transcript-empty-notice")?.remove();
-}
-
-function showNativeTranscriptEmptyNotice(panel) {
-  clearNativeTranscriptEmptyNotice(panel);
-  const notice = document.createElement("div");
-  notice.className = "blr-native-transcript-empty-notice";
-  notice.setAttribute("role", "status");
-  notice.textContent = "当前视频无字幕";
-  notice.addEventListener("animationend", () => notice.remove(), { once: true });
-  panel.appendChild(notice);
-}
-
-function setNativeTranscriptExpanded(panel, expanded) {
-  if (!panel) {
-    return;
-  }
-  const isExpanded = Boolean(expanded) && !isNativeTranscriptEmpty();
-  panel.classList.toggle("is-folded", !isExpanded);
-  panel.querySelectorAll("[data-native-transcript-toggle]").forEach((button) => {
-    button.setAttribute("aria-expanded", String(isExpanded));
-  });
-  const arrowButton = panel.querySelector(".blr-native-transcript-arrow-button");
-  arrowButton?.setAttribute("aria-label", isExpanded ? "折叠字幕" : "展开字幕");
-  const body = panel.querySelector(`#${ids.nativeTranscriptBody}`);
-  if (body) {
-    body.hidden = !isExpanded;
-  }
-}
-
-function hydrateNativeTranscriptSettings(settings = state.settings) {
-  state.nativeTranscriptTheme = normalizeNativeTranscriptTheme(settings?.nativeTranscriptTheme);
-  state.nativeTranscriptFontSize = normalizeNativeTranscriptFontSize(
-    settings?.nativeTranscriptFontSize
-  );
-  state.nativeTranscriptFontWeight = normalizeNativeTranscriptFontWeight(
-    settings?.nativeTranscriptFontWeight
-  );
-  state.settings = {
-    ...state.settings,
-    nativeTranscriptTheme: state.nativeTranscriptTheme,
-    nativeTranscriptFontSize: state.nativeTranscriptFontSize,
-    nativeTranscriptFontWeight: state.nativeTranscriptFontWeight
-  };
-  applyNativeTranscriptTypography();
-}
-
-function applyNativeTranscriptTypography(panel = document.getElementById(ids.nativeTranscriptPanel)) {
-  if (!panel) {
-    return;
-  }
-  const typographyChanged = panel.style.getPropertyValue("--blr-native-transcript-font-size") !== `${state.nativeTranscriptFontSize}px` ||
-    panel.style.getPropertyValue("--blr-native-transcript-font-weight") !== String(state.nativeTranscriptFontWeight);
-  const scrollAnchor = typographyChanged ? captureTranscriptScrollAnchor(
-    panel.querySelector(`#${ids.nativeTranscriptList}`), ".blr-native-transcript-segment"
-  ) : null;
-  panel.dataset.theme = state.nativeTranscriptTheme;
-  const themeButton = panel.querySelector(`#${ids.nativeTranscriptThemeButton}`);
-  if (themeButton) {
-    const themeLabels = { light: "浅色", dark: "深色", paper: "纸张" };
-    const label = `切换字幕主题，当前：${themeLabels[state.nativeTranscriptTheme] || "浅色"}`;
-    themeButton.title = label;
-    themeButton.setAttribute("aria-label", label);
-  }
-  panel.style.setProperty(
-    "--blr-native-transcript-font-size",
-    `${state.nativeTranscriptFontSize}px`
-  );
-  panel.style.setProperty(
-    "--blr-native-transcript-font-weight",
-    String(state.nativeTranscriptFontWeight)
-  );
-  const fontSizeSelect = panel.querySelector(`#${ids.nativeTranscriptFontSizeSelect}`);
-  const fontWeightSelect = panel.querySelector(`#${ids.nativeTranscriptFontWeightSelect}`);
-  if (fontSizeSelect) {
-    fontSizeSelect.value = String(state.nativeTranscriptFontSize);
-  }
-  if (fontWeightSelect) {
-    fontWeightSelect.value = String(state.nativeTranscriptFontWeight);
-  }
-  restoreTranscriptScrollAnchor(scrollAnchor);
-}
-
-function updateNativeTranscriptTheme(theme) {
-  state.nativeTranscriptTheme = normalizeNativeTranscriptTheme(theme);
-  state.settings = {
-    ...state.settings,
-    nativeTranscriptTheme: state.nativeTranscriptTheme
-  };
-  applyNativeTranscriptTypography();
-  persistReaderSettings();
-}
-
-function updateNativeTranscriptTypography({ fontSize, fontWeight } = {}) {
-  state.readingModeTransition?.cancel();
-  state.nativeTranscriptManualScrollPauseUntil = Date.now() + 3000;
-  state.nativeTranscriptFontSize = normalizeNativeTranscriptFontSize(
-    fontSize ?? state.nativeTranscriptFontSize
-  );
-  state.nativeTranscriptFontWeight = normalizeNativeTranscriptFontWeight(
-    fontWeight ?? state.nativeTranscriptFontWeight
-  );
-  state.settings = {
-    ...state.settings,
-    nativeTranscriptFontSize: state.nativeTranscriptFontSize,
-    nativeTranscriptFontWeight: state.nativeTranscriptFontWeight
-  };
-  applyNativeTranscriptTypography();
-  persistReaderSettings();
-}
-
-function renderNativeTranscriptHeaderControls(panel) {
-  const languageSelect = panel.querySelector(`#${ids.nativeTranscriptSelect}`);
-  if (languageSelect) {
-    const selectedUrlKey = normalizeSubtitleUrlForCache(state.selectedSubtitleUrl);
-    const languageRenderKey = JSON.stringify([
-      state.selectedSubtitleId,
-      selectedUrlKey,
-      state.subtitles.map((item) => [item.id, item.subtitleUrl, item.lanDoc, item.lan])
-    ]);
-    const optionsHtml = state.subtitles.length
-      ? state.subtitles
-          .map((item) => {
-            const selected =
-              (state.selectedSubtitleId && String(item.id) === String(state.selectedSubtitleId)) ||
-              normalizeSubtitleUrlForCache(item.subtitleUrl) === selectedUrlKey;
-            return `<option value="${escapeHtml(item.subtitleUrl)}" data-id="${escapeHtml(
-              item.id
-            )}" data-lang="${escapeHtml(item.lanDoc || item.lan || "unknown")}"${
-              selected ? " selected" : ""
-            }>${escapeHtml(item.lanDoc || item.lan || "字幕")}</option>`;
-          })
-          .join("")
-      : '<option value="">字幕</option>';
-    if (languageSelect.dataset.renderKey !== languageRenderKey) {
-      languageSelect.innerHTML = optionsHtml;
-      languageSelect.dataset.renderKey = languageRenderKey;
-    }
-    languageSelect.disabled = state.subtitles.length === 0 || state.subtitleFetchState === "loading";
-  }
-  applyNativeTranscriptTypography(panel);
-}
-
-function getNativeTranscriptPlaceholderText() {
-  if (
-    state.fetchClipSignature !== computeCurrentClipSignature() ||
-    state.subtitleFetchState === "loading" ||
-    state.subtitleFetchState === "idle"
-  ) {
-    return "正在加载字幕...";
-  }
-  if (state.subtitleFetchState === "error") {
-    return "字幕加载失败";
-  }
-  return "当前视频无字幕";
-}
-
-function renderNativeTranscriptPanel({ force = false } = {}) {
-  if (state.readingModeTransition?.phase === "animating") return;
-  const panel = document.getElementById(ids.nativeTranscriptPanel);
-  const body = panel?.querySelector(`#${ids.nativeTranscriptBody}`);
-  if (!panel || !body || !shouldShowNativeTranscriptPanel()) {
-    return;
-  }
-
-  renderNativeTranscriptHeaderControls(panel);
-  if (isNativeTranscriptEmpty()) {
-    autoFoldNativeTranscriptIfEmpty();
-  } else {
-    clearNativeTranscriptEmptyNotice(panel);
-  }
-
-  const transcriptItems = getReadingTranscriptItems();
-  const renderKey = [
-    computeCurrentClipSignature(),
-    state.subtitleFetchState,
-    state.selectedSubtitleId,
-    normalizeSubtitleUrlForCache(state.selectedSubtitleUrl),
-    transcriptItems.length,
-    state.subtitles.length
-  ].join("|");
-  if (!force && state.nativeTranscriptRenderedKey === renderKey && body.childElementCount > 0) {
-    return;
-  }
-  state.nativeTranscriptRenderedKey = renderKey;
-  if (transcriptItems.length === 0) {
-    const retry = state.subtitleFetchState === "error";
-    body.innerHTML = `
-      <div class="blr-native-transcript-state${retry ? " is-error" : ""}">
-        <span>${escapeHtml(getNativeTranscriptPlaceholderText())}</span>
-        ${retry ? '<button type="button" data-native-transcript-retry>重试</button>' : ""}
-      </div>
-    `;
-    state.nativeTranscriptActiveIndex = -1;
-    return;
-  }
-
-  const transcriptHtml = `
-    <div class="blr-native-transcript-complete" role="document">
-      ${transcriptItems
-        .map(
-          (item) => `
-            <button
-              type="button"
-              class="blr-native-transcript-segment"
-              data-native-transcript-index="${item.index}"
-              data-seconds="${item.from}"
-              title="${escapeHtml(formatCompactTimestamp(item.from, item.from >= 3600))}"
-            >${escapeHtml(item.content)}</button>
-          `
-        )
-        .join(" ")}
-    </div>
-  `;
-
-  body.innerHTML = `
-    <div id="${ids.nativeTranscriptList}" class="blr-native-transcript-list">
-      ${transcriptHtml}
-    </div>
-  `;
-  state.nativeTranscriptActiveIndex = -1;
-  syncNativeTranscriptPlayback(true);
-}
-
-function ensureNativeTranscriptLoaded({ force = false } = {}) {
-  if (!shouldShowNativeTranscriptPanel()) {
-    return Promise.resolve();
-  }
-
-  const signature = computeCurrentClipSignature();
-  if (signature !== state.currentClipSignature) {
-    resetClipState();
-  }
-  initializeNativeTranscriptForSignature(signature);
-  if (
-    !force &&
-    signature === state.nativeTranscriptLoadedSignature &&
-    ["ready", "empty", "error"].includes(state.subtitleFetchState)
-  ) {
-    autoFoldNativeTranscriptIfEmpty(signature);
-    renderNativeTranscriptPanel();
-    return Promise.resolve();
-  }
-  if (
-    state.nativeTranscriptLoadPromise &&
-    state.nativeTranscriptLoadSignature === signature
-  ) {
-    return state.nativeTranscriptLoadPromise;
-  }
-
-  state.subtitleFetchState = "loading";
-  renderNativeTranscriptPanel();
-  const loadSignature = signature;
-  const loadPromise = refreshClip()
-    .catch((error) => {
-      logWarn("[Bilibili Reader] native transcript load failed", error);
-    })
-    .finally(() => {
-      if (isRunActive(loadRunId) && state.nativeTranscriptLoadPromise === loadPromise) {
-        state.nativeTranscriptLoadedSignature = loadSignature;
-        autoFoldNativeTranscriptIfEmpty(loadSignature);
-      }
-      if (state.nativeTranscriptLoadPromise === loadPromise) {
-        state.nativeTranscriptLoadPromise = null;
-        state.nativeTranscriptLoadSignature = "";
-      }
-      if (isRunActive(loadRunId)) {
-        renderNativeTranscriptPanel();
-        syncNativeTranscriptPlayback(true);
-      }
-    });
-  const loadRunId = state.fetchRunId;
-  state.nativeTranscriptLoadSignature = loadSignature;
-  state.nativeTranscriptLoadPromise = loadPromise;
-  return loadPromise;
-}
-
-function initializeNativeTranscriptForSignature(signature = computeCurrentClipSignature()) {
-  if (!signature || state.nativeTranscriptDisplaySignature === signature) {
-    return;
-  }
-  state.nativeTranscriptDisplaySignature = signature;
-  state.nativeTranscriptAutoFoldedSignature = "";
-  state.nativeTranscriptOpen = true;
-  setNativeTranscriptExpanded(document.getElementById(ids.nativeTranscriptPanel), true);
-}
-
-function autoFoldNativeTranscriptIfEmpty(signature = computeCurrentClipSignature()) {
-  if (
-    !isNativeTranscriptEmpty() ||
-    signature !== computeCurrentClipSignature()
-  ) {
-    return;
-  }
-  state.nativeTranscriptAutoFoldedSignature = signature;
-  state.nativeTranscriptOpen = false;
-  setNativeTranscriptExpanded(document.getElementById(ids.nativeTranscriptPanel), false);
-}
-
-function bindNativeTranscriptPanelResize() {
-  const player = document.getElementById("playerWrap") || document.getElementById("bilibili-player");
-  if (!player || state.nativeTranscriptObservedPlayer === player) {
-    return;
-  }
-  state.nativeTranscriptResizeObserver?.disconnect();
-  state.nativeTranscriptResizeObserver = new ResizeObserver(() => {
-    if (state.readingModeTransition?.phase === "animating") return;
-    const scrollAnchor = captureTranscriptScrollAnchor(
-      document.getElementById(ids.nativeTranscriptList), ".blr-native-transcript-segment"
-    );
-    syncNativeTranscriptPanelAlignment();
-    syncNativeTranscriptPanelHeight();
-    restoreTranscriptScrollAnchor(scrollAnchor);
-  });
-  state.nativeTranscriptResizeObserver.observe(player);
-  state.nativeTranscriptObservedPlayer = player;
-}
-
-function syncNativeTranscriptPanelAlignment() {
-  const panel = document.getElementById(ids.nativeTranscriptPanel);
-  if (!panel) {
-    return;
-  }
-  if (!panel.classList.contains("is-collaboration-layout")) {
-    panel.style.removeProperty("margin-top");
-    return;
-  }
-  const player = document.getElementById("playerWrap") || document.getElementById("bilibili-player");
-  if (!player) {
-    return;
-  }
-  panel.style.setProperty("margin-top", "0px");
-  const panelTop = panel.getBoundingClientRect().top;
-  const playerTop = player.getBoundingClientRect().top;
-  if (!Number.isFinite(panelTop) || !Number.isFinite(playerTop)) {
-    return;
-  }
-  panel.style.setProperty("margin-top", `${Math.max(0, Math.round(playerTop - panelTop))}px`);
-}
-
-function syncNativeTranscriptPanelHeight() {
-  const panel = document.getElementById(ids.nativeTranscriptPanel);
-  const player = document.getElementById("playerWrap") || document.getElementById("bilibili-player");
-  if (!panel || !player) {
-    return;
-  }
-  const playerHeight = player.getBoundingClientRect().height;
-  if (!(playerHeight > 120)) {
-    return;
-  }
-  panel.style.setProperty(
-    "--blr-native-transcript-body-height",
-    `${Math.max(0, Math.round(playerHeight - 56))}px`
-  );
-}
-
-function startNativeTranscriptPlaybackSync() {
-  if (state.nativeTranscriptPlaybackTimer) {
-    return;
-  }
-  state.nativeTranscriptPlaybackTimer = window.setInterval(() => {
-    syncNativeTranscriptPlayback();
-  }, 250);
-}
-
-function syncNativeTranscriptPlayback(forceScroll = false) {
-  if (state.readingModeTransition &&
-    (state.readingModeTransition.phase === "animating" || !forceScroll)) return;
-  const panel = document.getElementById(ids.nativeTranscriptPanel);
-  const list = panel?.querySelector(`#${ids.nativeTranscriptList}`);
-  if (!panel || !list || !state.nativeTranscriptOpen || state.subtitleBody.length === 0) {
-    return;
-  }
-  const video = getRuntimeVideoElement();
-  if (!video) {
-    return;
-  }
-  const nextIndex = findActiveSubtitleIndex(Number(video.currentTime || 0) || 0);
-  const current = list.querySelector(".is-active");
-  const next = list.querySelector(`[data-native-transcript-index="${nextIndex}"]`);
-  if (current && current !== next) {
-    current.classList.remove("is-active");
-  }
-  if (next) {
-    next.classList.add("is-active");
-  }
-  const changed = nextIndex !== state.nativeTranscriptActiveIndex;
-  state.nativeTranscriptActiveIndex = nextIndex;
-  if (
-    next &&
-    (changed || forceScroll) &&
-    Date.now() >= state.nativeTranscriptManualScrollPauseUntil
-  ) {
-    scrollNativeTranscriptItemIntoView(next, list, forceScroll ? "auto" : "smooth");
-  }
-}
-
-function scrollNativeTranscriptItemIntoView(node, list, behavior = "smooth") {
-  const listRect = list.getBoundingClientRect();
-  const itemRect = node.getBoundingClientRect();
-  if (!(listRect.height > 0) || !(itemRect.height > 0)) {
-    return;
-  }
-  const padding = Math.max(32, Math.min(listRect.height * 0.22, 96));
-  const target = list.scrollTop + itemRect.top - listRect.top - padding;
-  if (behavior === "auto") behavior = "instant";
-  state.nativeTranscriptProgrammaticScrollUntil = Date.now() + (behavior === "instant" ? 120 : 700);
-  list.scrollTo({ top: Math.max(0, Math.round(target)), behavior });
-}
-
-function onNativeTranscriptClick(event) {
-  const retry = event.target.closest("[data-native-transcript-retry]");
-  if (retry) {
-    state.nativeTranscriptLoadedSignature = "";
-    ensureNativeTranscriptLoaded({ force: true });
-    return;
-  }
-  const target = event.target.closest("[data-native-transcript-index]");
-  if (!target || window.getSelection()?.toString().trim()) {
-    return;
-  }
-  const video = getRuntimeVideoElement();
-  if (!video) {
-    return;
-  }
-  state.nativeTranscriptManualScrollPauseUntil = 0;
-  video.currentTime = Math.max(0, Number(target.dataset.seconds || 0) || 0);
-  if (video.paused) {
-    video.play().catch(() => {});
-  }
-  syncNativeTranscriptPlayback(true);
-}
-
-function onNativeTranscriptChange(event) {
-  const fontSizeSelect = event.target.closest(`#${ids.nativeTranscriptFontSizeSelect}`);
-  if (fontSizeSelect) {
-    updateNativeTranscriptTypography({ fontSize: fontSizeSelect.value });
-    return;
-  }
-  const fontWeightSelect = event.target.closest(`#${ids.nativeTranscriptFontWeightSelect}`);
-  if (fontWeightSelect) {
-    updateNativeTranscriptTypography({ fontWeight: fontWeightSelect.value });
-    return;
-  }
-  const select = event.target.closest(`#${ids.nativeTranscriptSelect}`);
-  if (!select) {
-    return;
-  }
-  const option = select.options[select.selectedIndex];
-  const url = String(option?.value || "");
-  if (!url) {
-    return;
-  }
-  const previousFetchState = state.subtitleFetchState;
-  const runId = state.fetchRunId;
-  select.disabled = true;
-  loadSubtitle(
-    url,
-    String(option.dataset.lang || "unknown"),
-    runId,
-    String(option.dataset.id || "")
-  )
-    .then(() => {
-      if (!isRunActive(runId)) {
-        return;
-      }
-      renderNativeTranscriptPanel();
-      syncNativeTranscriptPlayback(true);
-    })
-    .catch((error) => {
-      if (isStaleRunError(error) || !isRunActive(runId)) {
-        return;
-      }
-      state.subtitleFetchState = previousFetchState === "ready" ? "ready" : "error";
-      logWarn("[Bilibili Reader] native subtitle switch failed", error);
-      renderNativeTranscriptPanel({ force: true });
-    })
-    .finally(() => {
-      if (!isRunActive(runId)) {
-        return;
-      }
-      const currentSelect = document.getElementById(ids.nativeTranscriptSelect);
-      if (currentSelect) {
-        currentSelect.disabled = state.subtitles.length === 0;
-      }
-    });
-}
-
-function shouldForceNormalPageState(url = location.href) {
-  return !isReaderMode(url) && !state.readingViewOpen;
-}
-
-function enforceNormalPageStateIfNeeded(url = location.href) {
-  if (!shouldForceNormalPageState(url)) {
-    return;
-  }
-  clearReaderModePageState();
-}
-
-function bindNormalPageStateGuard() {
-  if (state.normalPageStateGuardBound) {
-    return;
-  }
-  state.normalPageStateGuardBound = true;
-
-  const observer = new MutationObserver(() => {
-    enforceNormalPageStateIfNeeded();
-  });
-  observer.observe(document.documentElement, {
-    attributes: true,
-    attributeFilter: [
-      "data-blr-reader-mode",
-      "data-blr-reader-line-height",
-      "data-blr-reader-theme",
-      "data-blr-reader-font-scale",
-      "data-blr-reader-letter-spacing",
-      "data-blr-reader-content-width",
-      "data-blr-reader-chapter-visibility",
-      "data-blr-reader-has-chapters",
-      "data-blr-reader-transcript-visible"
-    ]
-  });
-  observer.observe(document.body, {
-    attributes: true,
-    attributeFilter: ["data-blr-reader-mode", "data-blr-reader-line-height", "data-blr-reading-active"]
-  });
-  state.normalPageStateObserver = observer;
-  enforceNormalPageStateIfNeeded();
-}
-
-function bindRuntimeEvents() {
-  if (state.runtimeEventsBound) {
-    return;
-  }
-  state.runtimeEventsBound = true;
-
-  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    if (!message || typeof message !== "object") {
-      return false;
-    }
-
-    if (message.type === "popup-get-state") {
-      sendResponse({ ok: true, payload: getPopupPayload() });
-      return false;
-    }
-
-    if (message.type === "popup-refresh") {
-      refreshClip()
-        .then(() => sendResponse({ ok: true, payload: getPopupPayload() }))
-        .catch((error) =>
-          sendResponse({ ok: false, error: getErrorMessage(error), payload: getPopupPayload() })
-        );
-      return true;
-    }
-
-    if (message.type === "popup-select-subtitle") {
-      const runId = state.fetchRunId;
-      const url = String(message.url || "").trim();
-      const lang = String(message.lang || "unknown");
-      const subtitleId = String(message.subtitleId || "");
-      if (!url) {
-        sendResponse({ ok: false, error: "Missing subtitle URL", payload: getPopupPayload() });
-        return false;
-      }
-      loadSubtitle(url, lang, runId, subtitleId)
-        .then(() => {
-          ensureRunActive(runId);
-          setStatus("字幕切换完成。");
-          renderSubtitleSelect();
-          sendResponse({ ok: true, payload: getPopupPayload() });
-        })
-        .catch((error) =>
-          sendResponse({ ok: false, error: getErrorMessage(error), payload: getPopupPayload() })
-        );
-      return true;
-    }
-
-    if (message.type === "popup-send-obsidian") {
-      sendToObsidian()
-        .then(() => sendResponse({ ok: true, payload: getPopupPayload() }))
-        .catch((error) =>
-          sendResponse({ ok: false, error: getErrorMessage(error), payload: getPopupPayload() })
-        );
-      return true;
-    }
-
-    if (message.type === "popup-trigger-reading-view") {
-      state.playerAiQuickActionSuppressedUntil = Date.now() + 2500;
-      removePlayerAiQuickActionButton();
-      ensureUiReady();
-      const readerUrl = String(message.readerUrl || "").trim();
-      if (readerUrl) {
-        replaceReaderModeUrl(readerUrl);
-        document.documentElement.setAttribute("data-blr-reader-mode", "1");
-        document.body.setAttribute("data-blr-reader-mode", "1");
-      }
-      if (!state.readingViewOpen) {
-        enterReaderMode().catch((error) => {
-          logWarn("[BOC] reading mode trigger failed", error);
-        });
-      }
-      sendResponse({ ok: true });
-      return true;
-    }
-
-    if (message.type === "sidepanel-get-context") {
-      const settings = state.settings || DEFAULT_SETTINGS;
-      const body = state.subtitleBody || [];
-      let subtitleMarkdown = "";
-      try {
-        subtitleMarkdown = body.length
-          ? buildMarkdown(state, body, { ...settings, includeHotCommentsInNote: false })
-          : "";
-      } catch (e) {
-        subtitleMarkdown = "";
-        logWarn("[BOC] sidepanel-get-context: buildMarkdown failed", e);
-      }
-      sendResponse({
-        ok: true,
-        payload: {
-          url: location.href,
-          title: state.title || "",
-          author: state.author || "",
-          uploadDate: state.uploadDate || "",
-          bvid: state.bvid || "",
-          cid: state.cid || "",
-          aid: state.aid || "",
-          pageIndex: Number(state.pageIndex) > 0 ? Number(state.pageIndex) : 1,
-          pageCount: Number(state.pageCount) > 0 ? Number(state.pageCount) : 0,
-          pageTitle: state.pageTitle || "",
-          subtitleBody: body,
-          subtitleMarkdown,
-          subtitleLang: state.selectedSubtitleLang || "",
-          selectedSubtitleId: state.selectedSubtitleId || "",
-          selectedSubtitleUrl: state.selectedSubtitleUrl || "",
-          subtitleOptions: state.subtitles || [],
-          hotComments: []
-        }
-      });
-      return false;
-    }
-
-    if (message.type === "sidepanel-get-hot-comments") {
-      const count = 20; // 固定取前 20 条热门评论
-      if (!count) {
-        sendResponse({ ok: true, comments: [] });
-        return false;
-      }
-
-      if (!getCurrentAid()) {
-        state.hotComments = [];
-        sendResponse({ ok: true, comments: [], note: "无法获取视频 aid" });
-        return false;
-      }
-
-      fetchHotComments(count)
-        .then((hotComments) => {
-          state.hotComments = hotComments;
-          sendResponse({ ok: true, comments: hotComments });
-        })
-        .catch((error) => {
-          state.hotComments = [];
-          sendResponse({ ok: true, comments: [], note: String(error?.message || error) });
-        });
-      return true;
-    }
-
-    if (message.type === "sidepanel-seek-video-time") {
-      const seconds = Number(message.seconds);
-      const video = getRuntimeVideoElement();
-      if (!video) {
-        sendResponse({ ok: false, error: "当前页面没有找到可联动的视频播放器。" });
-        return false;
-      }
-      const nextTime = Math.max(0, Number.isFinite(seconds) ? seconds : 0);
-      const wasPaused = Boolean(video.paused);
-      video.currentTime = nextTime;
-      if (!wasPaused) {
-        video.play().catch(() => {});
-      }
-      if (state.readingViewOpen) {
-        state.readingManualScrollPauseUntil = 0;
-        state.readingNextScrollBehavior = "auto";
-        updateReaderFollowState();
-        syncReadingViewPlayback(true);
-      }
-      sendResponse({ ok: true, currentTime: nextTime });
-      return false;
-    }
-
-    return false;
-  });
-}
-
-function bindSettingsWatcher() {
-  if (state.settingsWatcherBound || !chrome.storage?.onChanged) {
-    return;
-  }
-  state.settingsWatcherBound = true;
-
-  chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName !== "sync" && areaName !== "local") {
-      return;
-    }
-    if (
-      !changes.enablePlayerAiQuickAction &&
-      !changes.playerAiQuickPrompt &&
-      !changes.readerTheme &&
-      !changes.readerFontScale &&
-      !changes.readerFontWeight &&
-      !changes.readerLetterSpacing &&
-      !changes.readerLineHeight &&
-      !changes.readerContentWidth &&
-      !changes.readerChapterWidthPx &&
-      !changes.readerTranscriptWidthPx &&
-      !changes.readerVideoHeightPx &&
-      !changes.readerChapterVisibility &&
-      !changes.readerTranscriptVisible &&
-      !changes.readerTimestampVisible &&
-      !changes.nativeTranscriptTheme &&
-      !changes.nativeTranscriptFontSize &&
-      !changes.nativeTranscriptFontWeight
-    ) {
-      return;
-    }
-
-    getSettings()
-      .then(async (settings) => {
-        const transition = state.readingModeTransition;
-        if (transition) {
-          // Storage echoes must not reflow the live target during its motion.
-          await transition.finished.catch(() => {});
-          settings = await getSettings();
-        }
-        const scrollAnchor = captureTranscriptScrollAnchor(
-          document.getElementById("blr-reading-inline-host"), ".blr-reading-complete-segment"
-        );
-        const activeLayout = state.readingViewOpen
-          ? {
-              chapterWidth: state.readingChapterWidthPx,
-              transcriptWidth: state.readingTranscriptWidthPx
-            }
-          : null;
-        state.settings = settings;
-        hydrateReaderStateFromSettings(settings);
-        hydrateNativeTranscriptSettings(settings);
-        // The open reader owns its live drag state. Storage notifications can
-        // arrive out of order when two resize handles are used in quick
-        // succession, so they must not restore an older column or video size.
-        if (activeLayout) {
-          state.readingChapterWidthPx = activeLayout.chapterWidth;
-          state.readingTranscriptWidthPx = activeLayout.transcriptWidth;
-          state.settings = {
-            ...state.settings,
-            readerChapterWidthPx: activeLayout.chapterWidth,
-            readerTranscriptWidthPx: activeLayout.transcriptWidth
-          };
-        }
-        applyReadingViewPresentation();
-        restoreTranscriptScrollAnchor(scrollAnchor);
-        schedulePlayerAiQuickActionSync();
-      })
-      .catch((error) => {
-        logWarn("[BOC] failed to refresh settings after storage change", error);
-      });
-  });
-}
-
-function buildUiHtml() {
-  return `
-    <aside id="${ids.panel}" aria-hidden="true">
-      <header class="blr-header">
-        <strong>Default</strong>
-        <div class="blr-header-actions">
-          <button id="${ids.settingsBtn}" type="button" title="插件设置">设置</button>
-          <button id="${ids.closeBtn}" type="button" title="关闭">关闭</button>
-        </div>
-      </header>
-
-      <p id="${ids.status}" class="blr-status">准备就绪，点击“刷新抓取”开始。</p>
-      <div class="blr-props-head">属性</div>
-      <div id="${ids.meta}" class="blr-meta"></div>
-
-      <label class="blr-label" for="${ids.subtitleSelect}">字幕语言</label>
-      <select id="${ids.subtitleSelect}" disabled>
-        <option value="">暂无字幕</option>
-      </select>
-
-      <label class="blr-label" for="${ids.preview}">字幕预览</label>
-      <textarea id="${ids.preview}" readonly></textarea>
-
-      <div class="blr-actions">
-        <button id="${ids.refreshBtn}" type="button">刷新抓取</button>
-        <button id="${ids.copyBtn}" type="button">复制完整 Markdown</button>
-        <button id="${ids.downloadBtn}" type="button">下载字幕</button>
-        <button id="${ids.sendBtn}" type="button">发送到 Obsidian</button>
-      </div>
-      <p id="${ids.message}" class="blr-message"></p>
-    </aside>
-
-    <section id="${ids.readingView}" aria-hidden="true" data-blr-reader-ready="0" aria-busy="true">
-      <div class="blr-reading-topbar">
-        <div class="blr-reading-heading-group">
-          <strong id="${ids.readingPageTitle}" class="blr-reading-page-title"></strong>
-          <div id="${ids.readingEpisodeTitle}" class="blr-reading-episode-title" hidden></div>
-        </div>
-        <nav id="${ids.readingCollectionNav}" class="blr-reading-collection-nav" aria-label="合集选集" hidden>
-          <div id="${ids.readingCollectionList}" class="blr-reading-collection-list"></div>
-        </nav>
-      </div>
-      <div class="blr-reading-layout">
-        <aside class="blr-reading-rail">
-          <div class="blr-reading-eyebrow">章节</div>
-          <div id="${ids.readingChapterList}" class="blr-reading-list"></div>
-        </aside>
-
-        <section class="blr-reading-stage">
-          <header class="blr-reading-header">
-            <div class="blr-reading-header-copy">
-              <strong class="blr-reading-title">${escapeHtml(state.title || "B站字幕阅读")}</strong>
-              <div id="${ids.readingMeta}" class="blr-reading-meta">bilibili.com</div>
-            </div>
-            <div class="blr-reading-actions">
-              <button id="${ids.readingCloseBtn}" type="button" class="blr-reading-icon-btn" title="退出" aria-label="退出阅读视图">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-              </button>
-            </div>
-          </header>
-
-          <p id="${ids.readingStatus}" class="blr-reading-status">使用页面原生播放器联动章节和字幕。</p>
-
-          <div class="blr-reading-player-shell">
-            <div id="${ids.readingPlayerSlot}" class="blr-reading-player-slot"></div>
-          </div>
-
-          <section class="blr-reading-main">
-            <div id="${ids.readingTranscriptList}" class="blr-reading-transcript"></div>
-          </section>
-        </section>
-      </div>
-      <div id="${ids.readingTranscriptResizeHandle}" class="blr-reading-resize-handle blr-reading-resize-handle-right" role="separator" aria-label="调整视频、章节和字幕宽度" aria-orientation="vertical" aria-valuemin="280" aria-valuemax="720"></div>
-    </section>
-  `;
-}
-
-function bindUiEvents() {
-  const panel = byId(ids.panel);
-  const closeBtn = byId(ids.closeBtn);
-  const refreshBtn = byId(ids.refreshBtn);
-  const select = byId(ids.subtitleSelect);
-  const copyBtn = byId(ids.copyBtn);
-  const downloadBtn = byId(ids.downloadBtn);
-  const sendBtn = byId(ids.sendBtn);
-  const settingsBtn = byId(ids.settingsBtn);
-  const readingView = byId(ids.readingView);
-  const readingCloseBtn = byId(ids.readingCloseBtn);
-  const readingCollectionList = byId(ids.readingCollectionList);
-  const chapterList = byId(ids.readingChapterList);
-  const transcriptList = byId(ids.readingTranscriptList);
-
-  closeBtn.addEventListener("click", () => panel.classList.remove("open"));
-  refreshBtn.addEventListener("click", refreshClip);
-  select.addEventListener("change", onSubtitleChange);
-  copyBtn.addEventListener("click", copyMarkdown);
-  downloadBtn.addEventListener("click", downloadSubtitle);
-  sendBtn.addEventListener("click", sendToObsidian);
-  settingsBtn.addEventListener("click", requestOpenOptions);
-  readingCloseBtn.addEventListener("click", () => {
-    exitReaderMode().catch((error) => {
-      logWarn("[Bilibili Reader] reader exit failed", error);
-    });
-  });
-  bindReaderResizeHandle(byId(ids.readingTranscriptResizeHandle));
-
-  const handleReaderManualScroll = () => {
-    if (Date.now() <= state.readingProgrammaticScrollUntil) {
-      return;
-    }
-    noteManualReaderInteraction();
-  };
-  transcriptList.addEventListener("scroll", handleReaderManualScroll);
-  transcriptList.addEventListener("wheel", handleReaderManualScroll, { passive: true });
-  chapterList.addEventListener("wheel", handleReaderManualScroll, { passive: true });
-  chapterList.addEventListener("pointerdown", () => noteManualReaderInteraction(3500));
-  transcriptList.addEventListener("pointerdown", () => noteManualReaderInteraction(3500));
-  chapterList.addEventListener("click", onReadingChapterClick);
-  readingCollectionList.addEventListener("click", onReadingCollectionClick);
-  transcriptList.addEventListener("click", onReadingTranscriptClick);
-  readingView.addEventListener("transitionend", () => {
-    if (!state.readingViewOpen) {
-      stopReadingViewSync();
-    }
-  });
-}
-
-function startUrlWatcher() {
-  if (state.urlWatcherStarted) {
-    return;
-  }
-  state.urlWatcherStarted = true;
-
-  const checkCurrentClip = () => {
-    const nextUrl = location.href;
-    const nextSignature = computeCurrentClipSignature();
-    if (nextSignature === state.currentClipSignature) {
-      return;
-    }
-
-    state.currentUrl = nextUrl;
-    state.currentClipSignature = nextSignature;
-    enforceNormalPageStateIfNeeded(nextUrl);
-    ensureUiReady();
-    resetClipState({ preserveReadingContent: state.readingViewOpen && isReaderMode(nextUrl) });
-    scheduleNativeTranscriptPanelSync(0);
-    const shouldEnterReaderMode = isReaderMode(nextUrl);
-    if (!state.readingViewOpen && shouldEnterReaderMode) {
-      document.documentElement.setAttribute("data-blr-reader-mode", "1");
-      document.body.setAttribute("data-blr-reader-mode", "1");
-      renderReadingStatus("检测到阅读视图跳转，正在打开阅读模式...");
-      enterReaderMode().catch((error) => {
-        renderReadingStatus(`阅读视图启动失败：${getErrorMessage(error)}`);
-      });
-      return;
-    }
-    if (state.readingViewOpen || shouldEnterReaderMode) {
-      renderReadingStatus("检测到视频变化，正在自动刷新字幕...");
-      const changeRunId = state.fetchRunId;
-      waitForVideoMetadata().then(() => {
-        if (changeRunId !== state.fetchRunId || computeCurrentClipSignature() !== nextSignature) {
-          return;
-        }
-        refreshClip().catch((error) => {
-          if (!isStaleRunError(error)) {
-            renderReadingStatus(`自动刷新失败：${getErrorMessage(error)}`);
-          }
-        });
-      });
-      return;
-    }
-    setStatus("检测到页面变化，正在自动加载当前视频字幕...");
-    ensureNativeTranscriptLoaded({ force: true });
-  };
-  window.addEventListener("popstate", checkCurrentClip);
-  window.setInterval(checkCurrentClip, 250);
-}
-
-function resetClipState({ preserveReadingContent = false } = {}) {
-  // 切换时立即使旧请求失效，不能等新请求开始后才递增编号。
-  state.fetchRunId += 1;
-  state.fetchClipSignature = "";
-  state.bvid = "";
-  state.aid = "";
-  state.cid = "";
-  state.cidSource = "";
-  state.videoDuration = 0;
-  if (!preserveReadingContent) {
-    state.pageIndex = 1;
-    state.pageCount = 0;
-    state.pageTitle = "";
-    state.collection = null;
-    state.description = "";
-    state.title = "";
-    state.author = "";
-    state.uploadDate = "";
-  }
-  // 保留阅读视图布局和合集信息时，也必须清空上一集的字幕与章节。
-  state.subtitles = [];
-  state.selectedSubtitleId = "";
-  state.selectedSubtitleUrl = "";
-  state.selectedSubtitleLang = "";
-  state.subtitleBody = [];
-  state.chapters = [];
-  state.subtitleFetchState = "loading";
-  state.hotComments = [];
-  state.markdown = "";
-  state.srt = "";
-  state.txt = "";
-  state.currentClipSignature = computeCurrentClipSignature();
-  stopReadingViewSync();
-  state.readingActiveSubtitleIndex = -1;
-  state.readingActiveChapterIndex = -1;
-  state.nativeTranscriptLoadedSignature = "";
-  state.nativeTranscriptLoadPromise = null;
-  state.nativeTranscriptLoadSignature = "";
-  state.nativeTranscriptAutoFoldedSignature = "";
-  state.nativeTranscriptRenderedKey = "";
-  state.nativeTranscriptOpen = true;
-  state.nativeTranscriptActiveIndex = -1;
-  state.nativeTranscriptManualScrollPauseUntil = 0;
-  state.readingVideoEl = null;
-  stopReaderPlayerObserver();
-
-  renderMeta();
-  renderSubtitleSelect();
-  byId(ids.preview).value = "";
-  setMessage("");
-  renderNativeTranscriptPanel();
-  if (state.readingViewOpen) {
-    renderReadingView();
-    renderReadingStatus("正在切换选集并加载新字幕...");
-  }
-}
-
-function clearSubtitleContentAfterFetchError() {
-  state.selectedSubtitleId = "";
-  state.selectedSubtitleUrl = "";
-  state.selectedSubtitleLang = "";
-  state.subtitleBody = [];
-  state.hotComments = [];
-  state.markdown = "";
-  state.srt = "";
-  state.txt = "";
-  state.readingActiveSubtitleIndex = -1;
-
-  renderMeta();
-  renderSubtitleSelect();
-  byId(ids.preview).value = "";
-  setMessage("");
-}
-
-async function finishNoSubtitleLoad(runId) {
-  ensureRunActive(runId);
-  applyNoSubtitleState();
-  renderMeta();
-  renderSubtitleSelect();
-  await refreshOpenReadingView("当前视频无可用字幕。", runId);
-  ensureRunActive(runId);
-  setStatus("当前视频无可用字幕。");
-}
-
-async function refreshClip() {
-  const clipUrl = location.href;
-  const clipSignature = computeCurrentClipSignature(clipUrl);
-  if (state.currentClipSignature !== clipSignature) {
-    resetClipState({ preserveReadingContent: state.readingViewOpen && isReaderMode(clipUrl) });
-  }
-  const runId = ++state.fetchRunId;
-  state.fetchClipSignature = clipSignature;
+function extractYouTubeVideoId(url = location.href) {
   try {
-    setBusyState(true);
-    setMessage("");
-    setStatus("正在抓取视频信息...");
-    state.subtitleFetchState = "loading";
-    renderNativeTranscriptPanel();
-    if (state.readingViewOpen) {
-      renderReadingView();
-    }
-    const settings = await getSettings();
-    ensureRunActive(runId);
-    state.settings = settings;
+    const parsed = new URL(url);
+    const id = parsed.searchParams.get("v") || "";
+    return isYouTubePage(url) && parsed.pathname === "/watch" && /^[\w-]{11}$/.test(id) ? id : "";
+  } catch { return ""; }
+}
 
-    const bvid = extractBvid(clipUrl);
-    state.bvid = bvid;
-    if (!state.bvid) {
-      throw new Error("当前页面不是标准 BV 视频地址，无法抓取字幕。");
-    }
+function isSupportedTranscriptPage(url = location.href) {
+  return Boolean(extractYouTubeVideoId(url) || (!isYouTubePage(url) && extractBvid(url)));
+}
 
-    const pageIndex = extractPageIndex(clipUrl);
-    const oid = extractOid(clipUrl);
-    const hasPageParam = hasExplicitPageParam(clipUrl);
-    const meta = await retryAsync(() => {
-      ensureRunActive(runId);
-      return fetchVideoMeta(bvid);
-    }, 2, 250);
-    ensureRunActive(runId);
+function getYouTubePageWindow() {
+  return typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
+}
 
-    // 调试：打印 API 返回的原始数据
-    logInfo("[BOC] raw meta data", {
-      meta,
-      defaultCid: meta.defaultCid,
-      pagesCount: (meta.pages || []).length
-    });
+function readYouTubePlayerResponse(videoId) {
+  const page = getYouTubePageWindow();
+  const player = page.document.getElementById("movie_player");
+  const watch = page.document.querySelector("ytd-watch-flexy");
+  const candidates = [];
+  try { candidates.push(player?.getPlayerResponse?.()); } catch {}
+  candidates.push(watch?.playerData, page.ytInitialPlayerResponse);
+  const matching = candidates.filter((item) => item?.videoDetails?.videoId === videoId);
+  // A transient player response must not mask the complete watch-page data.
+  return matching.find((item) => item.captions?.playerCaptionsTracklistRenderer?.captionTracks?.length) ||
+    matching.find((item) => item.playabilityStatus?.status === "OK") || matching[0] || null;
+}
 
-    state.aid = meta.aid || "";
-    state.title = meta.title || readVideoTitle();
-    state.author = meta.author || readVideoAuthor();
-    state.uploadDate = meta.uploadDate || readUploadDate();
-    state.description = meta.description || readVideoDescription();
-    state.pageCount = Array.isArray(meta.pages) ? meta.pages.length : 0;
-    let resolvedPageIndex = pageIndex;
-    if ((meta.pages || []).length > 1 && !hasPageParam) {
-      const pageIndexFromOid = pickPageIndexFromOid(meta.pages, oid);
-      if (pageIndexFromOid > 0) {
-        resolvedPageIndex = pageIndexFromOid;
-        logInfo("[BOC] resolved page index from oid", {
-          oid,
-          resolvedPageIndex
-        });
-      } else {
-        // B 站多分P中，P1 常见为无 ?p= 参数；watchlater 等页面可能改用 oid 标识当前分P。
-        resolvedPageIndex = 1;
-        logInfo("[BOC] multi-page video without p param or valid oid, fallback to P1", {
-          oid
-        });
-      }
-    }
+function youtubeText(value) {
+  if (typeof value === "string") return value;
+  return value?.simpleText || value?.content || (value?.runs || []).map((item) => item.text || "").join("");
+}
 
-    const currentPage = pickPageFromPages(meta.pages, resolvedPageIndex);
-    state.pageIndex = resolvedPageIndex;
-    state.pageTitle = currentPage?.part || "";
-    state.collection = resolveVideoCollectionCurrent(meta.collection, {
-      bvid: state.bvid,
-      aid: state.aid,
-      pageIndex: resolvedPageIndex
-    });
-    state.cid = currentPage?.cid || pickCidFromPages(meta.pages, resolvedPageIndex, meta.defaultCid);
-    state.cidSource = "meta-pages";
-    state.videoDuration = pickDurationFromPages(meta.pages, resolvedPageIndex, meta.defaultDuration);
-    if (!(state.videoDuration > 0)) {
-      state.videoDuration = readRuntimeVideoDuration();
-    }
-    if (!(state.videoDuration > 0)) {
-      throw new Error("无法获取当前视频时长，已停止抓取以避免串到错误字幕。");
-    }
-
-    logInfo("[BOC] resolved video ids", {
-      url: location.href,
-      aid: state.aid,
-      bvid: state.bvid,
-      cid: state.cid,
-      cidSource: state.cidSource,
-      pageIndex: resolvedPageIndex,
-      videoDuration: state.videoDuration
-    });
-
-    setStatus("正在获取可用字幕...");
-    const cid = state.cid;
-    const aid = state.aid;
-    const fetchCurrentSubtitleBundle = () => {
-      ensureRunActive(runId);
-      return fetchSubtitleBundle(bvid, cid, aid, meta.subtitleTracks || []);
-    };
-    let subtitleBundle = await retryAsync(
-      fetchCurrentSubtitleBundle,
-      3,
-      500
-    );
-    ensureRunActive(runId);
-    state.subtitles = normalizeSubtitleTracks(subtitleBundle.tracks);
-    state.chapters = normalizeChapters(subtitleBundle.chapters);
-    logInfo(
-      "[BOC] chapters",
-      state.chapters.map((item) => ({
-        from: item.from,
-        to: item.to,
-        title: item.title
-      }))
-    );
-    logInfo(
-      "[BOC] subtitle tracks",
-      state.subtitles.map((item) => ({
-        id: item.id,
-        lan: item.lan,
-        lanDoc: item.lanDoc,
-        url: item.subtitleUrl
-      }))
-    );
-
-    // 无字幕时也允许进入阅读视图，只是字幕区域保持空态。
-    if (state.subtitles.length === 0) {
-      await finishNoSubtitleLoad(runId);
-      return;
-    }
-
-    // 显式点击“刷新抓取”时默认走网络，避免命中历史缓存导致字幕错位。
-    const forceRefresh = true;
-
-    const preferred = pickPreferredSubtitle(state.subtitles, {
-      previousId: state.selectedSubtitleId,
-      previousUrl: state.selectedSubtitleUrl,
-      previousLang: state.selectedSubtitleLang
-    });
-
-    if (!preferred) {
-      await finishNoSubtitleLoad(runId);
-      return;
-    }
-
-    const candidates = buildSubtitleCandidates(state.subtitles, preferred);
-    let selected = null;
-
+function mapYouTubeCaptionTracks(response, videoId) {
+  const list = response?.captions?.playerCaptionsTracklistRenderer;
+  const tracks = list?.captionTracks || [];
+  const defaultIndex = list?.audioTracks?.[list.defaultAudioTrackIndex || 0]?.defaultCaptionTrackIndex ?? 0;
+  return tracks.flatMap((track, index) => {
+    if (track.kind === "asr" || String(track.vssId || "").startsWith("a.")) return [];
     try {
-      selected = await tryLoadSubtitleCandidates(candidates, runId, forceRefresh);
-    } catch (error) {
-      ensureRunActive(runId);
-
-      // 正文失败时先重新核对列表，空列表应收起面板，不能沿用旧错误。
-      // 非空列表再用新的签名地址重试，网络故障仍保留为加载错误。
-      subtitleBundle = await retryAsync(
-        fetchCurrentSubtitleBundle,
-        2,
-        500
-      );
-      ensureRunActive(runId);
-      state.subtitles = normalizeSubtitleTracks(subtitleBundle.tracks);
-      state.chapters = normalizeChapters(subtitleBundle.chapters);
-      const retryPreferred = pickPreferredSubtitle(state.subtitles, {
-        previousId: preferred.id,
-        previousUrl: preferred.subtitleUrl,
-        previousLang: preferred.lanDoc || preferred.lan || ""
-      });
-      if (!retryPreferred) {
-        await finishNoSubtitleLoad(runId);
-        return;
-      }
-      const retryCandidates = buildSubtitleCandidates(state.subtitles, retryPreferred);
-      selected = await tryLoadSubtitleCandidates(retryCandidates, runId, forceRefresh);
-    }
-    ensureRunActive(runId);
-    if (selected) {
-      logInfo("[BOC] selected subtitle track", {
-        id: selected.id,
-        lan: selected.lan,
-        lanDoc: selected.lanDoc
-      });
-    }
-    state.subtitleFetchState = "ready";
-    renderMeta();
-    renderSubtitleSelect();
-    await refreshOpenReadingView("抓取完成，阅读视图已同步最新字幕。", runId);
-    ensureRunActive(runId);
-    setStatus("抓取完成，可以复制、下载或发送到 Obsidian。");
-  } catch (error) {
-    if (isStaleRunError(error) || !isRunActive(runId)) {
-      return;
-    }
-    if (isUnavailableSubtitleError(error)) {
-      await finishNoSubtitleLoad(runId);
-      return;
-    }
-    // 字幕正文与章节列表来自不同请求。字幕域名被拦截、网络失败或签名
-    // 过期时，保留已经成功取得的章节和当前视频元数据。
-    clearSubtitleContentAfterFetchError();
-    state.subtitleFetchState = "error";
-    await refreshOpenReadingView("字幕加载失败，请刷新重试。", runId);
-    if (!isRunActive(runId)) {
-      return;
-    }
-    setStatus(`抓取失败：${getErrorMessage(error)}`);
-  } finally {
-    if (isRunActive(runId)) {
-      setBusyState(false);
-      renderNativeTranscriptPanel();
-    }
-  }
+      const url = new URL(track.baseUrl);
+      if (url.protocol !== "https:" || !isYouTubePage(url.origin) ||
+          url.pathname !== "/api/timedtext" || url.searchParams.get("v") !== videoId) return [];
+      url.searchParams.set("fmt", "json3");
+      const label = youtubeText(track.name) || track.languageCode || "字幕";
+      return [{
+        id: `youtube:${videoId}:${track.vssId || `${track.languageCode}:${index}`}`,
+        lan: track.languageCode || "und",
+        lanDoc: label,
+        subtitleUrl: url.toString(),
+        nativeDefault: index === defaultIndex,
+        nativeLabel: youtubeText(track.name),
+        nativeTrackCount: tracks.length,
+        source: "youtube"
+      }];
+    } catch { return []; }
+  });
 }
 
-async function onSubtitleChange(event) {
-  const runId = state.fetchRunId;
-  const value = event.target.value;
-  const option = event.target.options[event.target.selectedIndex];
-  const lang = option?.dataset.lang || "unknown";
-  const subtitleId = option?.dataset.id || "";
-  if (!value) {
+function parseYouTubeChapterTimestamp(value) {
+  const text = String(value || "").trim();
+  if (!/^\d{1,3}:\d{2}(?::\d{2})?$/.test(text)) return NaN;
+  const parts = text.split(":").map(Number);
+  if (parts.at(-1) >= 60 || (parts.length === 3 && parts[1] >= 60)) return NaN;
+  return parts.reduce((seconds, part) => seconds * 60 + part, 0);
+}
+
+function normalizeYouTubeChapters(chapters, duration = 0) {
+  const sorted = chapters.filter((item) => item.title && Number.isFinite(item.from) &&
+    item.from >= 0 && (!duration || item.from < duration)).sort((a, b) => a.from - b.from);
+  const unique = sorted.filter((item, index) => index === 0 || item.from !== sorted[index - 1].from);
+  return unique.map((item, index) => ({
+    title: item.title.trim(), from: item.from,
+    to: unique[index + 1]?.from ?? (duration > item.from ? duration : 0), source: "youtube"
+  }));
+}
+
+function readYouTubeChapters(videoId, response = readYouTubePlayerResponse(videoId)) {
+  if (!videoId || videoId !== extractYouTubeVideoId()) return [];
+  const page = getYouTubePageWindow();
+  const watch = page.document.querySelector("ytd-watch-flexy");
+  const duration = Number(response?.videoDetails?.lengthSeconds) || clipState.videoDuration;
+  const roots = [response];
+  if (watch?.getAttribute("video-id") === videoId) roots.push(watch.data);
+  // Initial data can belong to the first video after a YouTube SPA navigation.
+  if (page.ytInitialPlayerResponse?.videoDetails?.videoId === videoId) roots.push(page.ytInitialData);
+  const chapters = [];
+  const markers = [];
+  roots.forEach((root) => walkYouTubeData(root, (item) => {
+    const chapter = item.chapterRenderer;
+    if (chapter?.timeRangeStartMillis !== undefined) chapters.push({
+      title: youtubeText(chapter.title), from: Number(chapter.timeRangeStartMillis) / 1000
+    });
+    const marker = item.macroMarkersListItemRenderer;
+    if (!marker) return;
+    const endpoint = marker.onTap?.watchEndpoint || marker.onTap?.innertubeCommand?.watchEndpoint;
+    if (endpoint?.videoId && endpoint.videoId !== videoId) return;
+    markers.push({ title: youtubeText(marker.title), from: endpoint?.startTimeSeconds !== undefined
+      ? Number(endpoint.startTimeSeconds) : parseYouTubeChapterTimestamp(youtubeText(marker.timeDescription)) });
+  }));
+  const structuredChapters = normalizeYouTubeChapters(chapters, duration);
+  const structured = structuredChapters.length ? structuredChapters : normalizeYouTubeChapters(markers, duration);
+  if (structured.length) return structured;
+
+  // Chapter cards may arrive after player metadata. Read their native titles
+  // and timestamps without opening the chapter panel or changing playback.
+  const domChapters = [];
+  if (watch?.getAttribute("video-id") === videoId) {
+    watch.querySelectorAll("ytd-macro-markers-list-item-renderer").forEach((node) => {
+      const link = node.querySelector("a[href]");
+      try {
+        const url = new URL(link?.getAttribute("href") || "", location.origin);
+        if (extractYouTubeVideoId(url.toString()) !== videoId) return;
+      } catch { return; }
+      domChapters.push({
+        title: node.querySelector("h3:not([hidden]), h3")?.textContent?.trim() || "",
+        from: parseYouTubeChapterTimestamp(node.querySelector("#time")?.textContent)
+      });
+    });
+  }
+  const nativeChapters = normalizeYouTubeChapters(domChapters, duration);
+  if (nativeChapters.length) return nativeChapters;
+
+  // Fall back to the creator's timestamp list when native cards are not mounted.
+  const descriptionChapters = String(response?.videoDetails?.shortDescription || "")
+    .split(/\r?\n/).flatMap((line) => {
+      const match = line.match(/^\s*(\d{1,3}:\d{2}(?::\d{2})?)\s+(.+?)\s*$/);
+      return match ? [{ from: parseYouTubeChapterTimestamp(match[1]), title: match[2] }] : [];
+    });
+  const isChapterList = descriptionChapters.length >= 3 && descriptionChapters[0].from === 0 &&
+    descriptionChapters.every((item, index) => Number.isFinite(item.from) &&
+      (index === 0 || item.from > descriptionChapters[index - 1].from));
+  return isChapterList ? normalizeYouTubeChapters(descriptionChapters, duration) : [];
+}
+
+function syncYouTubeReadingChapters() {
+  if (!isYouTubePage() || !readerSessionState.open ||
+      clipState.fetchClipSignature !== computeCurrentClipSignature()) return;
+  const chapters = readYouTubeChapters(extractYouTubeVideoId());
+  // Do not erase a valid list while YouTube replaces its watch-page nodes.
+  if (!chapters.length || (chapters.length === clipState.chapters.length &&
+      chapters.every((item, index) => item.title === clipState.chapters[index].title &&
+        item.from === clipState.chapters[index].from && item.to === clipState.chapters[index].to))) return;
+  clipState.chapters = chapters;
+  renderReadingView();
+  scheduleReaderLayout();
+}
+
+async function refreshYouTubeClipData(videoId, request) {
+  if (!videoId) throw new Error("请在 YouTube 视频播放页使用字幕功能。");
+  let response = null;
+  const deadline = Date.now() + 6000;
+  do {
+    ensureSubtitleRequestActive(request);
+    response = readYouTubePlayerResponse(videoId);
+    if (response) break;
+    await sleep(150);
+  } while (Date.now() < deadline);
+  ensureSubtitleRequestActive(request);
+  if (!response) throw new Error("YouTube 播放器尚未就绪，请重试。");
+  const details = response.videoDetails;
+  clipState.bvid = `youtube:${videoId}`;
+  clipState.cid = videoId;
+  clipState.cidSource = "youtube-player";
+  clipState.title = details.title || "YouTube 字幕";
+  clipState.author = details.author || "";
+  clipState.videoDuration = Number(details.lengthSeconds) || readRuntimeVideoDuration();
+  clipState.pageCount = 1;
+  clipState.pageIndex = 1;
+  clipState.collection = null;
+  clipState.chapters = readYouTubeChapters(videoId, response);
+  clipState.subtitles = normalizeSubtitleTracks(mapYouTubeCaptionTracks(response, videoId));
+  const preferred = pickPreferredSubtitle(clipState.subtitles);
+  if (!preferred) {
+    if (response.captions?.playerCaptionsTracklistRenderer?.captionTracks?.some((track) =>
+      track.kind !== "asr" && !String(track.vssId || "").startsWith("a."))) {
+      throw new Error("YouTube 字幕轨道暂时无法读取，请重试。");
+    }
+    await finishNoSubtitleLoad(request);
     return;
   }
+  await tryLoadSubtitleCandidates(buildSubtitleCandidates(clipState.subtitles, preferred),
+    request.runId, true, request);
+  ensureSubtitleRequestActive(request);
+}
 
+function normalizeYouTubeCues(cues, duration = 0) {
+  const sorted = cues.filter((cue) => Number.isFinite(cue.from) && cue.from >= 0 && cue.content?.trim())
+    .sort((a, b) => a.from - b.from);
+  return sorted.map((cue, index) => {
+    const next = sorted[index + 1]?.from;
+    const end = Number.isFinite(cue.to) && cue.to > cue.from ? cue.to :
+      next ?? (duration > cue.from ? duration : cue.from + 5);
+    return { from: cue.from, to: next > cue.from ? Math.min(end, next) : end, content: cue.content.trim() };
+  });
+}
+
+function parseYouTubeTimedText(text, duration = 0) {
+  if (!String(text || "").trim()) return [];
+  if (String(text).trimStart().startsWith("{")) {
+    const data = JSON.parse(text);
+    if (!Array.isArray(data.events)) throw new Error("YouTube 字幕格式无效。");
+    const cues = [];
+    for (const event of data.events) {
+      if (!Array.isArray(event.segs) || event.tStartMs === undefined) continue;
+      const content = event.segs.map((segment) => segment.utf8 || "").join("");
+      const from = Number(event.tStartMs) / 1000;
+      const to = from + Number(event.dDurationMs || 0) / 1000;
+      if (event.aAppend && cues.length) {
+        cues[cues.length - 1].content += content;
+        cues[cues.length - 1].to = Math.max(cues[cues.length - 1].to, to);
+      } else cues.push({ from, to, content });
+    }
+    return normalizeYouTubeCues(cues, duration);
+  }
+  const xml = new DOMParser().parseFromString(readerHtml(text), "text/xml");
+  if (xml.querySelector("parsererror") || !["transcript", "timedtext"].includes(xml.documentElement.tagName)) {
+    throw new Error("YouTube 字幕格式无效。");
+  }
+  const cues = [...xml.querySelectorAll("text, body > p")].map((node) => {
+    const milliseconds = node.tagName === "p";
+    const scale = milliseconds ? 1000 : 1;
+    const from = Number(node.getAttribute(milliseconds ? "t" : "start")) / scale;
+    return { from, to: from + Number(node.getAttribute(milliseconds ? "d" : "dur")) / scale,
+      content: node.textContent };
+  });
+  return normalizeYouTubeCues(cues, duration);
+}
+
+// Both the older transcript renderer and the modern inline-timestamp view
+// are delivered by YouTube's own engagement panel loader.
+function walkYouTubeData(root, visit) {
+  const seen = new Set();
+  const walk = (item, depth) => {
+    if (!item || typeof item !== "object" || depth > 35 || seen.has(item)) return;
+    seen.add(item);
+    visit(item);
+    Object.values(item).forEach((value) => walk(value, depth + 1));
+  };
+  walk(root, 0);
+}
+
+function parseYouTubeTranscriptData(data, duration = 0) {
+  const cues = [];
+  walkYouTubeData(data, (item) => {
+    const legacy = item.transcriptSegmentRenderer;
+    if (legacy?.startMs !== undefined) cues.push({
+      from: Number(legacy.startMs) / 1000,
+      to: legacy.endMs === undefined ? NaN : Number(legacy.endMs) / 1000,
+      content: youtubeText(legacy.snippet)
+    });
+    const modern = item.transcriptSegmentViewModel;
+    if (modern && /^\d+(?::\d{1,2}){1,2}$/.test(modern.timestamp || "")) cues.push({
+      from: modern.timestamp.split(":").reduce((seconds, part) => seconds * 60 + Number(part), 0),
+      to: NaN, content: youtubeText(modern.simpleText)
+    });
+    const cue = item.transcriptCueRenderer;
+    if (cue?.startOffsetMs !== undefined) cues.push({
+      from: Number(cue.startOffsetMs) / 1000,
+      to: (Number(cue.startOffsetMs) + Number(cue.durationMs || 0)) / 1000,
+      content: youtubeText(cue.cue)
+    });
+  });
+  return normalizeYouTubeCues(cues, duration);
+}
+
+function isYouTubeNativeTranscriptLanguageMatch(data, track, requestedLanguage = false) {
+  let matches = false;
+  let hasSelection = false;
+  walkYouTubeData(data, (item) => {
+    if ((item.selected === true || item.isSelected === true) && (item.title || item.languageCode)) {
+      hasSelection = true;
+      if (youtubeText(item.title) === track.nativeLabel || item.languageCode === track.lan) matches = true;
+    }
+  });
+  return hasSelection ? matches : requestedLanguage || (track.nativeTrackCount === 1 && track.nativeDefault);
+}
+
+function isYouTubeNativeTranscriptForVideo(data, videoId) {
+  const owners = new Set();
+  walkYouTubeData(data, (item) => {
+    const id = item.transcriptSegmentRenderer?.targetId;
+    const match = typeof id === "string" ? id.match(/^([\w-]{11})\./) : null;
+    if (match) owners.add(match[1]);
+    const endpointId = item.watchEndpoint?.videoId;
+    if (typeof endpointId === "string" && /^[\w-]{11}$/.test(endpointId)) owners.add(endpointId);
+  });
+  return owners.size === 1 && owners.has(videoId);
+}
+
+function readCachedYouTubeNativeTranscript(track) {
+  const page = getYouTubePageWindow();
+  const watch = page.document.querySelector("ytd-watch-flexy");
+  const videoId = extractYouTubeVideoId();
+  if (watch?.getAttribute("video-id") !== videoId ||
+      watch.data?.currentVideoEndpoint?.watchEndpoint?.videoId !== videoId) return [];
+  // Both panel versions may retain text while hidden. Modern panels without
+  // cue owner IDs are fetched again rather than risking stale text.
+  for (const cachedPanel of page.document.querySelectorAll(
+    'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"], ' +
+    'ytd-engagement-panel-section-list-renderer[target-id="PAmodern_transcript_view"]'
+  )) {
+    const cachedData = cachedPanel.data;
+    if (isYouTubeNativeTranscriptForVideo(cachedData, videoId) &&
+        isYouTubeNativeTranscriptLanguageMatch(cachedData, track)) {
+      const body = parseYouTubeTranscriptData(cachedData, clipState.videoDuration);
+      if (body.length) return body;
+    }
+  }
+  return [];
+}
+
+function isYouTubeTranscriptDataEmpty(data) {
+  let empty = false;
+  walkYouTubeData(data, (item) => {
+    const list = item.transcriptSegmentListRenderer;
+    if (Array.isArray(list?.initialSegments) && list.initialSegments.length === 0 &&
+        !list.continuations?.length) empty = true;
+    // Generic section lists and loading renderers are not evidence of an
+    // empty transcript: the modern panel uses them before its cues arrive.
+  });
+  return empty;
+}
+
+async function fetchYouTubeTranscriptData(command, track, request, signal) {
+  const page = getYouTubePageWindow();
+  const endpoint = command.showEngagementPanelEndpoint;
+  const context = page.ytcfg?.get?.("INNERTUBE_CONTEXT");
+  if (!context?.client || typeof page.fetch !== "function") {
+    throw new Error("YouTube 文字记录请求尚未就绪，请重试。");
+  }
+  ensureSubtitleRequestActive(request);
+  const controller = new AbortController();
+  const cancel = () => controller.abort();
+  signal?.addEventListener("abort", cancel, { once: true });
+  if (signal?.aborted) cancel();
+  const timeout = setTimeout(cancel, 8000);
   try {
-    setBusyState(true);
-    setStatus(`正在切换字幕：${lang}`);
-    setMessage("");
-    await loadSubtitle(value, lang, runId, subtitleId);
-    ensureRunActive(runId);
-    setStatus("字幕切换完成。");
-  } catch (error) {
-    if (isStaleRunError(error) || !isRunActive(runId)) {
-      return;
+    const url = new URL("/youtubei/v1/get_panel", page.location.origin);
+    url.searchParams.set("prettyPrint", "false");
+    const apiKey = page.ytcfg.get("INNERTUBE_API_KEY");
+    if (apiKey) url.searchParams.set("key", apiKey);
+    const requestContext = JSON.parse(JSON.stringify(context));
+    // The modern transcript selects its caption language from the client
+    // locale. Always request the selected manual track, not the UI language.
+    requestContext.client.hl = track.lan;
+    if (command.clickTrackingParams) {
+      requestContext.clickTracking = { clickTrackingParams: command.clickTrackingParams };
     }
-    setStatus(`切换字幕失败：${getErrorMessage(error)}`);
+    // The modern panel's request builder sends panelId and the opaque params
+    // from globalConfiguration. These params cannot be used with get_transcript.
+    const response = await page.fetch(url.toString(), {
+      method: "POST",
+      credentials: "include",
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        "X-YouTube-Client-Name": String(page.ytcfg.get("INNERTUBE_CONTEXT_CLIENT_NAME") || 1),
+        "X-YouTube-Client-Version": String(requestContext.client.clientVersion || "")
+      },
+      body: JSON.stringify({
+        context: requestContext,
+        panelId: endpoint.panelIdentifier || endpoint.identifier.tag,
+        params: endpoint.globalConfiguration.params
+      })
+    });
+    ensureSubtitleRequestActive(request);
+    if (!response.ok) throw new Error(`YouTube 文字记录请求失败（${response.status}）。`);
+    const data = await response.json();
+    ensureSubtitleRequestActive(request);
+    if (data.error) throw new Error("YouTube 文字记录请求失败，请重试。");
+    return data;
   } finally {
-    if (isRunActive(runId)) {
-      setBusyState(false);
-    }
+    clearTimeout(timeout);
+    signal?.removeEventListener("abort", cancel);
   }
 }
 
-async function loadSubtitle(url, lang, runId = state.fetchRunId, subtitleId = "", forceRefresh = false) {
-  ensureRunActive(runId);
-  if (!url) {
-    throw new Error("字幕 URL 为空。");
+function buildYouTubeModernTranscriptCommand(videoId) {
+  // Modern get_panel params: field 149 wraps videoId (field 1) and the
+  // inline transcript presentation (field 3, value 2). IDs are 11 ASCII bytes.
+  // Legacy watch pages may expose only the failing get_transcript endpoint.
+  const params = getYouTubePageWindow().btoa(
+    String.fromCharCode(0xaa, 0x09, 0x0f, 0x0a, 0x0b) + videoId + String.fromCharCode(0x18, 0x02)
+  );
+  return { showEngagementPanelEndpoint: {
+    identifier: { tag: "PAmodern_transcript_view" }, globalConfiguration: { params }
+  } };
+}
+
+async function fetchYouTubeTranscriptPanel(command, track, request, signal) {
+  const data = await fetchYouTubeTranscriptData(command, track, request, signal);
+  // Modern responses may omit language menus. The requested client locale
+  // identifies their language; any explicit selection must still match.
+  if (!isYouTubeNativeTranscriptLanguageMatch(data, track, true)) {
+    throw new Error("YouTube 返回的文字记录语言不匹配，请重试。");
   }
+  const body = parseYouTubeTranscriptData(data, clipState.videoDuration);
+  if (body.length) return { body, state: "ready" };
+  return { body: [], state: isYouTubeTranscriptDataEmpty(data) ? "empty" : "pending" };
+}
 
-  const cacheKey = getSubtitleCacheKey({
-    bvid: state.bvid,
-    cid: state.cid,
-    subtitleId,
-    subtitleUrl: url,
-    lang
-  });
-
-  // 尝试从缓存读取
-  if (!forceRefresh) {
-    const cachedBody = await loadSubtitleFromCache(cacheKey);
-    ensureRunActive(runId);
-    if (cachedBody && Array.isArray(cachedBody) && cachedBody.length > 0) {
-      const cachedCheck = validateSubtitleByDuration(cachedBody, state.videoDuration);
-      if (!cachedCheck.ok) {
-        logWarn("[BOC] cached subtitle duration mismatch, clearing cache", {
-          cacheKey,
-          reason: cachedCheck.reason
-        });
-        await clearSubtitleCacheByKey(cacheKey);
-        ensureRunActive(runId);
-      } else {
-        logInfo("[BOC] using cached subtitle", { cacheKey, itemCount: cachedBody.length });
-        ensureRunActive(runId);
-        state.selectedSubtitleId = subtitleId ? String(subtitleId) : state.selectedSubtitleId;
-        state.selectedSubtitleUrl = url;
-        state.selectedSubtitleLang = lang;
-        state.subtitleBody = cachedBody;
-        state.subtitleFetchState = "ready";
-        await refreshDerivedContent({ runId });
-        ensureRunActive(runId);
-        if (state.readingViewOpen) {
-          renderReadingView();
-          syncReadingViewPlayback(true);
-        }
-        renderNativeTranscriptPanel();
-        return;
-      }
+async function readYouTubeNativeTranscript(track, request, signal) {
+  const cachedBody = readCachedYouTubeNativeTranscript(track);
+  if (cachedBody.length) return { body: cachedBody, state: "ready" };
+  const page = getYouTubePageWindow();
+  const videoId = extractYouTubeVideoId();
+  const deadline = Date.now() + 6000;
+  do {
+    ensureSubtitleRequestActive(request);
+    if (signal?.aborted) return { body: [], state: "cancelled" };
+    const watch = page.document.querySelector("ytd-watch-flexy");
+    // Player captions can be ready before the watch-page model after reload
+    // or SPA navigation. Wait for the current model to avoid stale commands.
+    if (watch?.getAttribute("video-id") === videoId &&
+        watch.data?.currentVideoEndpoint?.watchEndpoint?.videoId === videoId) {
+      let command = null;
+      walkYouTubeData(watch.data, (item) => {
+        const show = item.showEngagementPanelEndpoint;
+        if (!command && show?.identifier?.tag === "PAmodern_transcript_view" &&
+            show.globalConfiguration?.params) command = item;
+      });
+      return fetchYouTubeTranscriptPanel(command || buildYouTubeModernTranscriptCommand(videoId),
+        track, request, signal);
     }
-  }
+    await sleep(150);
+  } while (Date.now() < deadline);
+  return { body: [], state: "pending" };
+}
 
-  // 从网络获取
-  const subtitle = await fetchSubtitleBody(url);
-  ensureRunActive(runId);
-  const body = Array.isArray(subtitle?.body)
-    ? subtitle.body.filter((item) => String(item?.content || "").trim())
-    : [];
-  if (body.length === 0) {
-    const error = new Error("字幕文件为空。");
-    error.code = "SUBTITLE_EMPTY";
+async function fetchYouTubeSubtitleBody(url) {
+  const request = { runId: clipState.fetchRunId, id: subtitleRequestId };
+  ensureSubtitleRequestActive(request);
+  const track = clipState.subtitles.find((item) => item.subtitleUrl === url);
+  if (!track || new URL(url).searchParams.get("v") !== extractYouTubeVideoId()) {
+    throw new Error("字幕不属于当前 YouTube 视频。");
+  }
+  const cachedBody = readCachedYouTubeNativeTranscript(track);
+  if (cachedBody.length) return cachedBody;
+  const controller = new AbortController();
+  const timedTextTask = (async () => {
+    const response = await sendRuntimeMessage({ type: "fetch-text", url });
+    ensureSubtitleRequestActive(request);
+    if (!response?.ok) throw new Error(toReadableText(response?.error, "字幕请求失败"));
+    const text = String(response.data || "");
+    const body = parseYouTubeTimedText(text, clipState.videoDuration);
+    if (body.length) return body;
+    const error = new Error(text.trim() ? "字幕正文为空。" : "YouTube 暂未返回字幕正文，请重试。");
+    error.code = text.trim() ? "SUBTITLE_EMPTY" : "YOUTUBE_SUBTITLE_PENDING";
     throw error;
-  }
-  const durationCheck = validateSubtitleByDuration(body, state.videoDuration);
-  if (!durationCheck.ok) {
-    const mismatchError = new Error("字幕时长与当前视频不匹配。");
-    mismatchError.code = "SUBTITLE_DURATION_MISMATCH";
-    mismatchError.details = durationCheck;
-    throw mismatchError;
-  }
-
-  // 存入缓存
-  await saveSubtitleToCache(cacheKey, body);
-  ensureRunActive(runId);
-
-  state.selectedSubtitleId = subtitleId ? String(subtitleId) : state.selectedSubtitleId;
-  state.selectedSubtitleUrl = url;
-  state.selectedSubtitleLang = lang;
-  state.subtitleBody = body;
-  state.subtitleFetchState = "ready";
-  await refreshDerivedContent({ runId });
-  ensureRunActive(runId);
-  if (state.readingViewOpen) {
-    renderReadingView();
-    syncReadingViewPlayback(true);
-  }
-  renderNativeTranscriptPanel();
-}
-
-function getSubtitleCacheKey({ bvid, cid, subtitleId = "", subtitleUrl = "", lang = "" }) {
-  const sourceKey = buildSubtitleSourceKey(subtitleId, subtitleUrl, lang);
-  return `${CACHE_KEY_PREFIX}${bvid}_${cid}_${sourceKey}`;
-}
-
-function buildSubtitleSourceKey(subtitleId, subtitleUrl, lang) {
-  const id = String(subtitleId || "").trim();
-  if (id) {
-    return `id_${id}`;
-  }
-
-  const normalizedUrl = normalizeSubtitleUrlForCache(subtitleUrl);
-  if (normalizedUrl) {
-    return `url_${normalizedUrl}`;
-  }
-
-  return `lang_${String(lang || "").trim().toLowerCase() || "unknown"}`;
-}
-
-function normalizeSubtitleUrlForCache(url) {
-  const text = String(url || "").trim();
-  if (!text) {
-    return "";
-  }
-
+  })();
+  const nativeTask = (async () => {
+    const result = await readYouTubeNativeTranscript(track, request, controller.signal);
+    ensureSubtitleRequestActive(request);
+    if (result.body.length) return result.body;
+    const error = new Error(result.state === "empty" ? "当前视频没有可用字幕。" :
+      "YouTube 文字记录暂未就绪，请重试。");
+    error.code = result.state === "empty" ? "SUBTITLE_EMPTY" : "YOUTUBE_SUBTITLE_PENDING";
+    throw error;
+  })();
   try {
-    const parsed = new URL(text);
-    const path = parsed.pathname.replace(/[^\w/.-]+/g, "_");
-    return `${parsed.hostname}${path}`;
-  } catch {
-    return text.replace(/[^\w/.-]+/g, "_");
-  }
-}
-
-async function loadSubtitleFromCache(cacheKey) {
-  try {
-    const result = await chrome.storage.local.get(cacheKey);
-    return result[cacheKey]?.body || null;
-  } catch {
-    return null;
-  }
-}
-
-async function saveSubtitleToCache(cacheKey, body) {
-  try {
-    await chrome.storage.local.set({
-      [cacheKey]: {
-        body,
-        timestamp: Date.now()
-      }
-    });
+    // Start both sources immediately. A native-panel load need not wait for
+    // the timedtext timeout, and the first usable body wins.
+    const body = await Promise.any([timedTextTask, nativeTask]);
+    ensureSubtitleRequestActive(request);
+    return body;
   } catch (error) {
-    logWarn("[BOC] failed to save subtitle cache", error);
+    ensureSubtitleRequestActive(request);
+    const errors = error.errors || [error];
+    console.warn(`[Bilibili Reader] YouTube 字幕来源：${JSON.stringify(errors.map((item) => getErrorMessage(item)))}`);
+    if (errors.every(isUnavailableSubtitleError)) {
+      const empty = new Error("当前视频没有可用字幕。");
+      empty.code = "SUBTITLE_EMPTY";
+      throw empty;
+    }
+    // Empty HTTP text, unsupported fallback paths and timeouts are not proof
+    // that an advertised caption track is absent. Keep a retryable error.
+    throw errors.find((item) => !isUnavailableSubtitleError(item)) || error;
+  } finally {
+    controller.abort();
   }
 }
-
-async function clearSubtitleCacheByKey(cacheKey) {
-  try {
-    await chrome.storage.local.remove(cacheKey);
-  } catch (error) {
-    logWarn("[BOC] failed to clear subtitle cache by key", { cacheKey, error });
+// One observer for the site's integration points. Ancestors are watched only
+// for direct replacements; comments and recommendation subtrees are excluded.
+const readerPageSubscriptions = new Set();
+const readerPageScopes = {
+  native: {
+    roots: "#danmukuBox, .danmaku-box, .up-panel-container, #playerWrap, #bilibili-player, .bpx-player-container",
+    required: "#danmukuBox, .danmaku-box",
+    changes: "#danmukuBox, .danmaku-box, .up-panel-container, .members-info-container, #blr-native-transcript-panel, video, #playerWrap, #bilibili-player, .bpx-player-container",
+    subtree: false
+  },
+  player: {
+    roots: "#playerWrap, #bilibili-player, .bpx-player-container, .bpx-player-mini-warp",
+    changes: "video, #playerWrap, #bilibili-player, .bpx-player-container, .bpx-player-video-area, .bpx-player-control-wrap, .bpx-player-mini-close, .bpx-player-mini-warp",
+    subtree: true
   }
-}
+};
+let readerPageObserver = null;
+let readerPageDiscoveryTimer = 0;
+let readerPageRefreshQueued = false;
+let readerPageObservedTargets = new Map();
+let readerPageMissingScopes = new Set();
+let readerPageEnabledScopes = new Set();
 
-function renderMeta() {
-  const meta = byId(ids.meta);
-  if (!state.bvid) {
-    meta.innerHTML = '<div class="blr-meta-item">尚未抓取视频信息</div>';
-    return;
-  }
-
-  const subtitleCount = state.subtitles.length;
-  meta.innerHTML = `
-    <div class="blr-meta-item"><strong>标题：</strong>${escapeHtml(state.title)}</div>
-    <div class="blr-meta-item"><strong>URL：</strong>${escapeHtml(cleanVideoUrl())}</div>
-    <div class="blr-meta-item"><strong>作者：</strong>${escapeHtml(state.author || "未知")}</div>
-    <div class="blr-meta-item"><strong>日期：</strong>${escapeHtml(state.uploadDate || "未知")}</div>
-    <div class="blr-meta-item"><strong>字幕轨：</strong>${subtitleCount}</div>
-  `;
-}
-
-function renderSubtitleSelect() {
-  const select = byId(ids.subtitleSelect);
-  const subtitles = state.subtitles || [];
-
-  if (subtitles.length === 0) {
-    select.innerHTML = '<option value="">暂无字幕</option>';
-    select.disabled = true;
-    syncReadingTranscriptHeaderControls();
-    return;
-  }
-
-  select.innerHTML = subtitles
-    .map((item) => {
-      const selectedById =
-        state.selectedSubtitleId && String(item.id) === String(state.selectedSubtitleId);
-      const selectedByUrl = item.subtitleUrl === state.selectedSubtitleUrl;
-      const selected = selectedById || selectedByUrl ? "selected" : "";
-      const label = item.lanDoc || item.lan || "unknown";
-      const isAi = isAiSubtitle(item);
-      const aiTag = isAi ? " [AI自动]" : "";
-      const optionLabel = `${label}${aiTag}`;
-      return `<option value="${escapeHtml(item.subtitleUrl)}" data-lang="${escapeHtml(
-        label
-      )}" data-id="${escapeHtml(String(item.id || ""))}" data-isai="${isAi}" ${selected}>${escapeHtml(
-        optionLabel
-      )}</option>`;
-    })
-    .join("");
-  select.disabled = false;
-}
-
-function buildReadingTranscriptHeadingHtml() {
-  return `
-    <span class="blr-reading-transcript-heading-title">字幕</span>
-    <div class="blr-reading-transcript-heading-controls">
-      <button id="${ids.readingTranscriptReturnButton}" class="blr-reading-transcript-tool-button" type="button" title="回到当前字幕" aria-label="回到当前字幕">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
-      </button>
-      <button id="${ids.readingTranscriptThemeButton}" class="blr-reading-transcript-tool-button" type="button" title="切换字幕主题" aria-label="切换字幕主题">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-      </button>
-      <select id="${ids.readingTranscriptQuickSubtitleSelect}" aria-label="字幕语言" title="字幕语言" disabled><option value="">字幕</option></select>
-      <select id="${ids.readingTranscriptQuickFontSizeSelect}" aria-label="字幕字号" title="字幕字号">
-        <option value="xs">12</option><option value="s">13</option><option value="m">14</option><option value="l">16</option><option value="xl">19</option>
-      </select>
-      <select id="${ids.readingTranscriptQuickFontWeightSelect}" aria-label="字幕字重" title="字幕字重">
-        <option value="light">300</option><option value="regular">400</option><option value="normal">500</option><option value="semibold">600</option><option value="bold">700</option>
-      </select>
-    </div>
-  `;
-}
-
-function syncReadingTranscriptHeaderControls() {
-  const heading = document.getElementById("blr-reading-transcript-heading");
-  if (!heading) {
-    return;
-  }
-  const themeButton = heading.querySelector(`#${ids.readingTranscriptThemeButton}`);
-  if (themeButton) {
-    const labels = { light: "浅色", dark: "深色", paper: "纸张" };
-    const label = `切换字幕主题，当前：${labels[state.readingTheme] || "浅色"}`;
-    themeButton.title = label;
-    themeButton.setAttribute("aria-label", label);
-  }
-  const fontSizeSelect = heading.querySelector(`#${ids.readingTranscriptQuickFontSizeSelect}`);
-  const fontWeightSelect = heading.querySelector(`#${ids.readingTranscriptQuickFontWeightSelect}`);
-  if (fontSizeSelect) {
-    fontSizeSelect.value = state.readingFontScale;
-  }
-  if (fontWeightSelect) {
-    fontWeightSelect.value = state.readingFontWeight;
-  }
-  const languageSelect = heading.querySelector(`#${ids.readingTranscriptQuickSubtitleSelect}`);
-  if (!languageSelect) {
-    return;
-  }
-  const selectedUrlKey = normalizeSubtitleUrlForCache(state.selectedSubtitleUrl);
-  const languageRenderKey = JSON.stringify([
-    state.selectedSubtitleId,
-    selectedUrlKey,
-    state.subtitles.map((item) => [item.id, item.subtitleUrl, item.lanDoc, item.lan])
-  ]);
-  if (languageSelect.dataset.renderKey !== languageRenderKey) {
-    languageSelect.innerHTML = state.subtitles.length
-      ? state.subtitles
-          .map((item) => {
-            const selected =
-              (state.selectedSubtitleId && String(item.id) === String(state.selectedSubtitleId)) ||
-              normalizeSubtitleUrlForCache(item.subtitleUrl) === selectedUrlKey;
-            return `<option value="${escapeHtml(item.subtitleUrl)}" data-id="${escapeHtml(
-              item.id
-            )}" data-lang="${escapeHtml(item.lanDoc || item.lan || "unknown")}"${
-              selected ? " selected" : ""
-            }>${escapeHtml(item.lanDoc || item.lan || "字幕")}</option>`;
-          })
-          .join("")
-      : '<option value="">字幕</option>';
-    languageSelect.dataset.renderKey = languageRenderKey;
-  }
-  languageSelect.disabled = state.subtitles.length === 0 || state.subtitleFetchState === "loading";
-}
-
-function returnReadingTranscriptToCurrent() {
-  state.readingManualScrollPauseUntil = 0;
-  const video = getRuntimeVideoElement();
-  const transcriptList = document.getElementById(ids.readingTranscriptList);
-  if (!video || !transcriptList) {
-    return;
-  }
-  const subtitleIndex = findActiveSubtitleIndex(Number(video.currentTime || 0) || 0);
-  const target = transcriptList.querySelector(`[data-index="${subtitleIndex}"]`);
-  if (target) {
-    state.readingNextScrollBehavior = "smooth";
-    scrollReadingTranscriptItemIntoView(target);
-  }
-  syncReadingViewPlayback(false);
-  updateReaderFollowState();
-}
-
-function bindReadingTranscriptHeaderControls(heading) {
-  if (!heading || heading.dataset.blrControlsBound === "1") {
-    return;
-  }
-  heading.querySelector(`#${ids.readingTranscriptReturnButton}`)?.addEventListener("click", (event) => {
-    const button = event.currentTarget;
-    returnReadingTranscriptToCurrent();
-    button.classList.add("is-active");
-    window.setTimeout(() => button.classList.remove("is-active"), 300);
-  });
-  heading.querySelector(`#${ids.readingTranscriptThemeButton}`)?.addEventListener("click", (event) => {
-    const button = event.currentTarget;
-    const themes = ["light", "dark", "paper"];
-    const nextIndex = (themes.indexOf(state.readingTheme) + 1) % themes.length;
-    updateReaderPreferences({ readerTheme: themes[nextIndex] }, { persist: true });
-    button.classList.add("is-active");
-    window.setTimeout(() => button.classList.remove("is-active"), 300);
-  });
-  heading
-    .querySelector(`#${ids.readingTranscriptQuickFontSizeSelect}`)
-    ?.addEventListener("change", (event) => {
-      updateReaderPreferences({ readerFontScale: event.target.value }, { persist: true });
-    });
-  heading
-    .querySelector(`#${ids.readingTranscriptQuickFontWeightSelect}`)
-    ?.addEventListener("change", (event) => {
-      updateReaderPreferences({ readerFontWeight: event.target.value }, { persist: true });
-    });
-  heading
-    .querySelector(`#${ids.readingTranscriptQuickSubtitleSelect}`)
-    ?.addEventListener("change", (event) => {
-      const select = event.target;
-      const option = select.options[select.selectedIndex];
-      const url = String(option?.value || "");
-      if (!url) {
-        return;
-      }
-      select.disabled = true;
-      const runId = state.fetchRunId;
-      loadSubtitle(
-        url,
-        String(option.dataset.lang || "unknown"),
-        runId,
-        String(option.dataset.id || "")
-      )
-        .then(() => {
-          if (!isRunActive(runId)) {
-            return;
-          }
-          renderReadingView();
-          syncReadingViewPlayback(true);
-        })
-        .catch((error) => {
-          if (isStaleRunError(error) || !isRunActive(runId)) {
-            return;
-          }
-          logWarn("[BOC] failed to switch subtitle in reading transcript header", error);
-          syncReadingTranscriptHeaderControls();
-        });
-    });
-  heading.dataset.blrControlsBound = "1";
-}
-
-function getPopupPayload() {
-  const subtitleOptions = (state.subtitles || []).map((item) => {
-    const label = item.lanDoc || item.lan || "unknown";
-    const isAi = isAiSubtitle(item);
-    const selectedById =
-      state.selectedSubtitleId && String(item.id) === String(state.selectedSubtitleId);
-    const selectedByUrl = item.subtitleUrl === state.selectedSubtitleUrl;
-    return {
-      id: String(item.id || ""),
-      url: item.subtitleUrl,
-      lang: label,
-      isAi,
-      selected: selectedById || selectedByUrl
-    };
-  });
-
-  return {
-    contentVersion: READER_VERSION,
-    url: cleanVideoUrl(),
-    title: state.title || "",
-    author: state.author || "",
-    uploadDate: state.uploadDate || "",
-    tags: String(state.settings?.tags || ""),
-    status: state.statusText || "",
-    message: state.messageText || "",
-    subtitlePreview: buildSubtitlePreview(state.subtitleBody || [], state.settings || DEFAULT_SETTINGS),
-    markdown: state.markdown || "",
-    srt: state.srt || "",
-    txt: state.txt || "",
-    downloadFormat: normalizeDownloadFormat(state.settings?.downloadFormat),
-    subtitleOptions
+if (isYouTubePage()) {
+  readerPageScopes.player = {
+    roots: "ytd-watch-flexy #player, #movie_player",
+    changes: "ytd-watch-flexy, #player, #movie_player, video",
+    subtree: true
+  };
+  readerPageScopes.native = {
+    roots: "ytd-watch-flexy #secondary-inner, #movie_player",
+    required: "ytd-watch-flexy #secondary-inner #related",
+    changes: "#secondary-inner, #related, #movie_player, video, #blr-native-transcript-panel",
+    subtree: false
   };
 }
 
-async function copyMarkdown() {
-  state.settings = await getSettings();
-  await refreshDerivedContent();
-  if (!state.markdown) {
-    setMessage("没有可复制的内容，请先刷新抓取。");
-    return;
-  }
-
-  try {
-    await navigator.clipboard.writeText(state.markdown);
-    setMessage("Markdown 已复制到剪贴板。");
-  } catch (error) {
-    setMessage(`复制失败：${getErrorMessage(error)}`);
-  }
+function subscribeReaderPageChanges(scope, callback) {
+  const subscription = { scope, callback };
+  readerPageSubscriptions.add(subscription);
+  if (!readerPageObserver) readerPageObserver = new MutationObserver(handleReaderPageChanges);
+  refreshReaderPageScopes();
+  return () => {
+    readerPageSubscriptions.delete(subscription);
+    refreshReaderPageScopes();
+  };
 }
 
-async function downloadSubtitle() {
-  state.settings = await getSettings();
-  rebuildDerivedContent();
-  const format = normalizeDownloadFormat(state.settings?.downloadFormat);
-  const content = format === "txt" ? state.txt : state.srt;
-  if (!content) {
-    setMessage("没有可下载的字幕，请先刷新抓取。");
-    return;
-  }
-
-  const safeTitle = sanitizeFileName(state.title || state.bvid || "bilibili-subtitle");
-  const langSuffix = sanitizeFileName(state.selectedSubtitleLang || "subtitle") || "subtitle";
-  const filename = `${safeTitle}.${langSuffix}.${format}`;
-  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-
-  setMessage(`已下载：${filename}`);
-}
-
-async function sendToObsidian() {
-  state.settings = await getSettings();
-  await refreshDerivedContent();
-  if (!state.markdown) {
-    setMessage("没有可发送内容，请先刷新抓取。");
-    return;
-  }
-
-  const filename = buildNoteFilename(state);
-  const folder = resolveFolderTemplate(state.settings.noteFolder || "", state);
-  const filepath = folder ? `${folder}/${filename}` : filename;
-  const baseUrl = String(state.settings.obsidianApiBaseUrl || "").trim();
-  const apiKey = String(state.settings.obsidianApiKey || "").trim();
-  if (!baseUrl || !apiKey) {
-    setMessage("请先在设置中填写 Obsidian Local REST API 地址和 API Key。");
-    requestOpenOptions();
-    return;
-  }
-
-  try {
-    const exists = await checkObsidianNoteExists(baseUrl, apiKey, filepath);
-    if (exists) {
-      const shouldOverwrite = await confirmOverwriteNote(filepath);
-      if (!shouldOverwrite) {
-        setMessage("已取消保存，原笔记未被覆盖。");
-        return;
-      }
+function readerMutationTouches(record, selector) {
+  const target = record.target instanceof Element ? record.target : record.target.parentElement;
+  // Own content renders must not feed back into repair. An external removal
+  // still has a site-owned parent and matches the removed integration node.
+  if (target?.closest("#blr-root, #blr-reading-inline-host, [data-blr-extension-node]")) return false;
+  for (const nodes of [record.addedNodes, record.removedNodes]) {
+    for (const node of nodes) {
+      if (node instanceof Element && (node.matches(selector) || node.querySelector(selector))) return true;
     }
-    await writeNoteByLocalApi(baseUrl, apiKey, filepath, state.markdown);
-    setMessage(`已写入 Obsidian：${filepath}`);
-  } catch (error) {
-    if (isExtensionContextInvalidated(error)) {
-      setMessage("扩展刚刚更新，请刷新当前页面后重试。");
-      return;
+  }
+  return false;
+}
+
+function isReaderPageScopeEnabled(scope) {
+  if (scope === "player") return isReaderMode();
+  if (scope === "native") return isSupportedTranscriptPage() && !isReaderMode();
+  return false;
+}
+
+function hasDetachedReaderPageTarget() {
+  for (const node of readerPageObservedTargets.keys()) {
+    if (!node.isConnected) return true;
+  }
+  return false;
+}
+
+function handleReaderPageChanges(records) {
+  const changedScopes = new Set();
+  let topologyChanged = hasDetachedReaderPageTarget();
+  for (const subscription of readerPageSubscriptions) {
+    if (!isReaderPageScopeEnabled(subscription.scope)) continue;
+    if (changedScopes.has(subscription.scope)) continue;
+    if (records.some((record) => readerMutationTouches(record, readerPageScopes[subscription.scope].changes))) {
+      changedScopes.add(subscription.scope);
     }
-    setMessage(`写入失败：${getErrorMessage(error)}`);
+    if (!topologyChanged && records.some((record) =>
+      readerMutationTouches(record, readerPageScopes[subscription.scope].roots))) topologyChanged = true;
   }
-}
-
-async function checkObsidianNoteExists(baseUrl, apiKey, filepath) {
-  const resp = await sendRuntimeMessage({
-    type: "obsidian-note-exists",
-    baseUrl,
-    apiKey,
-    filepath
-  });
-  if (!resp?.ok) {
-    throw new Error(toReadableText(resp?.error, "Local API 检查失败"));
+  for (const subscription of readerPageSubscriptions) {
+    if (changedScopes.has(subscription.scope)) subscription.callback();
   }
-  return Boolean(resp.exists);
-}
-
-async function writeNoteByLocalApi(baseUrl, apiKey, filepath, content) {
-  const resp = await sendRuntimeMessage({
-    type: "write-obsidian-note",
-    baseUrl,
-    apiKey,
-    filepath,
-    content
-  });
-  if (!resp?.ok) {
-    throw new Error(toReadableText(resp?.error, "Local API 写入失败"));
-  }
-}
-
-function confirmOverwriteNote(filepath) {
-  return new Promise((resolve) => {
-    const existing = document.querySelector(".blr-confirm-overlay");
-    if (existing) {
-      existing.remove();
-    }
-
-    const overlay = document.createElement("div");
-    overlay.className = "blr-confirm-overlay";
-    overlay.innerHTML = `
-      <div class="blr-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="blrConfirmTitle">
-        <div id="blrConfirmTitle" class="blr-confirm-title">该笔记已存在</div>
-        <div class="blr-confirm-body">继续会覆盖原内容：</div>
-        <div class="blr-confirm-path"></div>
-        <div class="blr-confirm-actions">
-          <button type="button" class="blr-confirm-cancel">取消</button>
-          <button type="button" class="blr-confirm-primary">覆盖</button>
-        </div>
-      </div>
-    `;
-    overlay.querySelector(".blr-confirm-path").textContent = String(filepath || "");
-
-    const cleanup = (value) => {
-      overlay.remove();
-      document.removeEventListener("keydown", onKeydown, true);
-      resolve(value);
-    };
-    const onKeydown = (event) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        cleanup(false);
-      }
-    };
-
-    overlay.addEventListener("click", (event) => {
-      if (event.target === overlay) {
-        cleanup(false);
-      }
+  // A control or subtitle content update does not change the observed roots.
+  // Removed ancestors contain those roots, or disconnect an observed target,
+  // so unknown site wrappers still take the repair/rebind path.
+  if (topologyChanged && !readerPageRefreshQueued) {
+    readerPageRefreshQueued = true;
+    queueMicrotask(() => {
+      readerPageRefreshQueued = false;
+      refreshReaderPageScopes();
     });
-    overlay.querySelector(".blr-confirm-cancel")?.addEventListener("click", () => cleanup(false));
-    overlay.querySelector(".blr-confirm-primary")?.addEventListener("click", () => cleanup(true));
-    document.addEventListener("keydown", onKeydown, true);
-    document.body.appendChild(overlay);
-    overlay.querySelector(".blr-confirm-primary")?.focus();
-  });
-}
-
-function setBusyState(disabled) {
-  byId(ids.copyBtn).disabled = disabled;
-  byId(ids.downloadBtn).disabled = disabled;
-  byId(ids.sendBtn).disabled = disabled;
-  byId(ids.refreshBtn).disabled = disabled;
-  byId(ids.settingsBtn).disabled = disabled;
-  byId(ids.subtitleSelect).disabled = disabled || state.subtitles.length === 0;
-}
-
-function setStatus(text) {
-  state.statusText = String(text || "");
-  byId(ids.status).textContent = state.statusText;
-}
-
-function setMessage(text) {
-  state.messageText = String(text || "");
-  byId(ids.message).textContent = state.messageText;
-}
-
-function applyNoSubtitleState() {
-  state.subtitles = [];
-  state.selectedSubtitleId = "";
-  state.selectedSubtitleUrl = "";
-  state.selectedSubtitleLang = "";
-  state.subtitleBody = [];
-  state.subtitleFetchState = "empty";
-  state.hotComments = [];
-  state.markdown = "";
-  state.srt = "";
-  state.txt = "";
-  byId(ids.preview).value = "";
-}
-function cleanupReaderFloatingArtifacts(playerHost = state.readingPlayerHost) {
-  if (document.pictureInPictureElement) {
-    document.exitPictureInPicture().catch(() => {});
-  }
-  dismissReaderMiniPlayer(playerHost);
-  const runtimeHost = findReaderPlayerHost(getRuntimeVideoElement());
-  if (runtimeHost && runtimeHost !== playerHost) {
-    dismissReaderMiniPlayer(runtimeHost);
   }
 }
 
+function scheduleReaderPageDiscovery() {
+  if (readerPageDiscoveryTimer || !readerPageMissingScopes.size) return;
+  readerPageDiscoveryTimer = window.setTimeout(() => {
+    readerPageDiscoveryTimer = 0;
+    const discovered = new Set();
+    let enabledChanged = false;
+    for (const scope of readerPageEnabledScopes) {
+      if (!isReaderPageScopeEnabled(scope)) enabledChanged = true;
+    }
+    // Existing roots and their ancestors remain observed while we only search
+    // for hosts that have not arrived yet.
+    for (const scope of readerPageMissingScopes) {
+      if (!isReaderPageScopeEnabled(scope)) continue;
+      const config = readerPageScopes[scope];
+      if (document.querySelector(config.required || config.roots)) discovered.add(scope);
+    }
+    const detached = hasDetachedReaderPageTarget();
+    if (discovered.size || detached || enabledChanged) refreshReaderPageScopes();
+    else scheduleReaderPageDiscovery();
+    for (const subscription of readerPageSubscriptions) {
+      if (discovered.has(subscription.scope) && isReaderPageScopeEnabled(subscription.scope)) subscription.callback();
+    }
+  }, 1500);
+}
+
+function refreshReaderPageScopes() {
+  readerPageObserver?.disconnect();
+  window.clearTimeout(readerPageDiscoveryTimer);
+  readerPageDiscoveryTimer = 0;
+  readerPageObservedTargets = new Map();
+  readerPageMissingScopes = new Set();
+  readerPageEnabledScopes = new Set();
+  if (!readerPageObserver || !readerPageSubscriptions.size || !document.body) return;
+  const targets = new Map();
+  const scopes = new Set([...readerPageSubscriptions].map((item) => item.scope).filter(isReaderPageScopeEnabled));
+  const missingScopes = new Set();
+  const watch = (node, subtree = false) => {
+    if (node) targets.set(node, Boolean(targets.get(node) || subtree));
+  };
+  watch(document.body);
+  document.querySelectorAll("#app, #video-page-app, #biliMain, #mirror-vdcon, .video-container-v1, .left-container, .right-container-inner")
+    .forEach((node) => watch(node));
+  for (const scope of scopes) {
+    const config = readerPageScopes[scope];
+    const roots = document.querySelectorAll(config.roots);
+    if (!document.querySelector(config.required || config.roots)) missingScopes.add(scope);
+    for (const root of roots) {
+      watch(root, config.subtree || root.matches(".up-panel-container, #playerWrap, #bilibili-player, .bpx-player-container"));
+      for (let parent = root.parentElement; parent && parent !== document.body; parent = parent.parentElement) {
+        watch(parent);
+      }
+    }
+  }
+  for (const [target, subtree] of targets) {
+    readerPageObserver.observe(target, { childList: true, subtree });
+  }
+  readerPageObservedTargets = targets;
+  readerPageMissingScopes = missingScopes;
+  readerPageEnabledScopes = scopes;
+  // During initial loading, a missing host can arrive below an unobserved
+  // wrapper. Discovery stops as soon as every subscribed host is present.
+  scheduleReaderPageDiscovery();
+}
 async function enterReaderMode({ animate = false } = {}) {
-  state.readingModeTransition?.cancel();
+  if (readerSessionState.open) return;
+  if (isYouTubePage() && !extractYouTubeVideoId()) return;
+  readerSessionState.transition?.cancel();
+  const sessionId = invalidateReaderSession();
   const open = () => {
+    if (sessionId !== readerSessionState.id) return;
     const readerUrl = new URL(location.href);
     readerUrl.searchParams.set("bilibli_reader", "1");
     replaceReaderModeUrl(readerUrl.toString());
     document.documentElement.setAttribute("data-blr-reader-mode", "1");
     document.body.setAttribute("data-blr-reader-mode", "1");
-    state.playerAiQuickActionSuppressedUntil = Date.now() + 2500;
-    removePlayerAiQuickActionButton();
-    return prepareReaderMode();
+    return prepareReaderMode(sessionId);
   };
   if (!animate || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     return open();
@@ -3035,9 +1338,10 @@ async function enterReaderMode({ animate = false } = {}) {
 }
 
 async function exitReaderMode() {
-  if (!state.readingViewOpen || state.readingViewClosing) return;
-  state.readingViewClosing = true;
-  state.readingModeTransition?.cancel();
+  if (!readerSessionState.open || readerSessionState.closing) return;
+  readerSessionState.closing = true;
+  readerSessionState.transition?.cancel();
+  invalidateReaderSession();
   document.documentElement.removeAttribute("data-blr-reader-entering");
   const close = () => {
     replaceReaderModeUrl(stripReaderModeUrl(location.href));
@@ -3053,7 +1357,7 @@ async function exitReaderMode() {
     close();
     throw error;
   } finally {
-    state.readingViewClosing = false;
+    readerSessionState.closing = false;
   }
 }
 
@@ -3107,12 +1411,10 @@ async function transitionReaderMode(update, direction) {
     }
     root.style.setProperty(name, value);
   };
-  if (direction === "exit") {
-    setTransitionStyle("--blr-exit-player-width", `${rect.width}px`);
-    setTransitionStyle("--blr-exit-player-height", `${rect.height}px`);
-    setTransitionStyle("--blr-exit-player-from-x", `${rect.left}px`);
-    setTransitionStyle("--blr-exit-player-from-y", `${rect.top}px`);
-  }
+  setTransitionStyle("--blr-transition-player-width", `${rect.width}px`);
+  setTransitionStyle("--blr-transition-player-height", `${rect.height}px`);
+  setTransitionStyle("--blr-transition-player-from-x", `${rect.left}px`);
+  setTransitionStyle("--blr-transition-player-from-y", `${rect.top}px`);
   const nameNode = (node, name) => {
     if (!node || namedNodes.has(node)) return;
     namedNodes.set(node, {
@@ -3130,7 +1432,7 @@ async function transitionReaderMode(update, direction) {
     direction === "enter" ? ".blr-native-transcript-segment" : ".blr-reading-complete-segment"
   );
   const sourceFollowPauseUntil = direction === "enter"
-    ? state.nativeTranscriptManualScrollPauseUntil : state.readingManualScrollPauseUntil;
+    ? nativeTranscriptState.manualScrollPauseUntil : readerSessionState.manualScrollPauseUntil;
   const transcriptRect = sourceTranscript?.getBoundingClientRect();
   if (transcriptRect?.width > 0 && transcriptRect.height > 0) {
     nameNode(sourceTranscript, "blr-reader-transcript");
@@ -3145,8 +1447,8 @@ async function transitionReaderMode(update, direction) {
     cleanedUp = true;
     window.clearTimeout(timeout);
     window.removeEventListener("resize", cancel);
-    const pendingReadingRender = state.readingModeTransition?.cancel === cancel &&
-      state.readingModeTransition.pendingReadingRender;
+    const pendingReadingRender = readerSessionState.transition?.cancel === cancel &&
+      readerSessionState.transition.pendingReadingRender;
     namedNodes.forEach(({ value, priority }, node) => {
       if (value) node.style.setProperty("view-transition-name", value, priority);
       else node.style.removeProperty("view-transition-name");
@@ -3157,15 +1459,15 @@ async function transitionReaderMode(update, direction) {
     });
     root.removeAttribute("data-blr-reader-transition");
     root.removeAttribute("data-blr-reader-transcript-transition");
-    if (state.readingModeTransition?.cancel === cancel) state.readingModeTransition = null;
-    if (pendingReadingRender && state.readingViewOpen) {
+    if (readerSessionState.transition?.cancel === cancel) readerSessionState.transition = null;
+    if (readerSessionState.open && readerSessionState.layoutDirty) scheduleReaderLayout();
+    if (pendingReadingRender && readerSessionState.open) {
       renderReadingView();
       syncReadingViewPlayback(true);
     }
-    if (direction === "exit" && !state.readingViewOpen) {
+    if (direction === "exit" && !readerSessionState.open) {
       clearReaderPageFocus();
       scheduleNativeTranscriptPanelSync(0);
-      schedulePlayerAiQuickActionSync(0);
       cleanupReaderFloatingArtifacts();
     }
   };
@@ -3178,29 +1480,27 @@ async function transitionReaderMode(update, direction) {
     transition = document.startViewTransition(async () => {
       if (cancelled) return;
       await update();
-      if (cancelled || (direction === "enter" && !state.readingViewOpen)) return;
+      if (cancelled || (direction === "enter" && !readerSessionState.open)) return;
       // The mounting code can replace the original player on watch-later pages.
       const nextHost = direction === "enter"
-        ? state.readingPlayerHost
+        ? readerPlayerState.host
         : findReaderPlayerHost(getRuntimeVideoElement());
       const nextPlayer = nextHost && (getReaderPlayerWrapNode(nextHost) || nextHost);
       if (nextPlayer !== player) {
         player.style.removeProperty("view-transition-name");
         nameNode(nextPlayer, "blr-reader-player");
       }
-      if (direction === "exit") {
-        const target = nextPlayer?.getBoundingClientRect();
-        if (!target || target.width <= 0 || target.height <= 0) {
-          transition.skipTransition();
-          return;
-        }
-        // Keep the captured bitmap's size constant. Only the group's transform
-        // moves/scales it; the browser must not also interpolate its width.
-        setTransitionStyle("--blr-exit-player-to-x", `${target.left}px`);
-        setTransitionStyle("--blr-exit-player-to-y", `${target.top}px`);
-        setTransitionStyle("--blr-exit-player-scale-x", String(target.width / rect.width));
-        setTransitionStyle("--blr-exit-player-scale-y", String(target.height / rect.height));
+      const target = nextPlayer?.getBoundingClientRect();
+      if (!target || target.width <= 0 || target.height <= 0) {
+        transition.skipTransition();
+        return;
       }
+      // Keep the captured bitmap's size constant in both directions. Only the
+      // group's transform moves/scales it, without a second width animation.
+      setTransitionStyle("--blr-transition-player-to-x", `${target.left}px`);
+      setTransitionStyle("--blr-transition-player-to-y", `${target.top}px`);
+      setTransitionStyle("--blr-transition-player-scale-x", String(target.width / rect.width));
+      setTransitionStyle("--blr-transition-player-scale-y", String(target.height / rect.height));
       // Match the subtitle panels in both directions. The native panel must
       // already exist in the new snapshot instead of appearing after exit.
       sourceTranscript?.style.removeProperty("view-transition-name");
@@ -3213,10 +1513,10 @@ async function transitionReaderMode(update, direction) {
       transferTranscriptScrollAnchor(sourceScrollAnchor, targetScrollContainer,
         direction === "enter" ? "data-index" : "data-native-transcript-index");
       if (direction === "enter") {
-        state.readingManualScrollPauseUntil = Math.max(state.readingManualScrollPauseUntil, sourceFollowPauseUntil);
+        readerSessionState.manualScrollPauseUntil = Math.max(readerSessionState.manualScrollPauseUntil, sourceFollowPauseUntil);
         updateReaderFollowState();
       } else {
-        state.nativeTranscriptManualScrollPauseUntil = Math.max(state.nativeTranscriptManualScrollPauseUntil, sourceFollowPauseUntil);
+        nativeTranscriptState.manualScrollPauseUntil = Math.max(nativeTranscriptState.manualScrollPauseUntil, sourceFollowPauseUntil);
       }
       nameNode(targetTranscript, "blr-reader-transcript");
       const targetTranscriptRect = targetTranscript?.getBoundingClientRect();
@@ -3241,14 +1541,14 @@ async function transitionReaderMode(update, direction) {
     cleanup();
     return update();
   }
-  state.readingModeTransition = { cancel, direction, phase: "updating", finished: transition.finished };
+  readerSessionState.transition = { cancel, direction, phase: "updating", finished: transition.finished };
   window.addEventListener("resize", cancel, { once: true });
   // A slow player must not leave the old page frozen behind a snapshot.
   timeout = window.setTimeout(() => transition.skipTransition(), 900);
   transition.ready.then(() => {
     window.clearTimeout(timeout);
-    if (state.readingModeTransition?.cancel === cancel) {
-      state.readingModeTransition.phase = "animating";
+    if (readerSessionState.transition?.cancel === cancel) {
+      readerSessionState.transition.phase = "animating";
     }
   }, () => {});
   transition.finished.then(cleanup, cleanup);
@@ -3260,37 +1560,49 @@ async function transitionReaderMode(update, direction) {
   }
 }
 
-async function prepareReaderMode() {
+const READER_MOUNT_TIMER_KEYS = ["playerMountTimer", "playerRetryTimer"];
+
+function clearReaderMountTimers() {
+  READER_MOUNT_TIMER_KEYS.forEach((name) => {
+    if (readerSessionState[name]) window.clearTimeout(readerSessionState[name]);
+    readerSessionState[name] = 0;
+  });
+}
+
+function invalidateReaderSession() {
+  readerSessionState.id += 1;
+  readerSessionState.mountTask = null;
+  readerSessionState.resizeCleanup?.(false);
+  if (readerSessionState.layoutFrame) window.cancelAnimationFrame(readerSessionState.layoutFrame);
+  readerSessionState.layoutFrame = 0;
+  readerSessionState.layoutDirty = false;
+  clearReaderMountTimers();
+  clearReaderPlayerTimers();
+  return readerSessionState.id;
+}
+
+function isReaderSessionActive(sessionId) {
+  return sessionId === readerSessionState.id && readerSessionState.open && isReaderMode();
+}
+
+async function prepareReaderMode(sessionId = readerSessionState.id) {
   const readingView = byId(ids.readingView);
-  state.readingViewOpen = true;
-  state.readingNativePageMode = true;
+  readerSessionState.open = true;
+  stopNativeTranscriptPlaybackSync();
+  ensureNativeTranscriptPanel();
   document.body.setAttribute("data-blr-reading-active", "1");
-  hydrateReaderStateFromSettings(state.settings);
+  hydrateReaderStateFromSettings(readerPreferences.settings);
   // Each entry gives the video its largest fitted size before allocating subtitles.
-  state.readingTranscriptAutoWidth = true;
+  readerSessionState.transcriptAutoWidth = true;
   applyReadingViewPresentation();
   alignReaderViewportToPlayer();
-  await sleep(0);
-  if (!state.readingViewOpen || !isReaderMode()) return;
   openReaderViewShell(readingView);
   applyReaderPageFocus();
   renderReadingView();
 
-  const earlyPlayerHost = findReaderPlayerHost(getRuntimeVideoElement());
-  if (earlyPlayerHost) {
-    earlyPlayerHost.setAttribute("data-blr-reader-fading", "1");
-  }
-
-  await sleep(0);
-  if (!state.readingViewOpen || !isReaderMode()) return;
-
   // Try to mount player, with more retries for slower pages (like watch later)
   const mounted = await ensureReaderPlayerMounted({ retries: 50, delayMs: 150, forceLayout: true });
-  if (!state.readingViewOpen || !isReaderMode()) return;
-  const mountedPlayerHost = state.readingPlayerHost || earlyPlayerHost;
-  if (mountedPlayerHost) {
-    mountedPlayerHost.removeAttribute("data-blr-reader-fading");
-  }
+  if (!isReaderSessionActive(sessionId)) return;
   if (!mounted) {
     // Don't throw - keep UI open and keep retrying in background
     renderReadingStatus("正在等待视频播放器就绪...");
@@ -3302,32 +1614,29 @@ async function prepareReaderMode() {
 }
 
 function scheduleReaderPlayerRetry() {
-  if (state.readingPlayerRetryTimer) {
-    window.clearTimeout(state.readingPlayerRetryTimer);
-    state.readingPlayerRetryTimer = 0;
+  if (readerSessionState.playerRetryTimer) {
+    window.clearTimeout(readerSessionState.playerRetryTimer);
+    readerSessionState.playerRetryTimer = 0;
   }
+  const sessionId = readerSessionState.id;
   // Keep trying to mount player in background
   const tryMount = async () => {
-    state.readingPlayerRetryTimer = 0;
-    if (!state.readingViewOpen || !isReaderMode()) return;
+    readerSessionState.playerRetryTimer = 0;
+    if (!isReaderSessionActive(sessionId)) return;
     const mounted = await ensureReaderPlayerMounted({ retries: 10, delayMs: 200, forceLayout: true });
-    const retryHost = state.readingPlayerHost;
-    if (retryHost) {
-      retryHost.removeAttribute("data-blr-reader-fading");
-    }
+    if (!isReaderSessionActive(sessionId)) return;
     if (mounted) {
       finishEnterReaderMode();
-    } else if (state.readingViewOpen) {
-      state.readingPlayerRetryTimer = window.setTimeout(tryMount, 500);
+    } else if (readerSessionState.open) {
+      readerSessionState.playerRetryTimer = window.setTimeout(tryMount, 500);
     }
   };
-  state.readingPlayerRetryTimer = window.setTimeout(tryMount, 500);
+  readerSessionState.playerRetryTimer = window.setTimeout(tryMount, 500);
 }
 
 function finishEnterReaderMode() {
-  if (!state.readingViewOpen || !isReaderMode()) return;
+  if (!readerSessionState.open || !isReaderMode()) return;
 
-  alignReaderViewportToPlayer();
   moveReadingMainInline();
   scheduleReaderMiniPlayerDismiss();
   maybeRefreshReaderSubtitleInBackground();
@@ -3340,20 +1649,21 @@ function openReaderViewShell(readingView = byId(ids.readingView)) {
   if (!readingView) {
     return;
   }
-  readingView.classList.add("open", "reader-page");
+  readingView.classList.add("open");
   readingView.setAttribute("aria-hidden", "false");
   setReadingViewReady(false);
   renderReadingStatus("正在准备播放器和字幕...");
 }
 
 function maybeRefreshReaderSubtitleInBackground() {
-  if (state.subtitleBody.length) {
+  if (clipState.subtitleBody.length) {
     return;
   }
   const signature = computeCurrentClipSignature();
-  const runId = state.fetchRunId;
+  const runId = clipState.fetchRunId;
+  const sessionId = readerSessionState.id;
   waitForVideoMetadata().then(() => {
-    if (runId !== state.fetchRunId || signature !== computeCurrentClipSignature()) {
+    if (!isReaderSessionActive(sessionId) || runId !== clipState.fetchRunId || signature !== computeCurrentClipSignature()) {
       return;
     }
     refreshClip().catch((error) => {
@@ -3401,40 +1711,59 @@ function settleReaderModePresentation() {
   return true;
 }
 
-async function ensureReaderPlayerMounted({ retries = 1, delayMs = 100, forceLayout = false } = {}) {
+function ensureReaderPlayerMounted(options = {}) {
+  const sessionId = readerSessionState.id;
+  if (!isReaderSessionActive(sessionId)) return Promise.resolve(false);
+  if (readerSessionState.mountTask?.sessionId === sessionId) return readerSessionState.mountTask.promise;
+  const task = { sessionId, promise: null };
+  readerSessionState.mountTask = task;
+  task.promise = mountReaderPlayer(options, sessionId).finally(() => {
+    if (readerSessionState.mountTask === task) readerSessionState.mountTask = null;
+  });
+  return task.promise;
+}
+
+async function mountReaderPlayer({ retries = 1, delayMs = 100, forceLayout = false }, sessionId) {
   for (let attempt = 0; attempt < retries; attempt += 1) {
-    if (!state.readingViewOpen || !isReaderMode()) return false;
+    if (!isReaderSessionActive(sessionId)) return false;
     const video = getRuntimeVideoElement();
     const playerHost = findReaderPlayerHost(video);
     if (video && playerHost) {
-      const previousHost = state.readingPlayerHost;
-      const previousVideo = state.readingVideoEl;
+      if (isYouTubePage()) {
+        readerPlayerState.host = playerHost;
+        bindReadingViewVideo(video);
+        bindReaderLayout();
+        layoutReaderPlayerHost();
+        return true;
+      }
+      const previousHost = readerPlayerState.host;
+      const previousVideo = readerPlayerState.videoEl;
       video.controls = false;
       video.removeAttribute("controls");
       video.disablePictureInPicture = true;
       video.setAttribute("disablepictureinpicture", "");
       video.removeAttribute("autopictureinpicture");
-      state.readingPlayerHost = playerHost;
+      readerPlayerState.host = playerHost;
       const miniPlayerClosed = dismissReaderMiniPlayer(playerHost);
       if (miniPlayerClosed) {
         await sleep(120);
       }
+      if (!isReaderSessionActive(sessionId)) return false;
+      if (!video.isConnected) continue;
       const activeHost = findReaderPlayerHost(video) || playerHost;
-      state.readingPlayerHost = activeHost;
+      readerPlayerState.host = activeHost;
       normalizeReaderPlayerContainer(activeHost);
-      if (state.readingNativePageMode) {
+      clearNativeReaderFloatingStyles(activeHost);
+      if (hasNativeReaderPlayerLayoutIssue(activeHost)) {
+        normalizeReaderPlayerContainer(activeHost);
         clearNativeReaderFloatingStyles(activeHost);
-        if (hasNativeReaderPlayerLayoutIssue(activeHost)) {
-          normalizeReaderPlayerContainer(activeHost);
-          clearNativeReaderFloatingStyles(activeHost);
-        }
       }
       if (previousHost && previousHost !== activeHost) {
         setReaderPlayerControlsVisible(false, previousHost);
         cleanupReaderPlayerHostNode(previousHost);
       }
       if (previousVideo !== video) {
-        state.readingVideoEventsBound = false;
+        readerPlayerState.videoEventsBound = false;
       }
       activeHost.classList.add("blr-reader-player-host");
       bindReadingViewVideo(video);
@@ -3445,19 +1774,20 @@ async function ensureReaderPlayerMounted({ retries = 1, delayMs = 100, forceLayo
         previousHost !== activeHost ||
         attempt > 0 ||
         miniPlayerClosed ||
-        (state.readingNativePageMode && hasNativeReaderPlayerLayoutIssue(activeHost))
+        hasNativeReaderPlayerLayoutIssue(activeHost)
       ) {
         layoutReaderPlayerHost();
-        if (state.readingNativePageMode && hasNativeReaderPlayerLayoutIssue(activeHost)) {
+        if (hasNativeReaderPlayerLayoutIssue(activeHost)) {
           normalizeReaderPlayerContainer(activeHost);
           clearNativeReaderFloatingStyles(activeHost);
           layoutReaderPlayerHost();
         }
       }
-      if (state.readingNativePageMode && !isWatchlaterPage()) {
+      if (!isWatchlaterPage()) {
         await ensureReaderPlayerControlsRecovered(activeHost, {
           reason: attempt > 0 ? "mount-retry" : "mount"
         });
+        if (!isReaderSessionActive(sessionId)) return false;
         queueEnsureReaderPlayerControlsRecovered({
           reason: attempt > 0 ? "post-mount-retry" : "post-mount",
           delayMs: 220,
@@ -3475,14 +1805,16 @@ async function ensureReaderPlayerMounted({ retries = 1, delayMs = 100, forceLayo
 }
 
 function queueEnsureReaderPlayerMounted() {
-  if (!state.readingViewOpen || !isReaderMode() || state.readingPlayerMountTimer) {
+  if (!readerSessionState.open || !isReaderMode() || readerSessionState.playerMountTimer) {
     return;
   }
-  state.readingPlayerMountTimer = window.setTimeout(() => {
-    state.readingPlayerMountTimer = 0;
+  const sessionId = readerSessionState.id;
+  readerSessionState.playerMountTimer = window.setTimeout(() => {
+    readerSessionState.playerMountTimer = 0;
+    if (!isReaderSessionActive(sessionId)) return;
     ensureReaderPlayerMounted({ retries: 12, delayMs: 120, forceLayout: true })
       .then((mounted) => {
-        if (!mounted || !state.readingViewOpen || !isReaderMode()) {
+        if (!mounted || !isReaderSessionActive(sessionId)) {
           return;
         }
         moveReadingMainInline();
@@ -3497,72 +1829,22 @@ function queueEnsureReaderPlayerMounted() {
   }, 60);
 }
 
-function findReaderPlayerHost(video) {
-  if (!video) {
-    return null;
-  }
-
-  return (
-    video.closest(".bpx-player-container") ||
-    video.closest(".bpx-player-video-area") ||
-    video.closest("#bilibili-player") ||
-    video.parentElement
-  );
-}
-
 function closeReadingView() {
-  const deferCleanup = state.readingModeTransition?.direction === "exit";
-  document.querySelectorAll("[data-blr-reader-fading]").forEach((node) => {
-    node.removeAttribute("data-blr-reader-fading");
-  });
+  invalidateReaderSession();
+  const deferCleanup = readerSessionState.transition?.direction === "exit";
   cleanupReaderFloatingArtifacts();
-  state.readingViewOpen = false;
-  state.readingNativePageMode = false;
-  state.readingViewReady = false;
-  state.readingManualScrollPauseUntil = 0;
-  state.readingProgrammaticScrollUntil = 0;
-  state.readingCollectionSwitchInFlight = false;
-  state.readingNextScrollBehavior = "smooth";
-  if (state.readingPlayerRetryTimer) {
-    window.clearTimeout(state.readingPlayerRetryTimer);
-    state.readingPlayerRetryTimer = 0;
-  }
+  readerSessionState.open = false;
+  readerSessionState.ready = false;
+  readerSessionState.manualScrollPauseUntil = 0;
+  readerSessionState.programmaticScrollUntil = 0;
+  readerSessionState.collectionSwitchInFlight = false;
+  readerSessionState.nextScrollBehavior = "smooth";
   const readingView = byId(ids.readingView);
-  readingView.classList.remove("open", "reader-page");
+  readingView.classList.remove("open");
   readingView.setAttribute("aria-hidden", "true");
   readingView.setAttribute("data-blr-reader-ready", "0");
   readingView.removeAttribute("data-blr-reader-follow");
-  document.body.removeAttribute("data-blr-reading-active");
-  document.documentElement.removeAttribute("data-blr-reader-mode");
-  document.body.removeAttribute("data-blr-reader-mode");
-  document.documentElement.removeAttribute("data-blr-reader-theme");
-  document.documentElement.removeAttribute("data-blr-reader-font-scale");
-  document.documentElement.removeAttribute("data-blr-reader-font-weight");
-  document.documentElement.removeAttribute("data-blr-reader-letter-spacing");
-  document.documentElement.removeAttribute("data-blr-reader-line-height");
-  document.documentElement.removeAttribute("data-blr-reader-content-width");
-  document.documentElement.removeAttribute("data-blr-reader-chapter-visibility");
-  document.documentElement.removeAttribute("data-blr-reader-has-chapters");
-  document.documentElement.removeAttribute("data-blr-reader-transcript-visible");
-  document.documentElement.removeAttribute("data-blr-reader-timestamp-visible");
-  document.documentElement.removeAttribute("data-blr-reader-transcript-mode");
-  document.body.removeAttribute("data-blr-reader-theme");
-  document.body.removeAttribute("data-blr-reader-font-scale");
-  document.body.removeAttribute("data-blr-reader-font-weight");
-  document.body.removeAttribute("data-blr-reader-letter-spacing");
-  document.body.removeAttribute("data-blr-reader-line-height");
-  document.body.removeAttribute("data-blr-reader-content-width");
-  document.body.removeAttribute("data-blr-reader-chapter-visibility");
-  document.body.removeAttribute("data-blr-reader-has-chapters");
-  document.body.removeAttribute("data-blr-reader-transcript-visible");
-  document.body.removeAttribute("data-blr-reader-timestamp-visible");
-  document.body.removeAttribute("data-blr-reader-transcript-mode");
-  document.body.removeAttribute("data-blr-reader-resizing");
-  const pageReaderEntry = document.getElementById("blr-page-reader-entry");
-  if (pageReaderEntry) {
-    pageReaderEntry.disabled = false;
-    pageReaderEntry.classList.remove("is-loading");
-  }
+  clearReaderPresentationAttributes();
   [document.documentElement, document.body, readingView].forEach((node) => {
     node.style.removeProperty("--blr-reader-rail-width");
     node.style.removeProperty("--blr-reader-transcript-width");
@@ -3588,10 +1870,1955 @@ function closeReadingView() {
     window.setTimeout(() => cleanupReaderFloatingArtifacts(), 220);
   }
 }
+function getReaderContentMaxPx() {
+  if (readerPreferences.contentWidth === "compact") {
+    return 720;
+  }
+  if (readerPreferences.contentWidth === "narrow") {
+    return 820;
+  }
+  if (readerPreferences.contentWidth === "wide") {
+    return 1120;
+  }
+  if (readerPreferences.contentWidth === "full") {
+    return 1280;
+  }
+  return 980;
+}
+
+function getReaderPagePaddingPx() {
+  return Math.min(32, Math.max(16, window.innerWidth * 0.028));
+}
+
+function getReaderMainWidthLimit(columns = null) {
+  const pagePadding = getReaderPagePaddingPx();
+  if (window.innerWidth > 1180) {
+    const { transcriptWidth, gap } = columns || getEffectiveReaderColumnWidths();
+    const availableWidth = window.innerWidth - pagePadding * 2 - transcriptWidth - gap;
+    // Fit against the real video ratio and player top in layoutReaderPlayerHost.
+    return Math.max(1, availableWidth);
+  }
+  return Math.max(320, Math.min(getReaderContentMaxPx(), window.innerWidth - pagePadding * 2));
+}
+
+function getReaderPlayerMaxHeightPx(playerTop) {
+  const isDesktop = window.innerWidth > 1180;
+  const hasChapterRail = isDesktop && getCachedReadingChapters().length > 0;
+  // Only visible chapters reserve space below the video.
+  const bottomSpace = hasChapterRail ? 148 : 0;
+  let playerBottomLimit = window.innerHeight - bottomSpace;
+  if (isDesktop) {
+    const transcriptRect = document.getElementById("blr-reading-inline-host")?.getBoundingClientRect();
+    // Before the transcript mounts, use its desktop CSS bottom inset (24px).
+    const transcriptBottom = transcriptRect?.width > 0 && transcriptRect.height > 0
+      ? transcriptRect.bottom
+      : window.innerHeight - 24;
+    playerBottomLimit = Math.min(playerBottomLimit, transcriptBottom);
+  }
+  return Math.max(1, playerBottomLimit - playerTop);
+}
+
+function normalizeReaderColumnWidth(value, fallback, min, max) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.round(Math.min(max, Math.max(min, parsed))) : fallback;
+}
+
+function getReaderVideoAspectRatio() {
+  const video = readerPlayerState.videoEl || getRuntimeVideoElement();
+  return Number(video?.videoWidth) > 0 && Number(video?.videoHeight) > 0
+    ? Number(video.videoWidth) / Number(video.videoHeight)
+    : 16 / 9;
+}
+
+function getEffectiveReaderColumnWidths() {
+  const pagePadding = getReaderPagePaddingPx();
+  const gap = Math.min(24, Math.max(16, window.innerWidth * 0.014));
+  const minChapterWidth = 140;
+  let minTranscriptWidth = 280;
+  const minVideoWidth = 420;
+  const chapterWidth = normalizeReaderColumnWidth(readerPreferences.chapterWidthPx, 220, minChapterWidth, 360);
+  let maxTranscriptWidth = Math.max(
+    minTranscriptWidth,
+    window.innerWidth - pagePadding * 2 - gap - minVideoWidth
+  );
+  if (readerSessionState.open && window.innerWidth > 1180) {
+    const video = readerPlayerState.videoEl || getRuntimeVideoElement();
+    const playerHost = readerPlayerState.host || findReaderPlayerHost(video);
+    const playerNode = getReaderPlayerWrapNode(playerHost) || playerHost;
+    const playerTop = playerNode?.getBoundingClientRect?.().top ?? 98;
+    const maxHeight = getReaderPlayerMaxHeightPx(playerTop);
+    const availableWidth = window.innerWidth - pagePadding * 2 - gap;
+    // Give the video its largest complete frame first, then use the remaining
+    // horizontal space for subtitles instead of reserving a fixed-width panel.
+    const videoWidth = Math.min(availableWidth - 280, maxHeight * getReaderVideoAspectRatio());
+    minTranscriptWidth = Math.max(280, Math.ceil(availableWidth - videoWidth));
+    maxTranscriptWidth = Math.max(
+      minTranscriptWidth, Math.floor(availableWidth - Math.min(minVideoWidth, videoWidth))
+    );
+  }
+  const transcriptWidth = readerSessionState.open && window.innerWidth > 1180 && readerSessionState.transcriptAutoWidth
+    ? minTranscriptWidth
+    : normalizeReaderColumnWidth(readerPreferences.transcriptWidthPx, 440, minTranscriptWidth, maxTranscriptWidth);
+
+  return {
+    chapterWidth: Math.round(chapterWidth),
+    transcriptWidth: Math.round(transcriptWidth),
+    minTranscriptWidth,
+    maxTranscriptWidth,
+    gap
+  };
+}
+
+function setReaderStyle(node, name, value) {
+  if (node && node.style.getPropertyValue(name) !== value) node.style.setProperty(name, value);
+}
+
+function applyReaderColumnLayout(columns = getEffectiveReaderColumnWidths()) {
+  const readingView = byId(ids.readingView);
+  if (!readingView) return;
+  const { chapterWidth, transcriptWidth, minTranscriptWidth, maxTranscriptWidth, gap } = columns;
+  const mainWidth = getReaderMainWidthLimit(columns);
+  const centerOffset = Math.round(-(transcriptWidth + gap) / 2);
+  [document.documentElement, document.body, readingView].forEach((node) => {
+    setReaderStyle(node, "--blr-reader-rail-width", `${chapterWidth}px`);
+    setReaderStyle(node, "--blr-reader-transcript-width", `${transcriptWidth}px`);
+    setReaderStyle(node, "--blr-reader-center-offset", `${centerOffset}px`);
+    setReaderStyle(node, "--blr-reader-main-width", `${Math.round(mainWidth)}px`);
+  });
+  const resizeHandle = document.getElementById(ids.readingTranscriptResizeHandle);
+  resizeHandle?.setAttribute("aria-valuenow", String(transcriptWidth));
+  resizeHandle?.setAttribute("aria-valuemin", String(minTranscriptWidth));
+  resizeHandle?.setAttribute("aria-valuemax", String(maxTranscriptWidth));
+}
+
+function updateReaderChapterRailPosition(rect = null) {
+  const readingView = document.getElementById(ids.readingView);
+  if (!readingView || window.innerWidth <= 1180) return;
+
+  const playerNode = getReaderPlayerWrapNode() || readerPlayerState.host;
+  const playerRect = rect || playerNode?.getBoundingClientRect?.();
+  if (!playerRect || !(playerRect.width > 0) || !(playerRect.height > 0)) return;
+
+  [document.documentElement, document.body, readingView].forEach((node) => {
+    setReaderStyle(node, "--blr-reader-player-left", `${Math.round(playerRect.left)}px`);
+    setReaderStyle(node, "--blr-reader-player-top", `${Math.round(playerRect.top)}px`);
+    setReaderStyle(node, "--blr-reader-player-bottom", `${Math.round(playerRect.bottom)}px`);
+    setReaderStyle(node, "--blr-reader-player-width", `${Math.round(playerRect.width)}px`);
+  });
+}
+
+function bindReaderResizeHandle(node) {
+  if (!node || node.dataset.blrBound === "1") return;
+
+  node.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0 || window.innerWidth <= 1180 || readerSessionState.transition) return;
+    readerSessionState.resizeCleanup?.(false);
+    event.preventDefault();
+    node.setPointerCapture?.(event.pointerId);
+    document.body.dataset.blrReaderResizing = "transcript";
+    noteManualReaderInteraction();
+    const sessionId = readerSessionState.id;
+    const scrollAnchor = captureTranscriptScrollAnchor(
+      document.getElementById("blr-reading-inline-host"), ".blr-reading-complete-segment"
+    );
+    let frame = 0;
+    let latestX = null;
+    let hasMoved = false;
+    let stopped = false;
+
+    const flush = () => {
+      if (latestX === null || !isReaderSessionActive(sessionId)) return;
+      const { gap, minTranscriptWidth, maxTranscriptWidth } = getEffectiveReaderColumnWidths();
+      readerSessionState.transcriptAutoWidth = false;
+      readerPreferences.transcriptWidthPx = normalizeReaderColumnWidth(
+        window.innerWidth - getReaderPagePaddingPx() - latestX - gap / 2,
+        readerPreferences.transcriptWidthPx, minTranscriptWidth, maxTranscriptWidth
+      );
+      latestX = null;
+      layoutReaderPlayerHost();
+      restoreTranscriptScrollAnchor(scrollAnchor);
+    };
+    const move = (moveEvent) => {
+      if (moveEvent.pointerId !== event.pointerId) return;
+      if (!isReaderSessionActive(sessionId)) {
+        finish(false);
+        return;
+      }
+      latestX = moveEvent.clientX;
+      hasMoved = true;
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        flush();
+      });
+    };
+    const end = (endEvent) => {
+      if (endEvent.pointerId !== event.pointerId) return;
+      if (hasMoved && endEvent.type === "pointerup") latestX = endEvent.clientX;
+      finish(true);
+    };
+    const finish = (persist = true) => {
+      if (stopped) return;
+      stopped = true;
+      if (frame) window.cancelAnimationFrame(frame);
+      frame = 0;
+      if (persist) flush();
+      if (node.hasPointerCapture?.(event.pointerId)) node.releasePointerCapture(event.pointerId);
+      document.body.removeAttribute("data-blr-reader-resizing");
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", end);
+      window.removeEventListener("pointercancel", end);
+      if (readerSessionState.resizeCleanup === finish) readerSessionState.resizeCleanup = null;
+      if (!persist || !isReaderSessionActive(sessionId)) return;
+      noteManualReaderInteraction();
+      readerPreferences.settings = { ...readerPreferences.settings, readerTranscriptWidthPx: readerPreferences.transcriptWidthPx };
+      persistReaderSettings();
+    };
+    readerSessionState.resizeCleanup = finish;
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", end);
+    window.addEventListener("pointercancel", end);
+  });
+  node.dataset.blrBound = "1";
+}
+
+function scheduleReaderLayout() {
+  if (!readerSessionState.open || !isReaderMode()) return;
+  readerSessionState.layoutDirty = true;
+  if (readerSessionState.layoutFrame || readerSessionState.transition?.phase === "animating") return;
+  const sessionId = readerSessionState.id;
+  readerSessionState.layoutFrame = window.requestAnimationFrame(() => {
+    readerSessionState.layoutFrame = 0;
+    if (!isReaderSessionActive(sessionId)) return;
+    layoutReaderPlayerHost();
+  });
+}
+
+function observeReaderPlayerLayout() {
+  const player = getReaderPlayerWrapNode() || readerPlayerState.host;
+  if (readerSessionState.observedPlayer === player) return;
+  readerSessionState.resizeObserver?.disconnect();
+  readerSessionState.observedPlayer = player;
+  if (!player) return;
+  readerSessionState.resizeObserver = new ResizeObserver(scheduleReaderLayout);
+  readerSessionState.resizeObserver.observe(player);
+}
+
+function bindReaderLayout() {
+  observeReaderPlayerLayout();
+  if (readerPlayerState.layoutBound) {
+    return;
+  }
+  window.addEventListener("resize", scheduleReaderLayout);
+  window.addEventListener("scroll", scheduleReaderLayout, { passive: true });
+  window.visualViewport?.addEventListener("resize", scheduleReaderLayout);
+  document.addEventListener("fullscreenchange", scheduleReaderLayout);
+  document.addEventListener("webkitfullscreenchange", scheduleReaderLayout);
+  readerPlayerState.layoutBound = true;
+}
+
+function unbindReaderLayout() {
+  readerSessionState.resizeObserver?.disconnect();
+  readerSessionState.resizeObserver = null;
+  readerSessionState.observedPlayer = null;
+  if (readerSessionState.layoutFrame) window.cancelAnimationFrame(readerSessionState.layoutFrame);
+  readerSessionState.layoutFrame = 0;
+  readerSessionState.layoutDirty = false;
+  if (!readerPlayerState.layoutBound) {
+    return;
+  }
+  window.removeEventListener("resize", scheduleReaderLayout);
+  window.removeEventListener("scroll", scheduleReaderLayout);
+  window.visualViewport?.removeEventListener("resize", scheduleReaderLayout);
+  document.removeEventListener("fullscreenchange", scheduleReaderLayout);
+  document.removeEventListener("webkitfullscreenchange", scheduleReaderLayout);
+  readerPlayerState.layoutBound = false;
+}
+
+// Size YouTube with scoped CSS while keeping its player in the native DOM.
+// Its inline dimensions and controls belong to YouTube and survive reader exit.
+function layoutYouTubeReaderPlayer() {
+  if (
+    document.fullscreenElement || document.webkitFullscreenElement ||
+    readerPlayerState.host?.classList.contains("ytp-fullscreen")
+  ) return;
+  const columns = getEffectiveReaderColumnWidths();
+  applyReaderColumnLayout(columns);
+  const padding = getReaderPagePaddingPx();
+  const top = 98;
+  const desktop = window.innerWidth > 1180;
+  const hasChapters = getCachedReadingChapters().length > 0;
+  const availableWidth = desktop
+    ? window.innerWidth - padding * 2 - columns.transcriptWidth - columns.gap
+    : window.innerWidth - padding * 2;
+  const availableHeight = desktop
+    ? window.innerHeight - top - (hasChapters ? 148 : 24)
+    : Math.min(window.innerHeight * 0.4, window.innerHeight - top - 240 - (hasChapters ? 128 : 0));
+  const ratio = getReaderVideoAspectRatio();
+  const width = Math.max(1, Math.min(availableWidth, Math.max(1, availableHeight) * ratio));
+  const height = width / ratio;
+  const left = desktop ? padding : (window.innerWidth - width) / 2;
+  [document.documentElement, document.body, byId(ids.readingView)].forEach((node) => {
+    setReaderStyle(node, "--blr-reader-player-left", `${Math.round(left)}px`);
+    setReaderStyle(node, "--blr-reader-player-top", `${top}px`);
+    setReaderStyle(node, "--blr-reader-player-bottom", `${Math.round(top + height)}px`);
+    setReaderStyle(node, "--blr-reader-player-width", `${width}px`);
+    setReaderStyle(node, "--blr-reader-player-rendered-width", `${width}px`);
+    setReaderStyle(node, "--blr-reader-player-rendered-height", `${height}px`);
+  });
+  updateReadingTranscriptTailSpacer();
+}
+
+function layoutReaderPlayerHost() {
+  if (!readerSessionState.open || !isReaderMode()) {
+    return;
+  }
+
+  if (readerSessionState.transition?.phase === "animating") {
+    readerSessionState.layoutDirty = true;
+    return;
+  }
+  readerSessionState.layoutDirty = false;
+  if (isYouTubePage()) {
+    layoutYouTubeReaderPlayer();
+    return;
+  }
+  const readingView = byId(ids.readingView);
+  const columns = getEffectiveReaderColumnWidths();
+  applyReaderColumnLayout(columns);
+  const playerHost = readerPlayerState.host;
+  if (!playerHost) {
+    return;
+  }
+
+  const aspectRatio = getReaderVideoAspectRatio();
+
+  const rect = playerHost.getBoundingClientRect();
+  if (!(rect.width > 0) || !(rect.height > 0)) {
+    return;
+  }
+
+  const widthLimit = getReaderMainWidthLimit(columns);
+  const wrapRect = getReaderPlayerWrapNode(playerHost)?.getBoundingClientRect?.();
+  const layoutTop = Number.isFinite(wrapRect?.top) ? wrapRect.top : rect.top;
+  const maxHeight = getReaderPlayerMaxHeightPx(layoutTop);
+  // Fit the whole video, then size the player to that same aspect ratio.
+  // Filling the width and height independently creates letterbox bars.
+  const renderedWidth = Math.min(widthLimit, maxHeight * aspectRatio);
+  const renderedHeight = renderedWidth / aspectRatio;
+
+  clearNativeReaderFloatingStyles(playerHost);
+  cleanupReaderPlayerHostNode(playerHost);
+  [document.documentElement, document.body, readingView].forEach((node) => {
+    setReaderStyle(node, "--blr-reader-player-rendered-width", `${renderedWidth}px`);
+    setReaderStyle(node, "--blr-reader-player-rendered-height", `${renderedHeight}px`);
+  });
+  updateReaderChapterRailPosition();
+  updateReadingTranscriptTailSpacer();
+  queueEnsureReaderPlayerControlsRecovered({
+    reason: "layout-native",
+    delayMs: 120
+  });
+}
+const nativeTranscriptRenderCache = new WeakMap();
+
+function startNativeTranscriptPanelObserver() {
+  if (nativeTranscriptState.observer || !document.body) {
+    return;
+  }
+
+  nativeTranscriptState.observer = subscribeReaderPageChanges(
+    "native", () => scheduleNativeTranscriptPanelSync()
+  );
+  window.addEventListener("resize", () => scheduleNativeTranscriptPanelSync(60), {
+    passive: true
+  });
+  scheduleNativeTranscriptPanelSync(0);
+}
+
+function scheduleNativeTranscriptPanelSync(delayMs = 120) {
+  if (nativeTranscriptState.syncTimer) {
+    return;
+  }
+  nativeTranscriptState.syncTimer = window.setTimeout(() => {
+    nativeTranscriptState.syncTimer = 0;
+    // closeReadingView restores the panel before the exit snapshot. Keep
+    // observer-driven refreshes out of the animation; completion syncs again.
+    if (readerSessionState.transition?.direction === "exit") return;
+    ensureNativeTranscriptPanel();
+  }, Math.max(0, Number(delayMs) || 0));
+}
+
+function shouldShowNativeTranscriptPanel() {
+  return isSupportedTranscriptPage() && !isReaderMode() && !readerSessionState.open;
+}
+
+function findNativeTranscriptAnchor() {
+  if (isYouTubePage()) return document.querySelector("ytd-watch-flexy #secondary-inner #related");
+  const danmaku = document.getElementById("danmukuBox") || document.querySelector(".danmaku-box");
+  const rightContainer = danmaku?.closest(".right-container-inner");
+  const collaborationPanel = rightContainer?.querySelector(
+    ":scope > .up-panel-container .members-info-container"
+  );
+  const collaborationAnchor = collaborationPanel?.closest(".up-panel-container");
+  return collaborationAnchor || danmaku;
+}
+
+function ensureNativeTranscriptPanel() {
+  const existing = document.getElementById(ids.nativeTranscriptPanel);
+  if (!shouldShowNativeTranscriptPanel()) {
+    existing?.parentElement?.removeAttribute("data-blr-youtube-transcript-open");
+    stopNativeTranscriptPlaybackSync();
+    nativeTranscriptState.resizeObserver?.disconnect();
+    nativeTranscriptState.observedPlayer = null;
+    existing?.remove();
+    return null;
+  }
+
+  const anchor = findNativeTranscriptAnchor();
+  if (!anchor?.parentElement) {
+    return null;
+  }
+
+  let panel = existing;
+  const created = !panel;
+  if (!panel) {
+    panel = document.createElement("section");
+    panel.id = ids.nativeTranscriptPanel;
+    panel.className = "blr-native-transcript-panel";
+    panel.setAttribute("data-blr-extension-node", "native-transcript");
+    panel.innerHTML = readerHtml(`
+      <div id="${ids.nativeTranscriptHeader}" class="blr-native-transcript-header">
+        <button
+          class="blr-native-transcript-title-button"
+          type="button"
+          data-native-transcript-toggle
+          aria-controls="${ids.nativeTranscriptBody}"
+          aria-expanded="true"
+        >字幕</button>
+        <div id="${ids.nativeTranscriptControls}" class="blr-native-transcript-controls">
+          <button
+            id="${ids.nativeTranscriptReaderButton}"
+            class="blr-native-transcript-reader-button"
+            type="button"
+            title="进入阅读模式"
+            aria-label="进入阅读模式"
+            aria-pressed="false"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5.5C9 3.5 5.5 3.5 2.5 4.5v15c3-1 6.5-1 9.5 1 3-2 6.5-2 9.5-1v-15c-3-1-6.5-1-9.5 1Z"/><path d="M12 5.5v15M5.5 8h3M5.5 11.5h3M15.5 8h3M15.5 11.5h3"/></svg>
+          </button>
+          <button
+            id="${ids.nativeTranscriptReturnButton}"
+            class="blr-native-transcript-return-button"
+            type="button"
+            title="回到当前字幕"
+            aria-label="回到当前字幕"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+          </button>
+          <button
+            id="${ids.nativeTranscriptThemeButton}"
+            class="blr-native-transcript-theme-button"
+            type="button"
+            title="切换字幕主题"
+            aria-label="切换字幕主题"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          </button>
+          <select id="${ids.nativeTranscriptSelect}" aria-label="字幕语言" title="字幕语言" disabled>
+            <option value="">字幕</option>
+          </select>
+          <select id="${ids.nativeTranscriptFontSizeSelect}" aria-label="字幕字号" title="字幕字号">
+            ${[12, 14, 16, 18, 20, 22]
+              .map((value) => `<option value="${value}">${value}</option>`)
+              .join("")}
+          </select>
+          <select id="${ids.nativeTranscriptFontWeightSelect}" aria-label="字幕字重" title="字幕字重">
+            ${[300, 400, 500, 600, 700]
+              .map((value) => `<option value="${value}">${value}</option>`)
+              .join("")}
+          </select>
+        </div>
+        <button
+          class="blr-native-transcript-arrow-button"
+          type="button"
+          data-native-transcript-toggle
+          aria-label="折叠字幕"
+          aria-controls="${ids.nativeTranscriptBody}"
+          aria-expanded="true"
+        >
+          <svg class="blr-native-transcript-arrow" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="m6 3.75 4.25 4.25L6 12.25"></path>
+          </svg>
+        </button>
+      </div>
+      <div id="${ids.nativeTranscriptBody}" class="blr-native-transcript-body">
+        <div class="blr-native-transcript-state">正在加载字幕...</div>
+      </div>
+    `);
+    bindNativeTranscriptPanelEvents(panel);
+  }
+
+  if (panel.parentElement !== anchor.parentElement || panel.nextElementSibling !== anchor) {
+    panel.parentElement?.removeAttribute("data-blr-youtube-transcript-open");
+    anchor.insertAdjacentElement("beforebegin", panel);
+  }
+  panel.dataset.platform = isYouTubePage() ? "youtube" : "bilibili";
+
+  panel.classList.toggle(
+    "is-collaboration-layout",
+    anchor.matches(".up-panel-container") && Boolean(anchor.querySelector(".members-info-container"))
+  );
+
+  setNativeTranscriptExpanded(panel, nativeTranscriptState.open);
+  if (created && isYouTubePage()) nativeTranscriptState.observedPlayer = null;
+  bindNativeTranscriptPanelResize();
+  const playerRect = syncNativeTranscriptPanelAlignment();
+  syncNativeTranscriptPanelHeight(playerRect);
+  ensureNativeTranscriptLoaded();
+  renderNativeTranscriptPanel({ force: created });
+  return panel;
+}
+
+function bindNativeTranscriptPanelEvents(panel) {
+  const body = panel.querySelector(`#${ids.nativeTranscriptBody}`);
+  panel.querySelector(`#${ids.nativeTranscriptReaderButton}`)?.addEventListener("click", onTranscriptReaderEntryClick);
+  const returnButton = panel.querySelector(`#${ids.nativeTranscriptReturnButton}`);
+  const themeButton = panel.querySelector(`#${ids.nativeTranscriptThemeButton}`);
+  const toggle = () => {
+    if (isNativeTranscriptEmpty()) {
+      autoFoldNativeTranscriptIfEmpty();
+      showNativeTranscriptEmptyNotice(panel);
+      return;
+    }
+    nativeTranscriptState.open = !nativeTranscriptState.open;
+    setNativeTranscriptExpanded(panel, nativeTranscriptState.open);
+    if (nativeTranscriptState.open) {
+      ensureNativeTranscriptLoaded();
+      syncNativeTranscriptPlayback(true);
+    }
+  };
+  panel.querySelectorAll("[data-native-transcript-toggle]").forEach((button) => {
+    button.addEventListener("click", toggle);
+  });
+  returnButton?.addEventListener("click", () => {
+    if (isNativeTranscriptEmpty()) {
+      autoFoldNativeTranscriptIfEmpty();
+      showNativeTranscriptEmptyNotice(panel);
+      return;
+    }
+    nativeTranscriptState.manualScrollPauseUntil = 0;
+    if (!nativeTranscriptState.open) {
+      nativeTranscriptState.open = true;
+      setNativeTranscriptExpanded(panel, true);
+      ensureNativeTranscriptLoaded().then(() => syncNativeTranscriptPlayback(true));
+    } else {
+      syncNativeTranscriptPlayback(true);
+    }
+    returnButton.classList.add("is-active");
+    window.setTimeout(() => returnButton.classList.remove("is-active"), 300);
+  });
+  themeButton?.addEventListener("click", () => {
+    const themes = ["light", "dark", "paper"];
+    const nextIndex = (themes.indexOf(readerPreferences.nativeTheme) + 1) % themes.length;
+    updateNativeTranscriptTheme(themes[nextIndex]);
+    themeButton.classList.add("is-active");
+    window.setTimeout(() => themeButton.classList.remove("is-active"), 300);
+  });
+  body?.addEventListener("click", onNativeTranscriptClick);
+  panel.addEventListener("change", onNativeTranscriptChange);
+  const noteManualScroll = () => {
+    if (Date.now() <= nativeTranscriptState.programmaticScrollUntil) {
+      return;
+    }
+    nativeTranscriptState.manualScrollPauseUntil = Date.now() + 3000;
+  };
+  body?.addEventListener("scroll", noteManualScroll, true);
+  body?.addEventListener("wheel", noteManualScroll, { passive: true });
+  body?.addEventListener("pointerdown", noteManualScroll, { passive: true });
+}
+
+function isNativeTranscriptEmpty() {
+  return (
+    clipState.fetchClipSignature === computeCurrentClipSignature() &&
+    clipState.subtitleFetchState === "empty"
+  );
+}
+
+function clearNativeTranscriptEmptyNotice(panel) {
+  panel?.querySelector(".blr-native-transcript-empty-notice")?.remove();
+}
+
+function showNativeTranscriptEmptyNotice(panel) {
+  clearNativeTranscriptEmptyNotice(panel);
+  const notice = document.createElement("div");
+  notice.className = "blr-native-transcript-empty-notice";
+  notice.setAttribute("role", "status");
+  notice.textContent = "当前视频无字幕";
+  notice.addEventListener("animationend", () => notice.remove(), { once: true });
+  panel.appendChild(notice);
+}
+
+function setNativeTranscriptExpanded(panel, expanded) {
+  if (!panel) {
+    return;
+  }
+  const isExpanded = Boolean(expanded) && !isNativeTranscriptEmpty();
+  panel.classList.toggle("is-folded", !isExpanded);
+  if (isYouTubePage()) {
+    panel.parentElement?.toggleAttribute("data-blr-youtube-transcript-open", isExpanded);
+  }
+  panel.querySelectorAll("[data-native-transcript-toggle]").forEach((button) => {
+    const value = String(isExpanded);
+    if (button.getAttribute("aria-expanded") !== value) button.setAttribute("aria-expanded", value);
+  });
+  const arrowButton = panel.querySelector(".blr-native-transcript-arrow-button");
+  const label = isExpanded ? "折叠字幕" : "展开字幕";
+  if (arrowButton && arrowButton.getAttribute("aria-label") !== label) arrowButton.setAttribute("aria-label", label);
+  const body = panel.querySelector(`#${ids.nativeTranscriptBody}`);
+  if (body && body.hidden !== !isExpanded) {
+    body.hidden = !isExpanded;
+  }
+  if (isExpanded) startNativeTranscriptPlaybackSync();
+  else stopNativeTranscriptPlaybackSync();
+}
+
+function hydrateNativeTranscriptSettings(settings = readerPreferences.settings) {
+  readerPreferences.nativeTheme = normalizeReaderTheme(settings?.nativeTranscriptTheme);
+  readerPreferences.nativeFontSize = normalizeNativeTranscriptFontSize(
+    settings?.nativeTranscriptFontSize
+  );
+  readerPreferences.nativeFontWeight = normalizeNativeTranscriptFontWeight(
+    settings?.nativeTranscriptFontWeight
+  );
+  readerPreferences.settings = {
+    ...readerPreferences.settings,
+    nativeTranscriptTheme: readerPreferences.nativeTheme,
+    nativeTranscriptFontSize: readerPreferences.nativeFontSize,
+    nativeTranscriptFontWeight: readerPreferences.nativeFontWeight
+  };
+  applyNativeTranscriptTypography();
+}
+
+function applyNativeTranscriptTypography(panel = document.getElementById(ids.nativeTranscriptPanel)) {
+  if (!panel) {
+    return;
+  }
+  const typographyChanged = panel.style.getPropertyValue("--blr-native-transcript-font-size") !== `${readerPreferences.nativeFontSize}px` ||
+    panel.style.getPropertyValue("--blr-native-transcript-font-weight") !== String(readerPreferences.nativeFontWeight);
+  const scrollAnchor = typographyChanged ? captureTranscriptScrollAnchor(
+    panel.querySelector(`#${ids.nativeTranscriptList}`), ".blr-native-transcript-segment"
+  ) : null;
+  setReaderDatasetValue(panel, "theme", readerPreferences.nativeTheme);
+  const themeButton = panel.querySelector(`#${ids.nativeTranscriptThemeButton}`);
+  if (themeButton) {
+    const themeLabels = { light: "浅色", dark: "深色", paper: "纸张" };
+    const label = `切换字幕主题，当前：${themeLabels[readerPreferences.nativeTheme] || "浅色"}`;
+    if (themeButton.title !== label) themeButton.title = label;
+    if (themeButton.getAttribute("aria-label") !== label) themeButton.setAttribute("aria-label", label);
+  }
+  setReaderStyle(panel,
+    "--blr-native-transcript-font-size",
+    `${readerPreferences.nativeFontSize}px`
+  );
+  setReaderStyle(panel,
+    "--blr-native-transcript-font-weight",
+    String(readerPreferences.nativeFontWeight)
+  );
+  const fontSizeSelect = panel.querySelector(`#${ids.nativeTranscriptFontSizeSelect}`);
+  const fontWeightSelect = panel.querySelector(`#${ids.nativeTranscriptFontWeightSelect}`);
+  if (fontSizeSelect && fontSizeSelect.value !== String(readerPreferences.nativeFontSize)) {
+    fontSizeSelect.value = String(readerPreferences.nativeFontSize);
+  }
+  if (fontWeightSelect && fontWeightSelect.value !== String(readerPreferences.nativeFontWeight)) {
+    fontWeightSelect.value = String(readerPreferences.nativeFontWeight);
+  }
+  restoreTranscriptScrollAnchor(scrollAnchor);
+}
+
+function updateNativeTranscriptTheme(theme) {
+  readerPreferences.nativeTheme = normalizeReaderTheme(theme);
+  readerPreferences.settings = {
+    ...readerPreferences.settings,
+    nativeTranscriptTheme: readerPreferences.nativeTheme
+  };
+  applyNativeTranscriptTypography();
+  persistReaderSettings();
+}
+
+function updateNativeTranscriptTypography({ fontSize, fontWeight } = {}) {
+  readerSessionState.transition?.cancel();
+  nativeTranscriptState.manualScrollPauseUntil = Date.now() + 3000;
+  readerPreferences.nativeFontSize = normalizeNativeTranscriptFontSize(
+    fontSize ?? readerPreferences.nativeFontSize
+  );
+  readerPreferences.nativeFontWeight = normalizeNativeTranscriptFontWeight(
+    fontWeight ?? readerPreferences.nativeFontWeight
+  );
+  readerPreferences.settings = {
+    ...readerPreferences.settings,
+    nativeTranscriptFontSize: readerPreferences.nativeFontSize,
+    nativeTranscriptFontWeight: readerPreferences.nativeFontWeight
+  };
+  applyNativeTranscriptTypography();
+  persistReaderSettings();
+}
+
+function renderNativeTranscriptHeaderControls(panel) {
+  const languageSelect = panel.querySelector(`#${ids.nativeTranscriptSelect}`);
+  syncSubtitleLanguageSelect(languageSelect);
+  applyNativeTranscriptTypography(panel);
+}
+
+function getNativeTranscriptPlaceholderText() {
+  if (
+    clipState.fetchClipSignature !== computeCurrentClipSignature() ||
+    clipState.subtitleFetchState === "loading" ||
+    clipState.subtitleFetchState === "idle"
+  ) {
+    return "正在加载字幕...";
+  }
+  if (clipState.subtitleFetchState === "error") {
+    return "字幕加载失败";
+  }
+  return "当前视频无字幕";
+}
+
+function renderNativeTranscriptPanel({ force = false } = {}) {
+  if (readerSessionState.transition?.phase === "animating") return;
+  const panel = document.getElementById(ids.nativeTranscriptPanel);
+  const body = panel?.querySelector(`#${ids.nativeTranscriptBody}`);
+  if (!panel || !body || !shouldShowNativeTranscriptPanel()) {
+    return;
+  }
+
+  renderNativeTranscriptHeaderControls(panel);
+  if (isNativeTranscriptEmpty()) {
+    autoFoldNativeTranscriptIfEmpty();
+  } else {
+    clearNativeTranscriptEmptyNotice(panel);
+  }
+
+  const renderKey = [
+    computeCurrentClipSignature(),
+    clipState.fetchClipSignature,
+    clipState.subtitleFetchState,
+    clipState.selectedSubtitleId,
+    normalizeSubtitleUrlForCache(clipState.selectedSubtitleUrl),
+    clipState.subtitleRevision
+  ].join("|");
+  const previous = nativeTranscriptRenderCache.get(body);
+  if (!force && previous?.key === renderKey && previous.subtitleBody === clipState.subtitleBody &&
+      body.childElementCount > 0) {
+    startNativeTranscriptPlaybackSync();
+    return;
+  }
+  const transcriptItems = getReadingTranscriptItems();
+  nativeTranscriptRenderCache.set(body, { key: renderKey, subtitleBody: clipState.subtitleBody });
+  invalidateReaderNodeCache(document.getElementById(ids.nativeTranscriptList));
+  if (transcriptItems.length === 0) {
+    const retry = clipState.subtitleFetchState === "error";
+    body.innerHTML = readerHtml(`
+      <div class="blr-native-transcript-state${retry ? " is-error" : ""}">
+        <span>${escapeHtml(getNativeTranscriptPlaceholderText())}</span>
+        ${retry ? '<button type="button" data-native-transcript-retry>重试</button>' : ""}
+      </div>
+    `);
+    nativeTranscriptState.activeIndex = -1;
+    stopNativeTranscriptPlaybackSync();
+    return;
+  }
+
+  const transcriptHtml = `
+    <div class="blr-native-transcript-complete" role="document">
+      ${transcriptItems
+        .map(
+          (item) => `
+            <button
+              type="button"
+              class="blr-native-transcript-segment"
+              data-native-transcript-index="${item.index}"
+              data-seconds="${item.from}"
+              title="${escapeHtml(formatCompactTimestamp(item.from, item.from >= 3600))}"
+            >${escapeHtml(item.content)}</button>
+          `
+        )
+        .join(" ")}
+    </div>
+  `;
+
+  body.innerHTML = readerHtml(`
+    <div id="${ids.nativeTranscriptList}" class="blr-native-transcript-list">
+      ${transcriptHtml}
+    </div>
+  `);
+  nativeTranscriptState.activeIndex = -1;
+  startNativeTranscriptPlaybackSync();
+  syncNativeTranscriptPlayback(true);
+}
+
+function ensureNativeTranscriptLoaded({ force = false } = {}) {
+  if (!shouldShowNativeTranscriptPanel()) {
+    return Promise.resolve();
+  }
+
+  const signature = computeCurrentClipSignature();
+  if (signature !== clipState.currentClipSignature) {
+    resetClipState();
+  }
+  initializeNativeTranscriptForSignature(signature);
+  if (
+    !force &&
+    signature === nativeTranscriptState.loadedSignature &&
+    ["ready", "empty", "error"].includes(clipState.subtitleFetchState)
+  ) {
+    autoFoldNativeTranscriptIfEmpty(signature);
+    return Promise.resolve();
+  }
+  if (
+    nativeTranscriptState.loadPromise &&
+    nativeTranscriptState.loadSignature === signature
+  ) {
+    return nativeTranscriptState.loadPromise;
+  }
+
+  clipState.subtitleFetchState = "loading";
+  renderNativeTranscriptPanel();
+  const loadSignature = signature;
+  const loadPromise = refreshClip()
+    .catch((error) => {
+      logWarn("[Bilibili Reader] native transcript load failed", error);
+    })
+    .finally(() => {
+      if (isRunActive(loadRunId) && nativeTranscriptState.loadPromise === loadPromise) {
+        nativeTranscriptState.loadedSignature = loadSignature;
+        autoFoldNativeTranscriptIfEmpty(loadSignature);
+      }
+      if (nativeTranscriptState.loadPromise === loadPromise) {
+        nativeTranscriptState.loadPromise = null;
+        nativeTranscriptState.loadSignature = "";
+      }
+      if (isRunActive(loadRunId)) {
+        renderNativeTranscriptPanel();
+        syncNativeTranscriptPlayback(true);
+      }
+    });
+  const loadRunId = clipState.fetchRunId;
+  nativeTranscriptState.loadSignature = loadSignature;
+  nativeTranscriptState.loadPromise = loadPromise;
+  return loadPromise;
+}
+
+function initializeNativeTranscriptForSignature(signature = computeCurrentClipSignature()) {
+  if (!signature || nativeTranscriptState.displaySignature === signature) {
+    return;
+  }
+  nativeTranscriptState.displaySignature = signature;
+  nativeTranscriptState.open = true;
+  setNativeTranscriptExpanded(document.getElementById(ids.nativeTranscriptPanel), true);
+}
+
+function autoFoldNativeTranscriptIfEmpty(signature = computeCurrentClipSignature()) {
+  if (
+    !isNativeTranscriptEmpty() ||
+    signature !== computeCurrentClipSignature()
+  ) {
+    return;
+  }
+  nativeTranscriptState.open = false;
+  setNativeTranscriptExpanded(document.getElementById(ids.nativeTranscriptPanel), false);
+}
+
+function bindNativeTranscriptPanelResize() {
+  const player = getNativeTranscriptPlayerNode();
+  if (!player || nativeTranscriptState.observedPlayer === player) {
+    return;
+  }
+  nativeTranscriptState.resizeObserver?.disconnect();
+  nativeTranscriptState.resizeObserver = new ResizeObserver(() => {
+    if (readerSessionState.transition?.phase === "animating") return;
+    const scrollAnchor = captureTranscriptScrollAnchor(
+      document.getElementById(ids.nativeTranscriptList), ".blr-native-transcript-segment"
+    );
+    const playerRect = syncNativeTranscriptPanelAlignment();
+    syncNativeTranscriptPanelHeight(playerRect);
+    restoreTranscriptScrollAnchor(scrollAnchor);
+  });
+  nativeTranscriptState.resizeObserver.observe(player);
+  if (isYouTubePage()) {
+    const header = document.getElementById(ids.nativeTranscriptHeader);
+    if (header) nativeTranscriptState.resizeObserver.observe(header);
+  }
+  nativeTranscriptState.observedPlayer = player;
+}
+
+function getNativeTranscriptPlayerRect() {
+  const player = getNativeTranscriptPlayerNode();
+  return player?.getBoundingClientRect() || null;
+}
+
+function getNativeTranscriptPlayerNode() {
+  return isYouTubePage() ? document.getElementById("movie_player") :
+    document.getElementById("playerWrap") || document.getElementById("bilibili-player");
+}
+
+function syncNativeTranscriptPanelAlignment() {
+  const panel = document.getElementById(ids.nativeTranscriptPanel);
+  if (!panel) {
+    return null;
+  }
+  if (!panel.classList.contains("is-collaboration-layout")) {
+    panel.style.removeProperty("margin-top");
+    return getNativeTranscriptPlayerRect();
+  }
+  const player = document.getElementById("playerWrap") || document.getElementById("bilibili-player");
+  if (!player) {
+    return null;
+  }
+  setReaderStyle(panel, "margin-top", "0px");
+  const panelTop = panel.getBoundingClientRect().top;
+  const playerRect = player.getBoundingClientRect();
+  const playerTop = playerRect.top;
+  if (!Number.isFinite(panelTop) || !Number.isFinite(playerTop)) {
+    return playerRect;
+  }
+  setReaderStyle(panel, "margin-top", `${Math.max(0, Math.round(playerTop - panelTop))}px`);
+  return playerRect;
+}
+
+function syncNativeTranscriptPanelHeight(playerRect = getNativeTranscriptPlayerRect()) {
+  const panel = document.getElementById(ids.nativeTranscriptPanel);
+  if (!panel || !playerRect) {
+    return;
+  }
+  const playerHeight = playerRect.height;
+  if (!(playerHeight > 120)) {
+    return;
+  }
+  const headerHeight = isYouTubePage()
+    ? (panel.querySelector(`#${ids.nativeTranscriptHeader}`)?.getBoundingClientRect().height || 44) + 8
+    : 56;
+  setReaderStyle(panel,
+    "--blr-native-transcript-body-height",
+    `${Math.max(0, Math.round(playerHeight - headerHeight))}px`
+  );
+}
+
+function startNativeTranscriptPlaybackSync() {
+  if (nativeTranscriptState.playbackTimer || !shouldShowNativeTranscriptPanel() ||
+      !nativeTranscriptState.open || !clipState.subtitleBody.length ||
+      !document.getElementById(ids.nativeTranscriptList)) {
+    return;
+  }
+  nativeTranscriptState.playbackTimer = window.setInterval(() => {
+    syncNativeTranscriptPlayback();
+  }, 250);
+}
+
+function stopNativeTranscriptPlaybackSync() {
+  if (!nativeTranscriptState.playbackTimer) return;
+  window.clearInterval(nativeTranscriptState.playbackTimer);
+  nativeTranscriptState.playbackTimer = 0;
+}
+
+function syncNativeTranscriptPlayback(forceScroll = false) {
+  if (readerSessionState.transition &&
+    (readerSessionState.transition.phase === "animating" || !forceScroll)) return;
+  if (!shouldShowNativeTranscriptPanel() || !nativeTranscriptState.open || !clipState.subtitleBody.length) {
+    stopNativeTranscriptPlaybackSync();
+    return;
+  }
+  const list = document.getElementById(ids.nativeTranscriptList);
+  if (!list) {
+    stopNativeTranscriptPlaybackSync();
+    return;
+  }
+  const video = getRuntimeVideoElement();
+  if (!video) {
+    return;
+  }
+  const nextIndex = findActiveSubtitleIndex(Number(video.currentTime || 0) || 0);
+  const changed = nextIndex !== nativeTranscriptState.activeIndex;
+  if (!changed && !forceScroll) return;
+  const cache = getReaderNodeCache(list, ".blr-native-transcript-segment", "data-native-transcript-index");
+  const next = cache?.byIndex.get(nextIndex) || null;
+  if (changed) setCachedReaderActiveNode(cache, next);
+  nativeTranscriptState.activeIndex = nextIndex;
+  if (
+    next &&
+    (changed || forceScroll) &&
+    Date.now() >= nativeTranscriptState.manualScrollPauseUntil
+  ) {
+    scrollNativeTranscriptItemIntoView(next, list, forceScroll ? "auto" : "smooth");
+  }
+}
+
+function scrollNativeTranscriptItemIntoView(node, list, behavior = "smooth") {
+  const listRect = list.getBoundingClientRect();
+  const itemRect = node.getBoundingClientRect();
+  if (!(listRect.height > 0) || !(itemRect.height > 0)) {
+    return;
+  }
+  const padding = Math.max(32, Math.min(listRect.height * 0.22, 96));
+  const target = list.scrollTop + itemRect.top - listRect.top - padding;
+  if (behavior === "auto") behavior = "instant";
+  nativeTranscriptState.programmaticScrollUntil = Date.now() + (behavior === "instant" ? 120 : 700);
+  list.scrollTo({ top: Math.max(0, Math.round(target)), behavior });
+}
+
+function onNativeTranscriptClick(event) {
+  const retry = event.target.closest("[data-native-transcript-retry]");
+  if (retry) {
+    nativeTranscriptState.loadedSignature = "";
+    ensureNativeTranscriptLoaded({ force: true });
+    return;
+  }
+  const target = event.target.closest("[data-native-transcript-index]");
+  if (!target || window.getSelection()?.toString().trim()) {
+    return;
+  }
+  const video = getRuntimeVideoElement();
+  if (!video) {
+    return;
+  }
+  nativeTranscriptState.manualScrollPauseUntil = 0;
+  video.currentTime = Math.max(0, Number(target.dataset.seconds || 0) || 0);
+  if (video.paused) {
+    video.play().catch(() => {});
+  }
+  syncNativeTranscriptPlayback(true);
+}
+
+function onNativeTranscriptChange(event) {
+  const fontSizeSelect = event.target.closest(`#${ids.nativeTranscriptFontSizeSelect}`);
+  if (fontSizeSelect) {
+    updateNativeTranscriptTypography({ fontSize: fontSizeSelect.value });
+    return;
+  }
+  const fontWeightSelect = event.target.closest(`#${ids.nativeTranscriptFontWeightSelect}`);
+  if (fontWeightSelect) {
+    updateNativeTranscriptTypography({ fontWeight: fontWeightSelect.value });
+    return;
+  }
+  const select = event.target.closest(`#${ids.nativeTranscriptSelect}`);
+  if (!select) {
+    return;
+  }
+  const option = select.options[select.selectedIndex];
+  const url = String(option?.value || "");
+  if (!url) {
+    return;
+  }
+  select.disabled = true;
+  selectSubtitle(
+    url,
+    String(option.dataset.lang || "unknown"),
+    String(option.dataset.id || "")
+  );
+}
+function shouldForceNormalPageState(url = location.href) {
+  return !isReaderMode(url) && !readerSessionState.open;
+}
+
+function enforceNormalPageStateIfNeeded(url = location.href) {
+  if (!shouldForceNormalPageState(url)) {
+    return;
+  }
+  clearReaderPresentationAttributes();
+}
+
+function bindNormalPageStateGuard() {
+  if (uiState.normalPageStateGuardBound) {
+    return;
+  }
+  uiState.normalPageStateGuardBound = true;
+
+  const observer = new MutationObserver(() => {
+    enforceNormalPageStateIfNeeded();
+  });
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: [
+      "data-blr-reader-mode",
+      "data-blr-reader-line-height",
+      "data-blr-reader-theme",
+      "data-blr-reader-font-scale",
+      "data-blr-reader-letter-spacing",
+      "data-blr-reader-content-width",
+      "data-blr-reader-has-chapters"
+    ]
+  });
+  observer.observe(document.body, {
+    attributes: true,
+    attributeFilter: ["data-blr-reader-mode", "data-blr-reader-line-height", "data-blr-reading-active"]
+  });
+  enforceNormalPageStateIfNeeded();
+}
+
+function bindRuntimeEvents() {
+  if (uiState.runtimeEventsBound) {
+    return;
+  }
+  uiState.runtimeEventsBound = true;
+
+  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (!message || typeof message !== "object") {
+      return false;
+    }
+
+    if (message.type === "popup-trigger-reading-view") {
+      ensureUiReady();
+      const readerUrl = String(message.readerUrl || "").trim();
+      if (readerUrl) {
+        replaceReaderModeUrl(readerUrl);
+        document.documentElement.setAttribute("data-blr-reader-mode", "1");
+        document.body.setAttribute("data-blr-reader-mode", "1");
+      }
+      if (!readerSessionState.open) {
+        enterReaderMode().catch((error) => {
+          logWarn("[BOC] reading mode trigger failed", error);
+        });
+      }
+      sendResponse({ ok: true });
+      return true;
+    }
+
+    return false;
+  });
+}
+
+function bindSettingsWatcher() {
+  if (uiState.settingsWatcherBound || !chrome.storage?.onChanged) {
+    return;
+  }
+  uiState.settingsWatcherBound = true;
+
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName !== "sync" && areaName !== "local") {
+      return;
+    }
+    if (
+      !changes.readerTheme &&
+      !changes.readerFontScale &&
+      !changes.readerFontWeight &&
+      !changes.readerLetterSpacing &&
+      !changes.readerLineHeight &&
+      !changes.readerContentWidth &&
+      !changes.readerChapterWidthPx &&
+      !changes.readerTranscriptWidthPx &&
+      !changes.nativeTranscriptTheme &&
+      !changes.nativeTranscriptFontSize &&
+      !changes.nativeTranscriptFontWeight
+    ) {
+      return;
+    }
+
+    getSettings()
+      .then(async (settings) => {
+        const transition = readerSessionState.transition;
+        if (transition) {
+          // Storage echoes must not reflow the live target during its motion.
+          await transition.finished.catch(() => {});
+          settings = await getSettings();
+        }
+        const scrollAnchor = captureTranscriptScrollAnchor(
+          document.getElementById("blr-reading-inline-host"), ".blr-reading-complete-segment"
+        );
+        const activeLayout = readerSessionState.open
+          ? {
+              chapterWidth: readerPreferences.chapterWidthPx,
+              transcriptWidth: readerPreferences.transcriptWidthPx
+            }
+          : null;
+        readerPreferences.settings = settings;
+        hydrateReaderStateFromSettings(settings);
+        hydrateNativeTranscriptSettings(settings);
+        // The open reader owns its live drag state. Storage notifications can
+        // arrive out of order when two resize handles are used in quick
+        // succession, so they must not restore an older column or video size.
+        if (activeLayout) {
+          readerPreferences.chapterWidthPx = activeLayout.chapterWidth;
+          readerPreferences.transcriptWidthPx = activeLayout.transcriptWidth;
+          readerPreferences.settings = {
+            ...readerPreferences.settings,
+            readerChapterWidthPx: activeLayout.chapterWidth,
+            readerTranscriptWidthPx: activeLayout.transcriptWidth
+          };
+        }
+        applyReadingViewPresentation();
+        scheduleReaderLayout();
+        restoreTranscriptScrollAnchor(scrollAnchor);
+      })
+      .catch((error) => {
+        logWarn("[BOC] failed to refresh settings after storage change", error);
+      });
+  });
+}
+
+function buildUiHtml() {
+  return `
+    <section id="${ids.readingView}" aria-hidden="true" data-blr-reader-ready="0" aria-busy="true">
+      <div class="blr-reading-topbar">
+        <div class="blr-reading-heading-group">
+          <strong id="${ids.readingPageTitle}" class="blr-reading-page-title"></strong>
+          <div id="${ids.readingEpisodeTitle}" class="blr-reading-episode-title" hidden></div>
+        </div>
+        <nav id="${ids.readingCollectionNav}" class="blr-reading-collection-nav" aria-label="合集选集" hidden>
+          <div id="${ids.readingCollectionList}" class="blr-reading-collection-list"></div>
+        </nav>
+      </div>
+      <div class="blr-reading-layout">
+        <aside class="blr-reading-rail">
+          <div class="blr-reading-eyebrow">章节</div>
+          <div id="${ids.readingChapterList}" class="blr-reading-list"></div>
+        </aside>
+
+        <section class="blr-reading-stage">
+          <header class="blr-reading-header">
+            <div class="blr-reading-header-copy">
+              <strong class="blr-reading-title">${escapeHtml(clipState.title || "B站字幕阅读")}</strong>
+              <div id="${ids.readingMeta}" class="blr-reading-meta">bilibili.com</div>
+            </div>
+            <div class="blr-reading-actions">
+              <button id="${ids.readingCloseBtn}" type="button" class="blr-reading-icon-btn" title="退出" aria-label="退出阅读视图">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+          </header>
+
+          <p id="${ids.readingStatus}" class="blr-reading-status">使用页面原生播放器联动章节和字幕。</p>
+
+          <section class="blr-reading-main">
+            <div id="${ids.readingTranscriptList}" class="blr-reading-transcript"></div>
+          </section>
+        </section>
+      </div>
+      <div id="${ids.readingTranscriptResizeHandle}" class="blr-reading-resize-handle blr-reading-resize-handle-right" role="separator" aria-label="调整视频、章节和字幕宽度" aria-orientation="vertical" aria-valuemin="280" aria-valuemax="720"></div>
+    </section>
+  `;
+}
+
+function bindUiEvents() {
+  const readingView = byId(ids.readingView);
+  const readingCloseBtn = byId(ids.readingCloseBtn);
+  const readingCollectionList = byId(ids.readingCollectionList);
+  const chapterList = byId(ids.readingChapterList);
+  const transcriptList = byId(ids.readingTranscriptList);
+
+  readingCloseBtn.addEventListener("click", () => {
+    exitReaderMode().catch((error) => {
+      logWarn("[Bilibili Reader] reader exit failed", error);
+    });
+  });
+  bindReaderResizeHandle(byId(ids.readingTranscriptResizeHandle));
+
+  const handleReaderManualScroll = () => {
+    if (Date.now() <= readerSessionState.programmaticScrollUntil) {
+      return;
+    }
+    noteManualReaderInteraction();
+  };
+  transcriptList.addEventListener("scroll", handleReaderManualScroll);
+  transcriptList.addEventListener("wheel", handleReaderManualScroll, { passive: true });
+  chapterList.addEventListener("wheel", handleReaderManualScroll, { passive: true });
+  chapterList.addEventListener("pointerdown", () => noteManualReaderInteraction(3500));
+  transcriptList.addEventListener("pointerdown", () => noteManualReaderInteraction(3500));
+  chapterList.addEventListener("click", onReadingChapterClick);
+  readingCollectionList.addEventListener("click", onReadingCollectionClick);
+  transcriptList.addEventListener("click", onReadingTranscriptClick);
+  readingView.addEventListener("transitionend", () => {
+    if (!readerSessionState.open) {
+      stopReadingViewSync();
+    }
+  });
+}
+
+function startUrlWatcher() {
+  if (uiState.urlWatcherStarted) {
+    return;
+  }
+  uiState.urlWatcherStarted = true;
+
+  const checkCurrentClip = () => {
+    let nextUrl = location.href;
+    const nextSignature = computeCurrentClipSignature();
+    if (nextSignature === clipState.currentClipSignature) {
+      return;
+    }
+
+    // YouTube also navigates to home/search without replacing the document.
+    if (isYouTubePage(nextUrl) && !extractYouTubeVideoId(nextUrl) && readerSessionState.open) {
+      readerSessionState.transition?.cancel();
+      replaceReaderModeUrl(stripReaderModeUrl(nextUrl));
+      closeReadingView();
+      nextUrl = location.href;
+    }
+
+    // Native episode navigation can drop the reader query. Keep an open
+    // reader session active across clip changes before starting its new run.
+    if (readerSessionState.open && !isReaderMode(nextUrl)) {
+      const readerUrl = new URL(nextUrl);
+      readerUrl.searchParams.set("bilibli_reader", "1");
+      replaceReaderModeUrl(readerUrl.toString());
+      nextUrl = location.href;
+    }
+
+    clipState.currentClipSignature = nextSignature;
+    refreshReaderPageScopes();
+    enforceNormalPageStateIfNeeded(nextUrl);
+    ensureUiReady();
+    resetClipState({ preserveReadingContent: readerSessionState.open && isReaderMode(nextUrl) });
+    scheduleNativeTranscriptPanelSync(0);
+    const shouldEnterReaderMode = isReaderMode(nextUrl);
+    if (!readerSessionState.open && shouldEnterReaderMode) {
+      document.documentElement.setAttribute("data-blr-reader-mode", "1");
+      document.body.setAttribute("data-blr-reader-mode", "1");
+      renderReadingStatus("检测到阅读视图跳转，正在打开阅读模式...");
+      enterReaderMode().catch((error) => {
+        renderReadingStatus(`阅读视图启动失败：${getErrorMessage(error)}`);
+      });
+      return;
+    }
+    if (readerSessionState.open || shouldEnterReaderMode) {
+      renderReadingStatus("检测到视频变化，正在自动刷新字幕...");
+      const changeRunId = clipState.fetchRunId;
+      const sessionId = readerSessionState.id;
+      waitForVideoMetadata().then(() => {
+        if (!isReaderSessionActive(sessionId) || changeRunId !== clipState.fetchRunId || computeCurrentClipSignature() !== nextSignature) {
+          return;
+        }
+        refreshClip().catch((error) => {
+          if (!isStaleRunError(error)) {
+            renderReadingStatus(`自动刷新失败：${getErrorMessage(error)}`);
+          }
+        });
+      });
+      return;
+    }
+
+    ensureNativeTranscriptLoaded({ force: true });
+  };
+  window.addEventListener("popstate", checkCurrentClip);
+  window.addEventListener("yt-navigate-finish", () => {
+    checkCurrentClip();
+    scheduleNativeTranscriptPanelSync(0);
+    if (readerSessionState.open) {
+      queueEnsureReaderPlayerMounted();
+      applyReaderPageFocus();
+    }
+  });
+  window.setInterval(checkCurrentClip, 250);
+}
+
+function resetClipState({ preserveReadingContent = false } = {}) {
+  // 切换时立即使旧请求失效，不能等新请求开始后才递增编号。
+  clipState.fetchRunId += 1;
+  if (readerSessionState.open) invalidateReaderSession();
+  clipState.fetchClipSignature = "";
+  clipState.bvid = "";
+  clipState.aid = "";
+  clipState.cid = "";
+  clipState.cidSource = "";
+  clipState.videoDuration = 0;
+  if (!preserveReadingContent) {
+    clipState.pageIndex = 1;
+    clipState.pageCount = 0;
+    clipState.pageTitle = "";
+    clipState.collection = null;
+    clipState.title = "";
+    clipState.author = "";
+    clipState.uploadDate = "";
+  }
+  // 保留阅读视图布局和合集信息时，也必须清空上一集的字幕与章节。
+  clearSubtitleContent({ clearTracks: true, clearChapters: true, fetchState: "loading" });
+  clipState.currentClipSignature = computeCurrentClipSignature();
+  stopReadingViewSync();
+  nativeTranscriptState.loadedSignature = "";
+  nativeTranscriptState.loadPromise = null;
+  nativeTranscriptState.loadSignature = "";
+  nativeTranscriptState.open = true;
+  nativeTranscriptState.manualScrollPauseUntil = 0;
+  readerPlayerState.videoEl = null;
+  stopReaderPlayerObserver();
+
+  renderNativeTranscriptPanel();
+  if (readerSessionState.open) {
+    renderReadingView();
+    renderReadingStatus("正在切换选集并加载新字幕...");
+  }
+}
+
+function clearSubtitleContent({
+  clearTracks = false,
+  clearChapters = false,
+  fetchState = clipState.subtitleFetchState
+} = {}) {
+  if (clearTracks) clipState.subtitles = [];
+  if (clearChapters) clipState.chapters = [];
+  clipState.selectedSubtitleId = "";
+  clipState.selectedSubtitleUrl = "";
+  clipState.selectedSubtitleLang = "";
+  clipState.subtitleBody = [];
+  clipState.subtitleRevision += 1;
+  clipState.subtitleFetchState = fetchState;
+  readerSessionState.activeSubtitleIndex = -1;
+  readerSessionState.activeChapterIndex = -1;
+  nativeTranscriptState.activeIndex = -1;
+}
+
+async function finishNoSubtitleLoad(request) {
+  ensureSubtitleRequestActive(request);
+  clearSubtitleContent({ clearTracks: true, fetchState: "empty" });
+
+  await refreshOpenReadingView("当前视频无可用字幕。", request.runId, request);
+  ensureSubtitleRequestActive(request);
+}
+
+let clipRefreshTask = null;
+
+function refreshClip() {
+  const signature = computeCurrentClipSignature();
+  if (clipRefreshTask?.signature === signature &&
+      clipRefreshTask.runId === clipState.fetchRunId &&
+      clipRefreshTask.requestId === subtitleRequestId) {
+    return clipRefreshTask.promise;
+  }
+  const promise = refreshClipData();
+  const task = { signature, runId: clipState.fetchRunId, requestId: subtitleRequestId, promise };
+  clipRefreshTask = task;
+  const release = () => {
+    if (clipRefreshTask === task) clipRefreshTask = null;
+  };
+  promise.then(release, release);
+  return promise;
+}
+
+async function refreshClipData() {
+  const clipUrl = location.href;
+  const clipSignature = computeCurrentClipSignature(clipUrl);
+  if (clipState.currentClipSignature !== clipSignature) {
+    resetClipState({ preserveReadingContent: readerSessionState.open && isReaderMode(clipUrl) });
+  }
+  const runId = ++clipState.fetchRunId;
+  clipState.fetchClipSignature = clipSignature;
+  const request = beginSubtitleRequest(runId);
+  try {
+    clipState.subtitleFetchState = "loading";
+    renderNativeTranscriptPanel();
+    if (readerSessionState.open) {
+      renderReadingView();
+    }
+    const settings = await getSettings();
+    ensureSubtitleRequestActive(request);
+    readerPreferences.settings = settings;
+
+    if (isYouTubePage(clipUrl)) {
+      await refreshYouTubeClipData(extractYouTubeVideoId(clipUrl), request);
+      ensureSubtitleRequestActive(request);
+      await refreshOpenReadingView("抓取完成，阅读视图已同步最新字幕。", runId, request);
+      return;
+    }
+
+    const bvid = extractBvid(clipUrl);
+    clipState.bvid = bvid;
+    if (!clipState.bvid) {
+      throw new Error("当前页面不是标准 BV 视频地址，无法抓取字幕。");
+    }
+
+    const pageIndex = extractPageIndex(clipUrl);
+    const oid = extractOid(clipUrl);
+    const hasPageParam = hasExplicitPageParam(clipUrl);
+    const meta = await retryAsync(() => {
+      ensureSubtitleRequestActive(request);
+      return fetchVideoMeta(bvid);
+    }, 2, 250);
+    ensureSubtitleRequestActive(request);
+
+    // 调试：打印 API 返回的原始数据
+    logInfo("[BOC] raw meta data", {
+      meta,
+      defaultCid: meta.defaultCid,
+      pagesCount: (meta.pages || []).length
+    });
+
+    clipState.aid = meta.aid || "";
+    clipState.title = meta.title || readVideoTitle();
+    clipState.author = meta.author || readVideoAuthor();
+    clipState.uploadDate = meta.uploadDate || readUploadDate();
+    clipState.pageCount = Array.isArray(meta.pages) ? meta.pages.length : 0;
+    let resolvedPageIndex = pageIndex;
+    if ((meta.pages || []).length > 1 && !hasPageParam) {
+      const pageIndexFromOid = pickPageIndexFromOid(meta.pages, oid);
+      if (pageIndexFromOid > 0) {
+        resolvedPageIndex = pageIndexFromOid;
+        logInfo("[BOC] resolved page index from oid", {
+          oid,
+          resolvedPageIndex
+        });
+      } else {
+        // B 站多分P中，P1 常见为无 ?p= 参数；watchlater 等页面可能改用 oid 标识当前分P。
+        resolvedPageIndex = 1;
+        logInfo("[BOC] multi-page video without p param or valid oid, fallback to P1", {
+          oid
+        });
+      }
+    }
+
+    const currentPage = pickPageFromPages(meta.pages, resolvedPageIndex);
+    clipState.pageIndex = resolvedPageIndex;
+    clipState.pageTitle = currentPage?.part || "";
+    clipState.collection = resolveVideoCollectionCurrent(meta.collection, {
+      bvid: clipState.bvid,
+      aid: clipState.aid,
+      pageIndex: resolvedPageIndex
+    });
+    clipState.cid = currentPage?.cid || pickCidFromPages(meta.pages, resolvedPageIndex, meta.defaultCid);
+    clipState.cidSource = "meta-pages";
+    clipState.videoDuration = pickDurationFromPages(meta.pages, resolvedPageIndex, meta.defaultDuration);
+    if (!(clipState.videoDuration > 0)) {
+      clipState.videoDuration = readRuntimeVideoDuration();
+    }
+    if (!(clipState.videoDuration > 0)) {
+      throw new Error("无法获取当前视频时长，已停止抓取以避免串到错误字幕。");
+    }
+
+    logInfo("[BOC] resolved video ids", {
+      url: location.href,
+      aid: clipState.aid,
+      bvid: clipState.bvid,
+      cid: clipState.cid,
+      cidSource: clipState.cidSource,
+      pageIndex: resolvedPageIndex,
+      videoDuration: clipState.videoDuration
+    });
+
+    const cid = clipState.cid;
+    const aid = clipState.aid;
+    const fetchCurrentSubtitleBundle = () => {
+      ensureSubtitleRequestActive(request);
+      return fetchSubtitleBundle(bvid, cid, aid, meta.subtitleTracks || []);
+    };
+    let subtitleBundle = await retryAsync(
+      fetchCurrentSubtitleBundle,
+      3,
+      500
+    );
+    ensureSubtitleRequestActive(request);
+    clipState.subtitles = normalizeSubtitleTracks(subtitleBundle.tracks);
+    clipState.chapters = normalizeChapters(subtitleBundle.chapters);
+    logInfo(
+      "[BOC] chapters",
+      clipState.chapters.map((item) => ({
+        from: item.from,
+        to: item.to,
+        title: item.title
+      }))
+    );
+    logInfo(
+      "[BOC] subtitle tracks",
+      clipState.subtitles.map((item) => ({
+        id: item.id,
+        lan: item.lan,
+        lanDoc: item.lanDoc,
+        url: item.subtitleUrl
+      }))
+    );
+
+    // 无字幕时也允许进入阅读视图，只是字幕区域保持空态。
+    if (clipState.subtitles.length === 0) {
+      await finishNoSubtitleLoad(request);
+      return;
+    }
+
+    // 显式点击“刷新抓取”时默认走网络，避免命中历史缓存导致字幕错位。
+    const forceRefresh = true;
+
+    const preferred = pickPreferredSubtitle(clipState.subtitles, {
+      previousId: clipState.selectedSubtitleId,
+      previousUrl: clipState.selectedSubtitleUrl,
+      previousLang: clipState.selectedSubtitleLang
+    });
+
+    if (!preferred) {
+      await finishNoSubtitleLoad(request);
+      return;
+    }
+
+    const candidates = buildSubtitleCandidates(clipState.subtitles, preferred);
+    let selected = null;
+
+    try {
+      selected = await tryLoadSubtitleCandidates(candidates, runId, forceRefresh, request);
+    } catch (error) {
+      ensureSubtitleRequestActive(request);
+
+      // 正文失败时先重新核对列表，空列表应收起面板，不能沿用旧错误。
+      // 非空列表再用新的签名地址重试，网络故障仍保留为加载错误。
+      subtitleBundle = await retryAsync(
+        fetchCurrentSubtitleBundle,
+        2,
+        500
+      );
+      ensureSubtitleRequestActive(request);
+      clipState.subtitles = normalizeSubtitleTracks(subtitleBundle.tracks);
+      clipState.chapters = normalizeChapters(subtitleBundle.chapters);
+      const retryPreferred = pickPreferredSubtitle(clipState.subtitles, {
+        previousId: preferred.id,
+        previousUrl: preferred.subtitleUrl,
+        previousLang: preferred.lanDoc || preferred.lan || ""
+      });
+      if (!retryPreferred) {
+        await finishNoSubtitleLoad(request);
+        return;
+      }
+      const retryCandidates = buildSubtitleCandidates(clipState.subtitles, retryPreferred);
+      selected = await tryLoadSubtitleCandidates(retryCandidates, runId, forceRefresh, request);
+    }
+    ensureSubtitleRequestActive(request);
+    if (selected) {
+      logInfo("[BOC] selected subtitle track", {
+        id: selected.id,
+        lan: selected.lan,
+        lanDoc: selected.lanDoc
+      });
+    }
+    clipState.subtitleFetchState = "ready";
+
+    await refreshOpenReadingView("抓取完成，阅读视图已同步最新字幕。", runId, request);
+    ensureSubtitleRequestActive(request);
+  } catch (error) {
+    if (isStaleRunError(error) || !isSubtitleRequestActive(request)) {
+      return;
+    }
+    if (isUnavailableSubtitleError(error)) {
+      await finishNoSubtitleLoad(request);
+      return;
+    }
+    // 字幕正文与章节列表来自不同请求。字幕域名被拦截、网络失败或签名
+    // 过期时，保留已经成功取得的章节和当前视频元数据。
+    clearSubtitleContent({ fetchState: "error" });
+    await refreshOpenReadingView("字幕加载失败，请刷新重试。", runId, request);
+    if (!isSubtitleRequestActive(request)) {
+      return;
+    }
+  } finally {
+    if (isSubtitleRequestActive(request)) {
+      renderNativeTranscriptPanel();
+    }
+  }
+}
+
+let subtitleRequestId = 0;
+
+function beginSubtitleRequest(runId = clipState.fetchRunId) {
+  ensureRunActive(runId);
+  return { runId, id: ++subtitleRequestId };
+}
+
+function isSubtitleRequestActive(request) {
+  return Boolean(request) && request.id === subtitleRequestId && isRunActive(request.runId);
+}
+
+function ensureSubtitleRequestActive(request) {
+  if (!isSubtitleRequestActive(request)) {
+    const error = new Error("Stale subtitle request");
+    error.code = "STALE_RUN";
+    throw error;
+  }
+}
+
+function commitSubtitle({ url, lang, subtitleId, body }, request) {
+  ensureSubtitleRequestActive(request);
+  clipState.selectedSubtitleId = subtitleId ? String(subtitleId) : "";
+  clipState.selectedSubtitleUrl = url;
+  clipState.selectedSubtitleLang = lang;
+  clipState.subtitleBody = body;
+  clipState.subtitleRevision += 1;
+  clipState.subtitleFetchState = "ready";
+  if (readerSessionState.open) {
+    renderReadingView();
+    syncReadingViewPlayback(true);
+  }
+  renderNativeTranscriptPanel();
+}
+
+async function selectSubtitle(url, lang, subtitleId = "") {
+  if (!isRunActive(clipState.fetchRunId)) return;
+  const request = beginSubtitleRequest();
+  const previousFetchState = clipState.subtitleFetchState;
+  clipState.subtitleFetchState = "loading";
+  syncReadingTranscriptHeaderControls();
+  const nativePanel = document.getElementById(ids.nativeTranscriptPanel);
+  if (nativePanel) renderNativeTranscriptHeaderControls(nativePanel);
+  try {
+    await loadSubtitle(url, lang, request.runId, subtitleId, false, request);
+    ensureSubtitleRequestActive(request);
+  } catch (error) {
+    if (isStaleRunError(error) || !isSubtitleRequestActive(request)) return;
+    // A failed language switch keeps the last successful transcript usable.
+    clipState.subtitleFetchState = clipState.subtitleBody.length ? "ready" :
+      previousFetchState === "empty" ? "empty" : "error";
+    logWarn("[Bilibili Reader] subtitle switch failed", error);
+    if (readerSessionState.open) renderReadingStatus(`切换字幕失败：${getErrorMessage(error)}`);
+  } finally {
+    if (isSubtitleRequestActive(request)) {
+      syncReadingTranscriptHeaderControls();
+      renderNativeTranscriptPanel();
+    }
+  }
+}
+
+async function loadSubtitle(
+  url, lang, runId = clipState.fetchRunId, subtitleId = "", forceRefresh = false,
+  request = beginSubtitleRequest(runId)
+) {
+  ensureSubtitleRequestActive(request);
+  if (!url) throw new Error("字幕 URL 为空。");
+  const cacheKey = getSubtitleCacheKey({
+    bvid: clipState.bvid, cid: clipState.cid, subtitleId, subtitleUrl: url, lang
+  });
+
+  if (!forceRefresh) {
+    const cachedBody = await loadSubtitleFromCache(cacheKey);
+    ensureSubtitleRequestActive(request);
+    if (Array.isArray(cachedBody) && cachedBody.length > 0) {
+      const cachedCheck = validateSubtitleByDuration(cachedBody, clipState.videoDuration);
+      if (cachedCheck.ok) {
+        logInfo("[Bilibili Reader] using cached subtitle", { cacheKey, itemCount: cachedBody.length });
+        commitSubtitle({ url, lang, subtitleId, body: cachedBody }, request);
+        return;
+      }
+      logWarn("[Bilibili Reader] cached subtitle duration mismatch", { cacheKey, reason: cachedCheck.reason });
+      await clearSubtitleCacheByKey(cacheKey);
+      ensureSubtitleRequestActive(request);
+    }
+  }
+
+  const subtitle = await fetchSubtitleBody(url);
+  ensureSubtitleRequestActive(request);
+  const body = Array.isArray(subtitle?.body)
+    ? subtitle.body.filter((item) => String(item?.content || "").trim()) : [];
+  if (body.length === 0) {
+    const error = new Error("字幕文件为空。");
+    error.code = "SUBTITLE_EMPTY";
+    throw error;
+  }
+  const durationCheck = validateSubtitleByDuration(body, clipState.videoDuration);
+  if (!durationCheck.ok) {
+    const error = new Error("字幕时长与当前视频不匹配。");
+    error.code = "SUBTITLE_DURATION_MISMATCH";
+    error.details = durationCheck;
+    throw error;
+  }
+  await saveSubtitleToCache(cacheKey, body);
+  ensureSubtitleRequestActive(request);
+  commitSubtitle({ url, lang, subtitleId, body }, request);
+}
+
+function getSubtitleCacheKey({ bvid, cid, subtitleId = "", subtitleUrl = "", lang = "" }) {
+  const sourceKey = buildSubtitleSourceKey(subtitleId, subtitleUrl, lang);
+  return `${CACHE_KEY_PREFIX}${bvid}_${cid}_${sourceKey}`;
+}
+
+function buildSubtitleSourceKey(subtitleId, subtitleUrl, lang) {
+  const id = String(subtitleId || "").trim();
+  if (id) {
+    return `id_${id}`;
+  }
+
+  const normalizedUrl = normalizeSubtitleUrlForCache(subtitleUrl);
+  if (normalizedUrl) {
+    return `url_${normalizedUrl}`;
+  }
+
+  return `lang_${String(lang || "").trim().toLowerCase() || "unknown"}`;
+}
+
+function normalizeSubtitleUrlForCache(url) {
+  const text = String(url || "").trim();
+  if (!text) {
+    return "";
+  }
+
+  try {
+    const parsed = new URL(text);
+    if (parsed.pathname === "/api/timedtext" && isYouTubePage(parsed.origin)) {
+      // YouTube languages share a path; keep their stable identity while
+      // excluding expiring signatures and proof-of-origin tokens.
+      return `${parsed.hostname}${parsed.pathname}?${new URLSearchParams(
+        ["v", "lang", "kind", "name", "tlang"].map((key) => [key, parsed.searchParams.get(key) || ""])
+      )}`;
+    }
+    const path = parsed.pathname.replace(/[^\w/.-]+/g, "_");
+    return `${parsed.hostname}${path}`;
+  } catch {
+    return text.replace(/[^\w/.-]+/g, "_");
+  }
+}
+
+async function loadSubtitleFromCache(cacheKey) {
+  try {
+    const result = await chrome.storage.local.get(cacheKey);
+    return result[cacheKey]?.body || null;
+  } catch {
+    return null;
+  }
+}
+
+async function saveSubtitleToCache(cacheKey, body) {
+  try {
+    await chrome.storage.local.set({
+      [cacheKey]: {
+        body,
+        timestamp: Date.now()
+      }
+    });
+  } catch (error) {
+    logWarn("[BOC] failed to save subtitle cache", error);
+  }
+}
+
+async function clearSubtitleCacheByKey(cacheKey) {
+  try {
+    await chrome.storage.local.remove(cacheKey);
+  } catch (error) {
+    logWarn("[BOC] failed to clear subtitle cache by key", { cacheKey, error });
+  }
+}
+
+function buildReadingTranscriptHeadingHtml() {
+  return `
+    <span class="blr-reading-transcript-heading-title">字幕</span>
+    <div class="blr-reading-transcript-heading-controls">
+      <button id="${ids.readingTranscriptReaderButton}" class="blr-reading-transcript-tool-button is-active" type="button" title="返回普通模式" aria-label="切换到普通模式" aria-pressed="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5.5C9 3.5 5.5 3.5 2.5 4.5v15c3-1 6.5-1 9.5 1 3-2 6.5-2 9.5-1v-15c-3-1-6.5-1-9.5 1Z"/><path d="M12 5.5v15M5.5 8h3M5.5 11.5h3M15.5 8h3M15.5 11.5h3"/></svg>
+      </button>
+      <button id="${ids.readingTranscriptReturnButton}" class="blr-reading-transcript-tool-button" type="button" title="回到当前字幕" aria-label="回到当前字幕">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+      </button>
+      <button id="${ids.readingTranscriptThemeButton}" class="blr-reading-transcript-tool-button" type="button" title="切换字幕主题" aria-label="切换字幕主题">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </button>
+      <select id="${ids.readingTranscriptQuickSubtitleSelect}" aria-label="字幕语言" title="字幕语言" disabled><option value="">字幕</option></select>
+      <select id="${ids.readingTranscriptQuickFontSizeSelect}" aria-label="字幕字号" title="字幕字号">
+        <option value="xs">12</option><option value="s">13</option><option value="m">14</option><option value="l">16</option><option value="xl">19</option>
+      </select>
+      <select id="${ids.readingTranscriptQuickFontWeightSelect}" aria-label="字幕字重" title="字幕字重">
+        <option value="light">300</option><option value="regular">400</option><option value="normal">500</option><option value="semibold">600</option><option value="bold">700</option>
+      </select>
+    </div>
+  `;
+}
+
+function syncReadingTranscriptHeaderControls() {
+  const heading = document.getElementById("blr-reading-transcript-heading");
+  if (!heading) {
+    return;
+  }
+  const themeButton = heading.querySelector(`#${ids.readingTranscriptThemeButton}`);
+  if (themeButton) {
+    const labels = { light: "浅色", dark: "深色", paper: "纸张" };
+    const label = `切换字幕主题，当前：${labels[readerPreferences.theme] || "浅色"}`;
+    themeButton.title = label;
+    themeButton.setAttribute("aria-label", label);
+  }
+  const fontSizeSelect = heading.querySelector(`#${ids.readingTranscriptQuickFontSizeSelect}`);
+  const fontWeightSelect = heading.querySelector(`#${ids.readingTranscriptQuickFontWeightSelect}`);
+  if (fontSizeSelect) {
+    fontSizeSelect.value = readerPreferences.fontScale;
+  }
+  if (fontWeightSelect) {
+    fontWeightSelect.value = readerPreferences.fontWeight;
+  }
+  const languageSelect = heading.querySelector(`#${ids.readingTranscriptQuickSubtitleSelect}`);
+  syncSubtitleLanguageSelect(languageSelect);
+}
+
+function returnReadingTranscriptToCurrent() {
+  readerSessionState.manualScrollPauseUntil = 0;
+  const video = getRuntimeVideoElement();
+  const transcriptList = document.getElementById(ids.readingTranscriptList);
+  if (!video || !transcriptList) {
+    return;
+  }
+  const subtitleIndex = findActiveSubtitleIndex(Number(video.currentTime || 0) || 0);
+  const target = transcriptList.querySelector(`[data-index="${subtitleIndex}"]`);
+  if (target) {
+    readerSessionState.nextScrollBehavior = "smooth";
+    scrollReadingTranscriptItemIntoView(target);
+  }
+  syncReadingViewPlayback(false);
+  updateReaderFollowState();
+}
+
+function bindReadingTranscriptHeaderControls(heading) {
+  if (!heading || heading.dataset.blrControlsBound === "1") {
+    return;
+  }
+  heading.querySelector(`#${ids.readingTranscriptReaderButton}`)?.addEventListener("click", (event) => {
+    const button = event.currentTarget;
+    if (readerSessionState.closing) return;
+    button.disabled = true;
+    exitReaderMode().catch((error) => {
+      logWarn("[Bilibili Reader] transcript mode switch failed", error);
+    }).finally(() => {
+      if (button.isConnected) button.disabled = false;
+    });
+  });
+  heading.querySelector(`#${ids.readingTranscriptReturnButton}`)?.addEventListener("click", (event) => {
+    const button = event.currentTarget;
+    returnReadingTranscriptToCurrent();
+    button.classList.add("is-active");
+    window.setTimeout(() => button.classList.remove("is-active"), 300);
+  });
+  heading.querySelector(`#${ids.readingTranscriptThemeButton}`)?.addEventListener("click", (event) => {
+    const button = event.currentTarget;
+    const themes = ["light", "dark", "paper"];
+    const nextIndex = (themes.indexOf(readerPreferences.theme) + 1) % themes.length;
+    updateReaderPreferences({ readerTheme: themes[nextIndex] }, { persist: true });
+    button.classList.add("is-active");
+    window.setTimeout(() => button.classList.remove("is-active"), 300);
+  });
+  heading
+    .querySelector(`#${ids.readingTranscriptQuickFontSizeSelect}`)
+    ?.addEventListener("change", (event) => {
+      updateReaderPreferences({ readerFontScale: event.target.value }, { persist: true });
+    });
+  heading
+    .querySelector(`#${ids.readingTranscriptQuickFontWeightSelect}`)
+    ?.addEventListener("change", (event) => {
+      updateReaderPreferences({ readerFontWeight: event.target.value }, { persist: true });
+    });
+  heading
+    .querySelector(`#${ids.readingTranscriptQuickSubtitleSelect}`)
+    ?.addEventListener("change", (event) => {
+      const select = event.target;
+      const option = select.options[select.selectedIndex];
+      const url = String(option?.value || "");
+      if (!url) {
+        return;
+      }
+      selectSubtitle(
+        url,
+        String(option.dataset.lang || "unknown"),
+        String(option.dataset.id || "")
+      );
+    });
+  heading.dataset.blrControlsBound = "1";
+}
+const readingSectionSnapshots = new WeakMap();
+
+function hasReadingSectionChanged(container, snapshot) {
+  const previous = readingSectionSnapshots.get(container);
+  if (previous && container.childElementCount > 0 &&
+      Object.keys(snapshot).every((key) => snapshot[key] === previous[key])) return false;
+  readingSectionSnapshots.set(container, snapshot);
+  return true;
+}
 
 function renderReadingView() {
-  if (state.readingModeTransition?.phase === "animating") {
-    state.readingModeTransition.pendingReadingRender = true;
+  if (readerSessionState.transition?.phase === "animating") {
+    readerSessionState.transition.pendingReadingRender = true;
     return;
   }
   const titleNode = document.querySelector(".blr-reading-title");
@@ -3599,89 +3826,87 @@ function renderReadingView() {
   const metaNode = byId(ids.readingMeta);
   const chapterList = byId(ids.readingChapterList);
   const transcriptList = byId(ids.readingTranscriptList);
-  const chapters = normalizeChapters(state.chapters || []);
-  const body = Array.isArray(state.subtitleBody) ? state.subtitleBody : [];
-  const transcriptItems = getReadingTranscriptItems();
-  const withHours = shouldShowHoursInNote(state, body);
-  const hasChapters = chapters.length > 0;
+  const chapters = getCachedReadingChapters();
+  const body = Array.isArray(clipState.subtitleBody) ? clipState.subtitleBody : [];
+  const clip = computeCurrentClipSignature();
+  const transcriptItems = getReadingTranscriptItems(body);
+  const withHours = Number(clipState.videoDuration) >= 3600 ||
+    getCachedSubtitleData(body).hasHourTimestamp ||
+    chapters.some((item) => Math.max(Number(item.from) || 0, Number(item.to) || 0) >= 3600);
+  updateReaderChapterPresence(chapters.length > 0);
 
-  if (titleNode) {
-    titleNode.textContent = state.title || "B站字幕阅读";
-  }
+  const title = clipState.title || (isYouTubePage() ? "YouTube 字幕阅读" : "B站字幕阅读");
+  if (titleNode && titleNode.textContent !== title) titleNode.textContent = title;
   if (pageTitleNode) {
-    pageTitleNode.textContent = state.title || "B站字幕阅读";
-    pageTitleNode.title = pageTitleNode.textContent;
+    if (pageTitleNode.textContent !== title) pageTitleNode.textContent = title;
+    if (pageTitleNode.title !== title) pageTitleNode.title = title;
   }
-  if (metaNode) {
-    metaNode.textContent = buildReadingMetaLine();
-  }
+  const meta = buildReadingMetaLine();
+  if (metaNode && metaNode.textContent !== meta) metaNode.textContent = meta;
   renderReadingCollection();
 
-  if (chapters.length === 0) {
-    chapterList.innerHTML = '<div class="blr-reading-empty">当前视频没有章节。</div>';
-  } else {
-    chapterList.innerHTML = chapters
-      .map(
-        (item, index) => `
-          <button
-            type="button"
-            class="blr-reading-chapter"
-            data-index="${index}"
-            data-seconds="${Number(item.from || 0) || 0}"
-          >
-            <span class="blr-reading-chapter-time">${escapeHtml(
-              formatCompactTimestamp(item.from, withHours)
-            )}</span>
+  const chaptersChanged = hasReadingSectionChanged(chapterList, {
+    chapters: clipState.chapters, withHours, clip
+  });
+  if (chaptersChanged) {
+    invalidateReaderNodeCache(chapterList);
+    chapterList.innerHTML = readerHtml(chapters.length === 0
+      ? '<div class="blr-reading-empty">当前视频没有章节。</div>'
+      : chapters.map((item, index) => `
+          <button type="button" class="blr-reading-chapter" data-index="${index}"
+            data-seconds="${Number(item.from || 0) || 0}">
+            <span class="blr-reading-chapter-time">${escapeHtml(formatCompactTimestamp(item.from, withHours))}</span>
             <span class="blr-reading-chapter-title">${escapeHtml(item.title)}</span>
           </button>
-        `
-      )
-      .join("");
+        `).join(""));
+    readerSessionState.activeChapterIndex = -1;
   }
 
-  if (transcriptItems.length === 0) {
-    transcriptList.innerHTML = `<div class="blr-reading-empty">${escapeHtml(
-      getReadingTranscriptPlaceholderText()
-    )}</div>`;
-  } else {
-    transcriptList.innerHTML = `
-      <div class="blr-reading-complete" role="document">
-        ${transcriptItems
-          .map(
-            (item) => `
-              <button
-                type="button"
-                class="blr-reading-complete-segment"
-                data-index="${item.index}"
-                data-seconds="${item.from}"
+  const placeholder = transcriptItems.length === 0 ? getReadingTranscriptPlaceholderText() : "";
+  const transcriptChanged = hasReadingSectionChanged(transcriptList, {
+    body, revision: clipState.subtitleRevision, withHours, placeholder,
+    clip, fetchedClip: clipState.fetchClipSignature
+  });
+  if (transcriptChanged) {
+    invalidateReaderNodeCache(transcriptList);
+    if (transcriptItems.length === 0) {
+      transcriptList.innerHTML = readerHtml(`<div class="blr-reading-empty">${escapeHtml(placeholder)}</div>`);
+    } else {
+      transcriptList.innerHTML = readerHtml(`
+        <div class="blr-reading-complete" role="document">
+          ${transcriptItems.map((item) => `
+              <button type="button" class="blr-reading-complete-segment"
+                data-index="${item.index}" data-seconds="${item.from}"
                 aria-label="${escapeHtml(formatCompactTimestamp(item.from, withHours))} ${escapeHtml(item.content)}"
               >${escapeHtml(item.content)}</button>
-            `
-          )
-          .join(" ")}
-      </div>
-    `;
-    transcriptList.insertAdjacentHTML(
-      "beforeend",
-      `<div id="${ids.readingTranscriptTailSpacer}" class="blr-reading-tail-spacer" aria-hidden="true"></div>`
-    );
+            `).join(" ")}
+        </div>
+        <div id="${ids.readingTranscriptTailSpacer}" class="blr-reading-tail-spacer" aria-hidden="true"></div>
+      `);
+    }
+    readerSessionState.activeSubtitleIndex = -1;
+    // Only newly created text needs an immediate initial position.
+    readerSessionState.nextScrollBehavior = "auto";
   }
 
-  updateReaderChapterPresence(hasChapters);
+  if (!chaptersChanged && !transcriptChanged) {
+    syncReadingTranscriptHeaderControls();
+    return;
+  }
   applyReadingViewPresentation();
   updateReadingTranscriptTailSpacer();
-  // Position newly rendered text before the transition captures the reader.
-  // A smooth initial scroll continues after the entrance animation finishes.
-  state.readingNextScrollBehavior = "auto";
-  state.readingActiveSubtitleIndex = -1;
-  state.readingActiveChapterIndex = -1;
 }
 
 function renderReadingCollection() {
   const episodeTitle = byId(ids.readingEpisodeTitle);
   const collectionNav = byId(ids.readingCollectionNav);
   const collectionList = byId(ids.readingCollectionList);
-  const collection = state.collection;
+  const collection = clipState.collection;
+  const snapshot = { collectionList, collection, currentIndex: collection?.currentIndex,
+    title: clipState.title, pageTitle: clipState.pageTitle };
+  const previous = uiState.collectionSnapshot;
+  if (previous && Object.keys(snapshot).every((key) => snapshot[key] === previous[key])) return;
+  uiState.collectionSnapshot = snapshot;
   const episodes = Array.isArray(collection?.episodes) ? collection.episodes : [];
   const hasCollection = episodes.length > 1;
 
@@ -3690,16 +3915,16 @@ function renderReadingCollection() {
     episodeTitle.textContent = "";
     episodeTitle.removeAttribute("title");
     collectionNav.hidden = true;
-    collectionList.innerHTML = "";
+    collectionList.replaceChildren();
     return;
   }
 
   const currentIndex = Number(collection.currentIndex);
   const currentEpisode = currentIndex >= 0 ? episodes[currentIndex] : null;
-  episodeTitle.textContent = currentEpisode?.title || state.pageTitle || state.title || "";
+  episodeTitle.textContent = currentEpisode?.title || clipState.pageTitle || clipState.title || "";
   episodeTitle.hidden = !episodeTitle.textContent;
   episodeTitle.title = episodeTitle.textContent;
-  collectionList.innerHTML = episodes
+  collectionList.innerHTML = readerHtml(episodes
     .map((episode, index) => {
       const isCurrent = index === currentIndex;
       const label = episode.title || `第 ${index + 1} 集`;
@@ -3719,10 +3944,12 @@ function renderReadingCollection() {
         </button>
       `;
     })
-    .join("");
+    .join(""));
 
   collectionNav.hidden = false;
+  const sessionId = readerSessionState.id;
   window.requestAnimationFrame(() => {
+    if (!isReaderSessionActive(sessionId) || uiState.collectionSnapshot !== snapshot) return;
     collectionList.querySelector(".is-active")?.scrollIntoView({
       behavior: "auto",
       block: "center",
@@ -3733,29 +3960,22 @@ function renderReadingCollection() {
 
 function getReadingTranscriptPlaceholderText() {
   if (
-    state.fetchClipSignature !== computeCurrentClipSignature() ||
-    state.subtitleFetchState === "loading"
+    clipState.fetchClipSignature !== computeCurrentClipSignature() ||
+    clipState.subtitleFetchState === "loading"
   ) {
     return "正在加载字幕...";
   }
-  if (state.subtitleFetchState === "error") {
+  if (clipState.subtitleFetchState === "error") {
     return "字幕加载失败，请刷新重试。";
   }
   return "当前视频无字幕。";
 }
 
-function getReadingTranscriptItems(body = state.subtitleBody) {
-  if (state.fetchClipSignature !== computeCurrentClipSignature()) {
+function getReadingTranscriptItems(body = clipState.subtitleBody) {
+  if (clipState.fetchClipSignature !== computeCurrentClipSignature()) {
     return [];
   }
-  return (Array.isArray(body) ? body : [])
-    .map((item, index) => ({
-      index,
-      from: Number(item?.from || 0) || 0,
-      to: Number(item?.to || 0) || 0,
-      content: String(item?.content || "").trim()
-    }))
-    .filter((item) => item.content);
+  return getCachedReadingTranscriptItems(body);
 }
 
 function updateReadingTranscriptTailSpacer() {
@@ -3767,237 +3987,137 @@ function updateReadingTranscriptTailSpacer() {
   const transcriptList = document.getElementById(ids.readingTranscriptList);
   const hostHeight = inlineHost?.clientHeight || transcriptList?.clientHeight || 0;
   const spacerHeight = Math.max(hostHeight, Math.round(window.innerHeight * 0.92), 320);
-  spacer.style.height = `${spacerHeight}px`;
+  setReaderStyle(spacer, "height", `${spacerHeight}px`);
 }
 
-function hydrateReaderStateFromSettings(settings = state.settings) {
-  state.readingTheme = normalizeReaderTheme(settings?.readerTheme);
-  state.readingFontScale = normalizeReaderFontScale(settings?.readerFontScale);
-  state.readingFontWeight = normalizeReaderFontWeight(settings?.readerFontWeight);
-  state.readingLetterSpacing = normalizeReaderLetterSpacing(settings?.readerLetterSpacing ?? settings?.readerLineHeight);
-  state.readingLineHeight = normalizeReaderLineHeight(settings?.readerLineHeight);
-  state.readingContentWidth = normalizeReaderContentWidth(settings?.readerContentWidth);
-  state.readingChapterWidthPx = normalizeReaderColumnWidth(settings?.readerChapterWidthPx, 220, 140, 360);
-  state.readingTranscriptWidthPx = normalizeReaderColumnWidth(settings?.readerTranscriptWidthPx, 440, 280, 720);
-  // The retired settings panel could persist hidden sections. Keep both visible now that
-  // the only reader controls live in the transcript header.
-  state.readingChapterVisible = true;
-  state.readingTranscriptVisible = true;
-  state.readingTimestampVisible = true;
+function hydrateReaderStateFromSettings(settings = readerPreferences.settings) {
+  readerPreferences.theme = normalizeReaderTheme(settings?.readerTheme);
+  readerPreferences.fontScale = normalizeReaderFontScale(settings?.readerFontScale);
+  readerPreferences.fontWeight = normalizeReaderFontWeight(settings?.readerFontWeight);
+  readerPreferences.letterSpacing = normalizeReaderLetterSpacing(settings?.readerLetterSpacing ?? settings?.readerLineHeight);
+  readerPreferences.lineHeight = normalizeReaderLineHeight(settings?.readerLineHeight);
+  readerPreferences.contentWidth = normalizeReaderContentWidth(settings?.readerContentWidth);
+  readerPreferences.chapterWidthPx = normalizeReaderColumnWidth(settings?.readerChapterWidthPx, 220, 140, 360);
+  readerPreferences.transcriptWidthPx = normalizeReaderColumnWidth(settings?.readerTranscriptWidthPx, 440, 280, 720);
+}
+
+function setReaderDatasetValue(node, key, value) {
+  if (node.dataset[key] !== value) node.dataset[key] = value;
+}
+
+function applyReaderRootPresentation(node) {
+  if (!node) return;
+  const values = {
+    Theme: readerPreferences.theme,
+    FontScale: readerPreferences.fontScale,
+    FontWeight: readerPreferences.fontWeight,
+    LetterSpacing: readerPreferences.letterSpacing,
+    LineHeight: readerPreferences.lineHeight,
+    ContentWidth: readerPreferences.contentWidth
+  };
+  Object.entries(values).forEach(([name, value]) => setReaderDatasetValue(node, `blrReader${name}`, value));
 }
 
 function applyReadingViewPresentation() {
   const readingView = byId(ids.readingView);
-  readingView.dataset.theme = state.readingTheme;
-  readingView.dataset.fontScale = state.readingFontScale;
-  readingView.dataset.fontWeight = state.readingFontWeight;
-  readingView.dataset.letterSpacing = state.readingLetterSpacing;
-  readingView.dataset.lineHeight = state.readingLineHeight;
-  readingView.dataset.contentWidth = state.readingContentWidth;
-  readingView.dataset.chapterVisibility = state.readingChapterVisible ? "auto" : "hide";
-  readingView.dataset.transcriptVisible = state.readingTranscriptVisible ? "1" : "0";
-  readingView.dataset.timestampVisible = state.readingTimestampVisible ? "1" : "0";
-  document.documentElement.dataset.blrReaderTheme = state.readingTheme;
-  document.documentElement.dataset.blrReaderFontScale = state.readingFontScale;
-  document.documentElement.dataset.blrReaderFontWeight = state.readingFontWeight;
-  document.documentElement.dataset.blrReaderLetterSpacing = state.readingLetterSpacing;
-  document.documentElement.dataset.blrReaderLineHeight = state.readingLineHeight;
-  document.documentElement.dataset.blrReaderContentWidth = state.readingContentWidth;
-  document.documentElement.dataset.blrReaderChapterVisibility = state.readingChapterVisible ? "auto" : "hide";
-  document.documentElement.dataset.blrReaderTranscriptVisible = state.readingTranscriptVisible ? "1" : "0";
-  document.documentElement.dataset.blrReaderTimestampVisible = state.readingTimestampVisible ? "1" : "0";
-  document.body.dataset.blrReaderTheme = state.readingTheme;
-  document.body.dataset.blrReaderFontScale = state.readingFontScale;
-  document.body.dataset.blrReaderFontWeight = state.readingFontWeight;
-  document.body.dataset.blrReaderLetterSpacing = state.readingLetterSpacing;
-  document.body.dataset.blrReaderLineHeight = state.readingLineHeight;
-  document.body.dataset.blrReaderContentWidth = state.readingContentWidth;
-  document.body.dataset.blrReaderChapterVisibility = state.readingChapterVisible ? "auto" : "hide";
-  document.body.dataset.blrReaderTranscriptVisible = state.readingTranscriptVisible ? "1" : "0";
-  document.body.dataset.blrReaderTimestampVisible = state.readingTimestampVisible ? "1" : "0";
+  setReaderDatasetValue(readingView, "theme", readerPreferences.theme);
+  setReaderDatasetValue(readingView, "fontScale", readerPreferences.fontScale);
+  setReaderDatasetValue(readingView, "fontWeight", readerPreferences.fontWeight);
+  setReaderDatasetValue(readingView, "letterSpacing", readerPreferences.letterSpacing);
+  setReaderDatasetValue(readingView, "lineHeight", readerPreferences.lineHeight);
+  setReaderDatasetValue(readingView, "contentWidth", readerPreferences.contentWidth);
+  applyReaderRootPresentation(document.documentElement);
+  applyReaderRootPresentation(document.body);
+  [document.documentElement, document.body].forEach((node) => {
+    setReaderDatasetValue(node, "blrReaderPlatform", isYouTubePage() ? "youtube" : "bilibili");
+  });
   applyReaderColumnLayout();
-  const main = document.querySelector(".blr-reading-main");
-  if (main) {
-    main.style.display = state.readingTranscriptVisible ? "" : "none";
-  }
-  const inlineHost = document.getElementById("blr-reading-inline-host");
-  if (inlineHost) {
-    const leftContainer = document.querySelector(".left-container");
-    const bgColor = leftContainer ? getComputedStyle(leftContainer).backgroundColor : "";
-    if (state.readingTranscriptVisible) {
-      inlineHost.style.border = "";
-      inlineHost.style.background = "";
-      inlineHost.style.marginTop = "";
-      inlineHost.style.boxShadow = "";
-      inlineHost.style.borderRadius = "";
-    } else {
-      inlineHost.style.border = "none";
-      inlineHost.style.background = bgColor;
-      inlineHost.style.marginTop = "0";
-      inlineHost.style.boxShadow = "none";
-      inlineHost.style.borderRadius = "0";
-    }
-  }
   syncReadingTranscriptHeaderControls();
 }
 
 function updateReaderChapterPresence(hasChapters) {
   const value = hasChapters ? "1" : "0";
   const readingView = byId(ids.readingView);
-  readingView.dataset.hasChapters = value;
-  document.documentElement.dataset.blrReaderHasChapters = value;
-  document.body.dataset.blrReaderHasChapters = value;
-}
-
-function bindReaderResizeHandle(node) {
-  if (!node || node.dataset.blrBound === "1") return;
-
-  node.addEventListener("pointerdown", (event) => {
-    if (event.button !== 0 || window.innerWidth <= 1180 || state.readingModeTransition) return;
-    event.preventDefault();
-    node.setPointerCapture?.(event.pointerId);
-    document.body.dataset.blrReaderResizing = "transcript";
-    noteManualReaderInteraction();
-    const scrollAnchor = captureTranscriptScrollAnchor(
-      document.getElementById("blr-reading-inline-host"), ".blr-reading-complete-segment"
-    );
-
-    const move = (moveEvent) => {
-      if (!state.readingViewOpen || !isReaderMode()) {
-        stop();
-        return;
-      }
-      const pagePadding = getReaderPagePaddingPx();
-      const { gap, minTranscriptWidth, maxTranscriptWidth } = getEffectiveReaderColumnWidths();
-      state.readingTranscriptAutoWidth = false;
-      state.readingTranscriptWidthPx = normalizeReaderColumnWidth(
-        window.innerWidth - pagePadding - moveEvent.clientX - gap / 2,
-        state.readingTranscriptWidthPx,
-        minTranscriptWidth,
-        maxTranscriptWidth
-      );
-      applyReaderColumnLayout();
-      layoutReaderPlayerHost();
-      restoreTranscriptScrollAnchor(scrollAnchor);
-    };
-
-    const stop = () => {
-      if (node.hasPointerCapture?.(event.pointerId)) node.releasePointerCapture(event.pointerId);
-      document.body.removeAttribute("data-blr-reader-resizing");
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", stop);
-      window.removeEventListener("pointercancel", stop);
-      noteManualReaderInteraction();
-      state.settings = {
-        ...state.settings,
-        readerTranscriptWidthPx: state.readingTranscriptWidthPx
-      };
-      persistReaderSettings();
-    };
-
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", stop);
-    window.addEventListener("pointercancel", stop);
-  });
-  node.dataset.blrBound = "1";
+  setReaderDatasetValue(readingView, "hasChapters", value);
+  setReaderDatasetValue(document.documentElement, "blrReaderHasChapters", value);
+  setReaderDatasetValue(document.body, "blrReaderHasChapters", value);
 }
 
 function updateReaderPreferences(next, { persist = true } = {}) {
-  state.readingModeTransition?.cancel();
+  readerSessionState.transition?.cancel();
   noteManualReaderInteraction();
   const scrollAnchor = captureTranscriptScrollAnchor(
     document.getElementById("blr-reading-inline-host") || byId(ids.readingTranscriptList),
     ".blr-reading-complete-segment"
   );
-  state.readingTheme = normalizeReaderTheme(next.readerTheme ?? state.readingTheme);
-  state.readingFontScale = normalizeReaderFontScale(next.readerFontScale ?? state.readingFontScale);
-  state.readingFontWeight = normalizeReaderFontWeight(next.readerFontWeight ?? state.readingFontWeight);
-  state.readingLetterSpacing = normalizeReaderLetterSpacing(
-    next.readerLetterSpacing ?? state.readingLetterSpacing
+  readerPreferences.theme = normalizeReaderTheme(next.readerTheme ?? readerPreferences.theme);
+  readerPreferences.fontScale = normalizeReaderFontScale(next.readerFontScale ?? readerPreferences.fontScale);
+  readerPreferences.fontWeight = normalizeReaderFontWeight(next.readerFontWeight ?? readerPreferences.fontWeight);
+  readerPreferences.letterSpacing = normalizeReaderLetterSpacing(
+    next.readerLetterSpacing ?? readerPreferences.letterSpacing
   );
-  state.readingLineHeight = normalizeReaderLineHeight(next.readerLineHeight ?? state.readingLineHeight);
-  state.readingContentWidth = normalizeReaderContentWidth(next.readerContentWidth ?? state.readingContentWidth);
-  state.readingChapterVisible = next.readerChapterVisible !== undefined ? Boolean(next.readerChapterVisible) : state.readingChapterVisible;
-  state.readingTranscriptVisible = normalizeReaderTranscriptVisible(
-    next.readerTranscriptVisible ?? state.readingTranscriptVisible
-  );
-  state.readingTimestampVisible = normalizeReaderTimestampVisible(
-    next.readerTimestampVisible ?? state.readingTimestampVisible
-  );
-  state.settings = {
-    ...state.settings,
-    readerTheme: state.readingTheme,
-    readerFontScale: state.readingFontScale,
-    readerFontWeight: state.readingFontWeight,
-    readerLetterSpacing: state.readingLetterSpacing,
-    readerLineHeight: state.readingLineHeight,
-    readerContentWidth: state.readingContentWidth,
-    readerChapterVisible: state.readingChapterVisible,
-    readerTranscriptVisible: state.readingTranscriptVisible,
-    readerTimestampVisible: state.readingTimestampVisible
+  readerPreferences.lineHeight = normalizeReaderLineHeight(next.readerLineHeight ?? readerPreferences.lineHeight);
+  readerPreferences.contentWidth = normalizeReaderContentWidth(next.readerContentWidth ?? readerPreferences.contentWidth);
+  readerPreferences.settings = {
+    ...readerPreferences.settings,
+    readerTheme: readerPreferences.theme,
+    readerFontScale: readerPreferences.fontScale,
+    readerFontWeight: readerPreferences.fontWeight,
+    readerLetterSpacing: readerPreferences.letterSpacing,
+    readerLineHeight: readerPreferences.lineHeight,
+    readerContentWidth: readerPreferences.contentWidth
   };
   applyReadingViewPresentation();
   updateReadingTranscriptTailSpacer();
   restoreTranscriptScrollAnchor(scrollAnchor);
+  scheduleReaderLayout();
   if (persist) {
     persistReaderSettings();
   }
 }
 
 function persistReaderSettings() {
-  sendRuntimeMessage({ type: "save-settings", settings: state.settings }).catch((error) => {
+  sendRuntimeMessage({ type: "save-settings", settings: readerPreferences.settings }).catch((error) => {
     logWarn("[BOC] failed to persist reader settings", error);
   });
 }
 
 function buildReadingMetaLine() {
   const parts = [];
-  if (state.author) {
-    parts.push(state.author);
+  if (clipState.author) {
+    parts.push(clipState.author);
   }
-  if (state.uploadDate) {
-    parts.push(state.uploadDate);
+  if (clipState.uploadDate) {
+    parts.push(clipState.uploadDate);
   }
-  parts.push("bilibili.com");
-  if (Number(state.pageCount) > 1) {
-    const pageParts = [`P${Number(state.pageIndex) > 0 ? Number(state.pageIndex) : 1}`];
-    if (state.pageTitle) {
-      pageParts.push(state.pageTitle);
+  parts.push(isYouTubePage() ? "youtube.com" : "bilibili.com");
+  if (Number(clipState.pageCount) > 1) {
+    const pageParts = [`P${Number(clipState.pageIndex) > 0 ? Number(clipState.pageIndex) : 1}`];
+    if (clipState.pageTitle) {
+      pageParts.push(clipState.pageTitle);
     }
     parts.push(pageParts.join(" "));
   }
-  if (state.selectedSubtitleLang) {
-    parts.push(`字幕：${state.selectedSubtitleLang}`);
+  if (clipState.selectedSubtitleLang) {
+    parts.push(`字幕：${clipState.selectedSubtitleLang}`);
   }
   return parts.join(" · ");
 }
 
 function renderReadingStatus(text) {
-  byId(ids.readingStatus).textContent = String(text || "");
+  const node = byId(ids.readingStatus);
+  const value = String(text || "");
+  if (node.textContent !== value) node.textContent = value;
 }
 
 function setReadingViewReady(ready) {
-  state.readingViewReady = Boolean(ready);
+  readerSessionState.ready = Boolean(ready);
   const readingView = document.getElementById(ids.readingView);
   if (!readingView) {
     return;
   }
-  readingView.setAttribute("data-blr-reader-ready", state.readingViewReady ? "1" : "0");
-  readingView.setAttribute("aria-busy", state.readingViewReady ? "false" : "true");
-}
-
-function isReaderPresentationStable(playerHost = state.readingPlayerHost) {
-  if (!state.readingViewOpen || !playerHost?.isConnected) {
-    return false;
-  }
-  const rect = playerHost.getBoundingClientRect();
-  if (!(rect.width > 240) || !(rect.height > 120)) {
-    return false;
-  }
-  if (!state.readingNativePageMode) {
-    return true;
-  }
-  return !hasNativeReaderPlayerLayoutIssue(playerHost);
+  readingView.setAttribute("data-blr-reader-ready", readerSessionState.ready ? "1" : "0");
+  readingView.setAttribute("aria-busy", readerSessionState.ready ? "false" : "true");
 }
 
 function createReaderDebugSnapshot(label = "manual") {
@@ -4040,9 +4160,9 @@ function createReaderDebugSnapshot(label = "manual") {
     };
   };
 
-  const playerHost = state.readingPlayerHost || findReaderPlayerHost(getRuntimeVideoElement());
+  const playerHost = readerPlayerState.host || findReaderPlayerHost(getRuntimeVideoElement());
   const wrapNode = getReaderPlayerWrapNode(playerHost);
-  const video = state.readingVideoEl || getRuntimeVideoElement();
+  const video = readerPlayerState.videoEl || getRuntimeVideoElement();
   const hostChain = [];
   let current = playerHost;
   let depth = 0;
@@ -4080,9 +4200,8 @@ function createReaderDebugSnapshot(label = "manual") {
     url: cleanVideoUrl(),
     readerMode: document.documentElement.getAttribute("data-blr-reader-mode"),
     readingActive: document.body.getAttribute("data-blr-reading-active"),
-    readingViewOpen: state.readingViewOpen,
-    readingNativePageMode: state.readingNativePageMode,
-    readingViewReady: state.readingViewReady,
+    readingViewOpen: readerSessionState.open,
+    readingViewReady: readerSessionState.ready,
     readyStable: isReaderPresentationStable(playerHost),
     hasLayoutIssue: hasNativeReaderPlayerLayoutIssue(playerHost),
     hasRoot: Boolean(document.getElementById(ids.root)),
@@ -4126,361 +4245,27 @@ function createReaderDebugSnapshot(label = "manual") {
   };
 }
 
-function bindReaderLayout() {
-  if (state.readingLayoutBound) {
-    return;
-  }
-  window.addEventListener("resize", layoutReaderPlayerHost);
-  window.addEventListener("scroll", layoutReaderPlayerHost, { passive: true });
-  document.addEventListener("fullscreenchange", layoutReaderPlayerHost);
-  document.addEventListener("webkitfullscreenchange", layoutReaderPlayerHost);
-  state.readingLayoutBound = true;
-}
-
-function unbindReaderLayout() {
-  if (!state.readingLayoutBound) {
-    return;
-  }
-  window.removeEventListener("resize", layoutReaderPlayerHost);
-  window.removeEventListener("scroll", layoutReaderPlayerHost);
-  document.removeEventListener("fullscreenchange", layoutReaderPlayerHost);
-  document.removeEventListener("webkitfullscreenchange", layoutReaderPlayerHost);
-  state.readingLayoutBound = false;
-}
-
-function layoutReaderPlayerHost() {
-  if (!state.readingViewOpen || !isReaderMode()) {
-    return;
-  }
-
-  const readingView = byId(ids.readingView);
-  applyReaderColumnLayout();
-  const playerHost = state.readingPlayerHost;
-  const slot = byId(ids.readingPlayerSlot);
-  if (!playerHost) {
-    return;
-  }
-
-  const aspectRatio = getReaderVideoAspectRatio();
-
-  if (state.readingNativePageMode) {
-    const rect = playerHost.getBoundingClientRect();
-    if (!(rect.width > 0) || !(rect.height > 0)) {
-      return;
-    }
-
-    const widthLimit = getReaderMainWidthLimit();
-    const wrapRect = getReaderPlayerWrapNode(playerHost)?.getBoundingClientRect?.();
-    const layoutTop = Number.isFinite(wrapRect?.top) ? wrapRect.top : rect.top;
-    const maxHeight = getReaderPlayerMaxHeightPx(layoutTop);
-    // Fit the whole video, then size the player to that same aspect ratio.
-    // Filling the width and height independently creates letterbox bars.
-    const renderedWidth = Math.min(widthLimit, maxHeight * aspectRatio);
-    const renderedHeight = renderedWidth / aspectRatio;
-
-    clearNativeReaderFloatingStyles(playerHost);
-    cleanupReaderPlayerHostNode(playerHost);
-    [document.documentElement, document.body, readingView].forEach((node) => {
-      node.style.setProperty("--blr-reader-player-rendered-width", `${renderedWidth}px`);
-      node.style.setProperty("--blr-reader-player-rendered-height", `${renderedHeight}px`);
-    });
-    updateReaderChapterRailPosition();
-    updateReadingTranscriptTailSpacer();
-    queueEnsureReaderPlayerControlsRecovered({
-      reason: "layout-native",
-      delayMs: 120
-    });
-    return;
-  }
-
-  if (!slot) {
-    return;
-  }
-
-  const rect = slot.getBoundingClientRect();
-  if (!(rect.width > 0) || !(rect.height > 0)) {
-    return;
-  }
-
-  const maxHeight = Math.min(rect.height, getReaderPlayerMaxHeightPx(rect.top));
-  const targetWidth = Math.min(rect.width, maxHeight * aspectRatio);
-  const targetHeight = targetWidth / aspectRatio;
-  const left = rect.left + (rect.width - targetWidth) / 2;
-
-  [document.documentElement, document.body, readingView].forEach((node) => {
-    node.style.setProperty("--blr-reader-player-rendered-width", `${targetWidth}px`);
-    node.style.setProperty("--blr-reader-player-rendered-height", `${targetHeight}px`);
-  });
-  playerHost.style.setProperty("position", "fixed", "important");
-  playerHost.style.setProperty("left", `${Math.round(left)}px`, "important");
-  playerHost.style.setProperty("top", `${Math.round(rect.top)}px`, "important");
-  playerHost.style.setProperty("width", `${targetWidth}px`, "important");
-  playerHost.style.setProperty("height", `${targetHeight}px`, "important");
-  playerHost.style.setProperty("margin", "0", "important");
-  playerHost.style.setProperty("z-index", "2147483647", "important");
-  playerHost.style.setProperty("max-width", "none", "important");
-  playerHost.style.setProperty("max-height", "none", "important");
-  updateReaderChapterRailPosition({
-    left,
-    bottom: rect.top + targetHeight,
-    width: targetWidth,
-    height: targetHeight
-  });
-  updateReadingTranscriptTailSpacer();
-}
-
-function cleanupReaderPlayerHostNode(playerHost) {
-  if (!playerHost) {
-    return;
-  }
-  playerHost.classList.remove("blr-reader-player-host");
-  playerHost.style.removeProperty("position");
-  playerHost.style.removeProperty("inset");
-  playerHost.style.removeProperty("left");
-  playerHost.style.removeProperty("top");
-  playerHost.style.removeProperty("right");
-  playerHost.style.removeProperty("bottom");
-  playerHost.style.removeProperty("transform");
-  playerHost.style.removeProperty("width");
-  playerHost.style.removeProperty("height");
-  playerHost.style.removeProperty("margin");
-  playerHost.style.removeProperty("z-index");
-  playerHost.style.removeProperty("max-width");
-  playerHost.style.removeProperty("max-height");
-}
-
-function cleanupReaderPlayerHost() {
-  unbindReaderPlayerControlsHover();
-  unbindReaderHeaderActionsHover();
-  if (state.readingControlsRecoveryTimer) {
-    window.clearTimeout(state.readingControlsRecoveryTimer);
-    state.readingControlsRecoveryTimer = 0;
-  }
-  state.readingControlsRecoveryInFlight = false;
-  const readingView = byId(ids.readingView);
-  [document.documentElement, document.body, readingView].filter(Boolean).forEach((node) => {
-    node.style.removeProperty("--blr-reader-player-rendered-width");
-    node.style.removeProperty("--blr-reader-player-rendered-height");
-    node.style.removeProperty("--blr-reader-player-left");
-    node.style.removeProperty("--blr-reader-player-top");
-    node.style.removeProperty("--blr-reader-player-bottom");
-    node.style.removeProperty("--blr-reader-player-width");
-  });
-  const playerHost = state.readingPlayerHost;
-  if (playerHost) {
-    setReaderPlayerControlsVisible(false, playerHost);
-    cleanupReaderPlayerHostNode(playerHost);
-  }
-  // Restore native dimensions last so cleanup cannot erase them again.
-  restoreReaderPlayerContainer();
-  state.readingPlayerHost = null;
-}
-
 function startReadingViewSync() {
-  if (state.readingSyncTimer) {
-    window.clearInterval(state.readingSyncTimer);
+  if (readerSessionState.syncTimer) {
+    window.clearInterval(readerSessionState.syncTimer);
   }
-  state.readingSyncTimer = window.setInterval(() => {
+  readerSessionState.syncTimer = window.setInterval(() => {
+    syncYouTubeReadingChapters();
     syncReadingViewPlayback();
-  }, 250);
+    scheduleReaderLayout();
+  }, 1500);
 }
 
 function stopReadingViewSync() {
-  if (state.readingSyncTimer) {
-    window.clearInterval(state.readingSyncTimer);
-    state.readingSyncTimer = 0;
+  if (readerSessionState.syncTimer) {
+    window.clearInterval(readerSessionState.syncTimer);
+    readerSessionState.syncTimer = 0;
   }
-  if (state.readingMiniDismissTimer) {
-    window.clearTimeout(state.readingMiniDismissTimer);
-    state.readingMiniDismissTimer = 0;
-  }
-  if (state.readingControlsHideTimer) {
-    window.clearTimeout(state.readingControlsHideTimer);
-    state.readingControlsHideTimer = 0;
-  }
-  if (state.readingControlsRecoveryTimer) {
-    window.clearTimeout(state.readingControlsRecoveryTimer);
-    state.readingControlsRecoveryTimer = 0;
-  }
-  state.readingControlsRecoveryInFlight = false;
-  if (state.readingPlayerMountTimer) {
-    window.clearTimeout(state.readingPlayerMountTimer);
-    state.readingPlayerMountTimer = 0;
-  }
-  if (state.readingPlayerRetryTimer) {
-    window.clearTimeout(state.readingPlayerRetryTimer);
-    state.readingPlayerRetryTimer = 0;
-  }
+  clearReaderMountTimers();
+  clearReaderPlayerTimers();
   stopReaderPlayerObserver();
   unbindReaderPlayerControlsHover();
-  if (state.readingVideoEl && state.readingVideoEl.__blrReadingSyncHandler) {
-    const video = state.readingVideoEl;
-    video.removeEventListener("timeupdate", video.__blrReadingSyncHandler);
-    video.removeEventListener("seeked", video.__blrReadingSyncHandler);
-    video.removeEventListener("loadedmetadata", video.__blrReadingSyncHandler);
-    video.removeEventListener("resize", video.__blrReadingSyncHandler);
-    delete video.__blrReadingSyncHandler;
-  }
-  state.readingVideoEventsBound = false;
-}
-
-function startReaderPlayerObserver() {
-  if (!isReaderMode() || state.readingPlayerObserver || !document.body) {
-    return;
-  }
-  const observer = new MutationObserver(() => {
-    if (!state.readingViewOpen) {
-      return;
-    }
-    const nextVideo = getRuntimeVideoElement();
-    const nextHost = findReaderPlayerHost(nextVideo);
-    if (nextVideo && nextHost && (nextVideo !== state.readingVideoEl || nextHost !== state.readingPlayerHost)) {
-      queueEnsureReaderPlayerMounted();
-    }
-    if (document.querySelector(".bpx-player-mini-close, .bpx-player-mini-warp")) {
-      scheduleReaderMiniPlayerDismiss();
-    }
-  });
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
-  state.readingPlayerObserver = observer;
-}
-
-function stopReaderPlayerObserver() {
-  if (state.readingPlayerObserver) {
-    state.readingPlayerObserver.disconnect();
-    state.readingPlayerObserver = null;
-  }
-}
-
-function bindReadingViewVideo(video = getRuntimeVideoElement()) {
-  if (!video) {
-    if (state.readingVideoEl && state.readingVideoEl.__blrReadingSyncHandler) {
-      const prev = state.readingVideoEl;
-      prev.removeEventListener("timeupdate", prev.__blrReadingSyncHandler);
-      prev.removeEventListener("seeked", prev.__blrReadingSyncHandler);
-      prev.removeEventListener("loadedmetadata", prev.__blrReadingSyncHandler);
-      prev.removeEventListener("resize", prev.__blrReadingSyncHandler);
-      delete prev.__blrReadingSyncHandler;
-    }
-    state.readingVideoEl = null;
-    state.readingVideoEventsBound = false;
-    return null;
-  }
-
-  if (state.readingVideoEl === video && state.readingVideoEventsBound) {
-    return video;
-  }
-
-  if (state.readingVideoEl && state.readingVideoEl.__blrReadingSyncHandler) {
-    const prev = state.readingVideoEl;
-    prev.removeEventListener("timeupdate", prev.__blrReadingSyncHandler);
-    prev.removeEventListener("seeked", prev.__blrReadingSyncHandler);
-    prev.removeEventListener("loadedmetadata", prev.__blrReadingSyncHandler);
-    prev.removeEventListener("resize", prev.__blrReadingSyncHandler);
-  }
-
-  const syncHandler = (event) => {
-    if (state.readingViewOpen) {
-      if (event?.type === "loadedmetadata" || event?.type === "resize") {
-        layoutReaderPlayerHost();
-      }
-      if (event?.type === "seeked") {
-        state.readingNextScrollBehavior = "auto";
-        queueEnsureReaderPlayerControlsRecovered({
-          reason: "seeked",
-          delayMs: 140,
-          minIntervalMs: 320
-        });
-      }
-      const latestHost = findReaderPlayerHost(video);
-      if (latestHost && latestHost !== state.readingPlayerHost) {
-        queueEnsureReaderPlayerMounted();
-      }
-      syncReadingViewPlayback();
-    }
-  };
-  video.addEventListener("timeupdate", syncHandler);
-  video.addEventListener("seeked", syncHandler);
-  video.addEventListener("loadedmetadata", syncHandler);
-  video.addEventListener("resize", syncHandler);
-  video.__blrReadingSyncHandler = syncHandler;
-  state.readingVideoEl = video;
-  state.readingPlayerHost = findReaderPlayerHost(video) || state.readingPlayerHost;
-  state.readingVideoEventsBound = true;
-  return video;
-}
-
-function getRuntimeVideoElement() {
-  if (state.readingVideoEl?.isConnected) {
-    const currentHost = findReaderPlayerHost(state.readingVideoEl);
-    const currentRect = state.readingVideoEl.getBoundingClientRect();
-    if (
-      currentHost?.isConnected &&
-      currentRect.width > 120 &&
-      currentRect.height > 68 &&
-      !isIgnoredReaderVideoCandidate(state.readingVideoEl)
-    ) {
-      return state.readingVideoEl;
-    }
-  }
-
-  const candidates = Array.from(document.querySelectorAll("video")).filter(
-    (item) => item.isConnected && !isIgnoredReaderVideoCandidate(item)
-  );
-  if (candidates.length === 0) {
-    return null;
-  }
-
-  const visible = candidates
-    .map((item) => {
-      const rect = item.getBoundingClientRect();
-      const host = findReaderPlayerHost(item);
-      const inPlayer = Boolean(
-        host &&
-          (host.matches?.("#bilibili-player, .bpx-player-container, .bpx-player-video-area") ||
-            host.querySelector?.(".bpx-player-video-area"))
-      );
-      const area = Math.max(0, rect.width) * Math.max(0, rect.height);
-      const score =
-        area +
-        (inPlayer ? 1000000 : 0) +
-        (!item.paused ? 20000 : 0) +
-        Number(item.readyState || 0) * 2000 +
-        (item.currentSrc ? 10000 : 0) +
-        (item === state.readingVideoEl ? 500 : 0);
-      return { item, rect, score };
-    })
-    .filter(({ rect }) => rect.width > 240 && rect.height > 120)
-    .sort((a, b) => b.score - a.score)[0];
-
-  return visible?.item || candidates[0] || null;
-}
-
-function isIgnoredReaderVideoCandidate(video) {
-  if (!video) {
-    return true;
-  }
-  const host = findReaderPlayerHost(video);
-  const blockedSelector = [
-    "[data-blr-reader-hidden='1']",
-    ".bpx-player-mini-warp",
-    ".bpx-player-mini-close",
-    ".bpx-player-ending-panel",
-    ".bpx-player-ending-related",
-    "[class*='mini-player']",
-    "[class*='picture-in-picture']",
-    "[class*='adcard']",
-    ".ad-report",
-    "[class*='ad-report']",
-    ".video-page-card-small",
-    ".video-page-special-card-small",
-    ".feed-card",
-    ".bili-video-card"
-  ].join(", ");
-  return Boolean(video.closest(blockedSelector) || host?.closest?.(blockedSelector));
+  unbindReadingViewVideo();
 }
 
 function applyReaderPageFocus() {
@@ -4489,7 +4274,7 @@ function applyReaderPageFocus() {
   const root = byId(ids.root);
   const video = getRuntimeVideoElement();
   const playerHost = findReaderPlayerHost(video);
-  const titleNode = findReaderTitleContainer();
+  const titleNode = isYouTubePage() ? null : findReaderTitleContainer();
   const inlineHost = document.getElementById("blr-reading-inline-host");
   const keepRoots = [root, inlineHost, playerHost, titleNode].filter(Boolean);
 
@@ -4497,6 +4282,16 @@ function applyReaderPageFocus() {
     markReaderKeepSubtree(node);
     markReaderKeepPath(node);
   });
+
+  if (isYouTubePage()) {
+    // YouTube moves the same player between these hosts when theater mode
+    // changes. Keep both paths available before it moves into the empty host.
+    document.querySelectorAll(
+      "ytd-watch-flexy #player, ytd-watch-flexy #player-container-outer, " +
+      "ytd-watch-flexy #player-container-inner, ytd-watch-flexy #full-bleed-container, " +
+      "ytd-watch-flexy #player-full-bleed-container"
+    ).forEach(markReaderKeepPath);
+  }
 
   const keepNodes = Array.from(document.querySelectorAll("[data-blr-reader-keep='1']"));
   keepNodes.forEach((parent) => {
@@ -4533,14 +4328,14 @@ function moveReadingMainInline() {
     return;
   }
 
-  if (!state.readingMainOriginalParent) {
-    state.readingMainOriginalParent = readingMain.parentElement;
-    state.readingMainOriginalNextSibling = readingMain.nextSibling;
+  if (!uiState.mainOriginalParent) {
+    uiState.mainOriginalParent = readingMain.parentElement;
+    uiState.mainOriginalNextSibling = readingMain.nextSibling;
   }
   const playerWrap =
     document.getElementById("playerWrap") ||
-    state.readingPlayerHost?.closest?.("#playerWrap") ||
-    state.readingPlayerHost;
+    readerPlayerState.host?.closest?.("#playerWrap") ||
+    readerPlayerState.host;
   if (!playerWrap) {
     return;
   }
@@ -4568,9 +4363,9 @@ function moveReadingMainInline() {
     transcriptHeading.className = "blr-reading-transcript-heading";
     transcriptHeading.setAttribute("role", "heading");
     transcriptHeading.setAttribute("aria-level", "2");
-    transcriptHeading.innerHTML = buildReadingTranscriptHeadingHtml();
+    transcriptHeading.innerHTML = readerHtml(buildReadingTranscriptHeadingHtml());
   } else if (!transcriptHeading.querySelector(".blr-reading-transcript-heading-controls")) {
-    transcriptHeading.innerHTML = buildReadingTranscriptHeadingHtml();
+    transcriptHeading.innerHTML = readerHtml(buildReadingTranscriptHeadingHtml());
   }
   if (transcriptHeading.parentElement !== inlineHost || inlineHost.firstElementChild !== transcriptHeading) {
     inlineHost.prepend(transcriptHeading);
@@ -4580,7 +4375,7 @@ function moveReadingMainInline() {
 
   if (!inlineHost.dataset.blrScrollBound) {
     const handleInlineHostManualScroll = () => {
-      if (Date.now() <= state.readingProgrammaticScrollUntil) {
+      if (Date.now() <= readerSessionState.programmaticScrollUntil) {
         return;
       }
       noteManualReaderInteraction();
@@ -4593,37 +4388,22 @@ function moveReadingMainInline() {
   if (readingMain.parentElement !== inlineHost) {
     inlineHost.appendChild(readingMain);
   }
-  const leftContainer = document.querySelector(".left-container");
-  const bgColor = leftContainer ? getComputedStyle(leftContainer).backgroundColor : "";
-  if (state.readingTranscriptVisible) {
-    inlineHost.style.border = "";
-    inlineHost.style.background = "";
-    inlineHost.style.marginTop = "";
-    inlineHost.style.boxShadow = "";
-    inlineHost.style.borderRadius = "";
-  } else {
-    inlineHost.style.border = "none";
-    inlineHost.style.background = bgColor;
-    inlineHost.style.marginTop = "0";
-    inlineHost.style.boxShadow = "none";
-    inlineHost.style.borderRadius = "0";
-  }
   updateReadingTranscriptTailSpacer();
 }
 
 function restoreReadingMainInline() {
   const readingMain = document.querySelector(".blr-reading-main");
   const inlineHost = document.getElementById("blr-reading-inline-host");
-  if (readingMain && state.readingMainOriginalParent) {
-    if (state.readingMainOriginalNextSibling?.parentNode === state.readingMainOriginalParent) {
-      state.readingMainOriginalParent.insertBefore(readingMain, state.readingMainOriginalNextSibling);
+  if (readingMain && uiState.mainOriginalParent) {
+    if (uiState.mainOriginalNextSibling?.parentNode === uiState.mainOriginalParent) {
+      uiState.mainOriginalParent.insertBefore(readingMain, uiState.mainOriginalNextSibling);
     } else {
-      state.readingMainOriginalParent.appendChild(readingMain);
+      uiState.mainOriginalParent.appendChild(readingMain);
     }
   }
   inlineHost?.remove();
-  state.readingMainOriginalParent = null;
-  state.readingMainOriginalNextSibling = null;
+  uiState.mainOriginalParent = null;
+  uiState.mainOriginalNextSibling = null;
 }
 
 function pruneReaderNonKeepBranches(node) {
@@ -4666,7 +4446,7 @@ function hideReaderNoiseNodes(keepRoots = []) {
     }
     if (
       node.closest(
-        "#bilibili-player, .bpx-player-container, .bpx-player-video-area, .bpx-player-primary-area, #blr-root, h1.video-title, .video-info-detail, .video-info-meta, .video-data"
+        "#movie_player, #bilibili-player, .bpx-player-container, .bpx-player-video-area, .bpx-player-primary-area, #blr-root, h1.video-title, .video-info-detail, .video-info-meta, .video-data"
       )
     ) {
       return;
@@ -4709,7 +4489,372 @@ function findReaderTitleContainer() {
   return title;
 }
 
-function dismissReaderMiniPlayer(playerHost = state.readingPlayerHost) {
+function setReaderHeaderActionsVisible(visible) {
+  const actions = document.querySelector(".blr-reading-actions");
+  if (!actions) {
+    return;
+  }
+  if (visible) {
+    actions.removeAttribute("data-blr-icon-hidden");
+    return;
+  }
+  actions.setAttribute("data-blr-icon-hidden", "1");
+}
+
+function scheduleReaderHeaderActionsHide(delayMs = 10000) {
+  if (uiState.headerHideTimer) {
+    window.clearTimeout(uiState.headerHideTimer);
+    uiState.headerHideTimer = 0;
+  }
+  uiState.headerHideTimer = window.setTimeout(() => {
+    uiState.headerHideTimer = 0;
+    if (!readerSessionState.open) {
+      return;
+    }
+    setReaderHeaderActionsVisible(false);
+  }, delayMs);
+}
+
+function bindReaderHeaderActionsHover() {
+  if (!readerSessionState.open) {
+    return;
+  }
+  const header = document.querySelector(".blr-reading-header");
+  if (!header || header.__blrReaderHeaderHoverBound) {
+    uiState.headerHoverHost = header || null;
+    return;
+  }
+
+  const showActions = () => {
+    if (!readerSessionState.open) {
+      return;
+    }
+    if (uiState.headerHideTimer) {
+      window.clearTimeout(uiState.headerHideTimer);
+      uiState.headerHideTimer = 0;
+    }
+    setReaderHeaderActionsVisible(true);
+  };
+  const hideActionsLater = () => {
+    if (!readerSessionState.open) {
+      return;
+    }
+    scheduleReaderHeaderActionsHide();
+  };
+
+  header.addEventListener("mouseenter", showActions, true);
+  header.addEventListener("mouseleave", hideActionsLater, true);
+  header.__blrReaderHeaderHoverBound = { showActions, hideActionsLater };
+  uiState.headerHoverHost = header;
+  setReaderHeaderActionsVisible(true);
+  scheduleReaderHeaderActionsHide();
+}
+
+function unbindReaderHeaderActionsHover() {
+  const header = uiState.headerHoverHost;
+  if (uiState.headerHideTimer) {
+    window.clearTimeout(uiState.headerHideTimer);
+    uiState.headerHideTimer = 0;
+  }
+  if (!header?.__blrReaderHeaderHoverBound) {
+    uiState.headerHoverHost = null;
+    return;
+  }
+  const { showActions, hideActionsLater } = header.__blrReaderHeaderHoverBound;
+  header.removeEventListener("mouseenter", showActions, true);
+  header.removeEventListener("mouseleave", hideActionsLater, true);
+  delete header.__blrReaderHeaderHoverBound;
+  uiState.headerHoverHost = null;
+  setReaderHeaderActionsVisible(true);
+}
+// Native Bilibili player discovery, layout repair, controls, and cleanup.
+const ignoredReaderVideoSelector = [
+  "[data-blr-reader-hidden='1']",
+  ".bpx-player-mini-warp",
+  ".bpx-player-mini-close",
+  ".bpx-player-ending-panel",
+  ".bpx-player-ending-related",
+  "[class*='mini-player']",
+  "[class*='picture-in-picture']",
+  "[class*='adcard']",
+  ".ad-report",
+  "[class*='ad-report']",
+  ".video-page-card-small",
+  ".video-page-special-card-small",
+  ".feed-card",
+  ".bili-video-card"
+].join(", ");
+
+function clearNativeReaderFloatingStyles(playerHost = readerPlayerState.host) {
+  if (!readerSessionState.open || !playerHost) {
+    return;
+  }
+
+  const targets = [];
+  let current = playerHost;
+  let depth = 0;
+  while (current && current !== document.body && depth < 8) {
+    if (
+      current.matches?.(
+        ".bpx-player-container, .bpx-docker, .bpx-player-video-area, .bpx-player-primary-area, #bilibili-player, #playerWrap, .player-wrap"
+      )
+    ) {
+      targets.push(current);
+    }
+    if (current.id === "playerWrap") {
+      break;
+    }
+    current = current.parentElement;
+    depth += 1;
+  }
+
+  targets.forEach((node) => {
+    node.style.removeProperty("position");
+    node.style.removeProperty("inset");
+    node.style.removeProperty("left");
+    node.style.removeProperty("top");
+    node.style.removeProperty("right");
+    node.style.removeProperty("bottom");
+    node.style.removeProperty("transform");
+    node.style.removeProperty("width");
+    node.style.removeProperty("height");
+    node.style.removeProperty("max-width");
+    node.style.removeProperty("max-height");
+    node.style.removeProperty("margin");
+    node.style.removeProperty("z-index");
+  });
+}
+
+function getReaderPlayerWrapNode(playerHost = readerPlayerState.host) {
+  if (isYouTubePage()) return playerHost || document.getElementById("movie_player");
+  return (
+    playerHost?.closest?.("#playerWrap") ||
+    playerHost?.closest?.(".player-wrap") ||
+    document.getElementById("playerWrap") ||
+    document.querySelector(".player-wrap")
+  );
+}
+
+function hasNativeReaderPlayerLayoutIssue(playerHost = readerPlayerState.host) {
+  if (isYouTubePage()) return false;
+  if (!readerSessionState.open || !playerHost) {
+    return false;
+  }
+
+  const playerStyle = window.getComputedStyle(playerHost);
+  if (playerStyle.position === "fixed" || playerStyle.position === "sticky") {
+    return true;
+  }
+
+  const playerRect = playerHost.getBoundingClientRect();
+  const wrapNode = getReaderPlayerWrapNode(playerHost);
+  if (!wrapNode) {
+    return false;
+  }
+
+  const wrapRect = wrapNode.getBoundingClientRect();
+  return wrapRect.height <= 8 && playerRect.height > 120;
+}
+
+function isReaderPresentationStable(playerHost = readerPlayerState.host) {
+  if (!readerSessionState.open || !playerHost?.isConnected) {
+    return false;
+  }
+  const rect = playerHost.getBoundingClientRect();
+  if (!(rect.width > 240) || !(rect.height > 120)) {
+    return false;
+  }
+  return !hasNativeReaderPlayerLayoutIssue(playerHost);
+}
+
+function cleanupReaderPlayerHostNode(playerHost) {
+  if (!playerHost) {
+    return;
+  }
+  playerHost.classList.remove("blr-reader-player-host");
+  playerHost.style.removeProperty("position");
+  playerHost.style.removeProperty("inset");
+  playerHost.style.removeProperty("left");
+  playerHost.style.removeProperty("top");
+  playerHost.style.removeProperty("right");
+  playerHost.style.removeProperty("bottom");
+  playerHost.style.removeProperty("transform");
+  playerHost.style.removeProperty("width");
+  playerHost.style.removeProperty("height");
+  playerHost.style.removeProperty("margin");
+  playerHost.style.removeProperty("z-index");
+  playerHost.style.removeProperty("max-width");
+  playerHost.style.removeProperty("max-height");
+}
+
+const READER_PLAYER_TIMER_KEYS = ["miniDismissTimer", "controlsHideTimer", "controlsRecoveryTimer"];
+
+function clearReaderPlayerTimers() {
+  READER_PLAYER_TIMER_KEYS.forEach((name) => {
+    if (readerPlayerState[name]) window.clearTimeout(readerPlayerState[name]);
+    readerPlayerState[name] = 0;
+  });
+  readerPlayerState.controlsRecoveryInFlight = false;
+}
+
+function cleanupReaderPlayerHost() {
+  unbindReaderPlayerControlsHover();
+  unbindReaderHeaderActionsHover();
+  clearReaderPlayerTimers();
+  const readingView = byId(ids.readingView);
+  [document.documentElement, document.body, readingView].filter(Boolean).forEach((node) => {
+    node.style.removeProperty("--blr-reader-player-rendered-width");
+    node.style.removeProperty("--blr-reader-player-rendered-height");
+    node.style.removeProperty("--blr-reader-player-left");
+    node.style.removeProperty("--blr-reader-player-top");
+    node.style.removeProperty("--blr-reader-player-bottom");
+    node.style.removeProperty("--blr-reader-player-width");
+  });
+  const playerHost = readerPlayerState.host;
+  if (playerHost && !isYouTubePage()) {
+    setReaderPlayerControlsVisible(false, playerHost);
+    cleanupReaderPlayerHostNode(playerHost);
+  }
+  // Restore native dimensions last so cleanup cannot erase them again.
+  restoreReaderPlayerContainer();
+  readerPlayerState.host = null;
+}
+
+function startReaderPlayerObserver() {
+  if (!isReaderMode() || readerPlayerState.observer || !document.body) {
+    return;
+  }
+  readerPlayerState.observer = subscribeReaderPageChanges("player", () => {
+    if (!readerSessionState.open) return;
+    const nextVideo = getRuntimeVideoElement();
+    const nextHost = findReaderPlayerHost(nextVideo);
+    if (nextVideo && nextHost && (nextVideo !== readerPlayerState.videoEl || nextHost !== readerPlayerState.host)) {
+      queueEnsureReaderPlayerMounted();
+    }
+    if (isYouTubePage()) {
+      // Theater/fullscreen switches can reparent an unchanged player. Refresh
+      // its keep path even when neither the video nor the player was replaced.
+      applyReaderPageFocus();
+      scheduleReaderLayout();
+      return;
+    }
+    if (document.querySelector(".bpx-player-mini-close, .bpx-player-mini-warp")) {
+      scheduleReaderMiniPlayerDismiss();
+    }
+  });
+}
+
+function stopReaderPlayerObserver() {
+  readerPlayerState.observer?.();
+  readerPlayerState.observer = null;
+}
+
+const READING_VIDEO_SYNC_EVENTS = ["timeupdate", "seeked", "loadedmetadata", "resize"];
+
+function unbindReadingViewVideo(video = readerPlayerState.videoEl) {
+  const handler = video?.__blrReadingSyncHandler;
+  if (handler) {
+    READING_VIDEO_SYNC_EVENTS.forEach((event) => video.removeEventListener(event, handler));
+    delete video.__blrReadingSyncHandler;
+  }
+  if (video === readerPlayerState.videoEl) readerPlayerState.videoEventsBound = false;
+}
+
+function bindReadingViewVideo(video = getRuntimeVideoElement()) {
+  if (!video) {
+    unbindReadingViewVideo();
+    readerPlayerState.videoEl = null;
+    readerPlayerState.videoEventsBound = false;
+    return null;
+  }
+
+  if (readerPlayerState.videoEl === video && readerPlayerState.videoEventsBound) {
+    return video;
+  }
+
+  unbindReadingViewVideo();
+
+  const syncHandler = (event) => {
+    if (readerSessionState.open) {
+      if (event?.type === "loadedmetadata" || event?.type === "resize") {
+        scheduleReaderLayout();
+      }
+      if (event?.type === "seeked") {
+        readerSessionState.nextScrollBehavior = "auto";
+        queueEnsureReaderPlayerControlsRecovered({
+          reason: "seeked",
+          delayMs: 140,
+          minIntervalMs: 320
+        });
+      }
+      const latestHost = findReaderPlayerHost(video);
+      if (latestHost && latestHost !== readerPlayerState.host) {
+        queueEnsureReaderPlayerMounted();
+      }
+      syncReadingViewPlayback();
+    }
+  };
+  READING_VIDEO_SYNC_EVENTS.forEach((event) => video.addEventListener(event, syncHandler));
+  video.__blrReadingSyncHandler = syncHandler;
+  readerPlayerState.videoEl = video;
+  readerPlayerState.host = findReaderPlayerHost(video) || readerPlayerState.host;
+  readerPlayerState.videoEventsBound = true;
+  return video;
+}
+
+function getRuntimeVideoElement() {
+  if (isYouTubePage()) return document.querySelector("#movie_player video");
+  if (readerPlayerState.videoEl?.isConnected) {
+    const currentHost = findReaderPlayerHost(readerPlayerState.videoEl);
+    const currentRect = readerPlayerState.videoEl.getBoundingClientRect();
+    if (
+      currentHost?.isConnected &&
+      currentRect.width > 120 &&
+      currentRect.height > 68 &&
+      !isIgnoredReaderVideoCandidate(readerPlayerState.videoEl, currentHost)
+    ) {
+      return readerPlayerState.videoEl;
+    }
+  }
+
+  let fallback = null;
+  let best = null;
+  let bestScore = Number.NEGATIVE_INFINITY;
+  for (const video of document.querySelectorAll("video")) {
+    if (!video.isConnected) continue;
+    const host = findReaderPlayerHost(video);
+    if (isIgnoredReaderVideoCandidate(video, host)) continue;
+    if (!fallback) fallback = video;
+    const rect = video.getBoundingClientRect();
+    if (!(rect.width > 240 && rect.height > 120)) continue;
+    const inPlayer = Boolean(host &&
+      (host.matches?.("#bilibili-player, .bpx-player-container, .bpx-player-video-area") ||
+        host.querySelector?.(".bpx-player-video-area")));
+    const score = Math.max(0, rect.width) * Math.max(0, rect.height) +
+      (inPlayer ? 1000000 : 0) +
+      (!video.paused ? 20000 : 0) +
+      Number(video.readyState || 0) * 2000 +
+      (video.currentSrc ? 10000 : 0) +
+      (video === readerPlayerState.videoEl ? 500 : 0);
+    // Strict comparison keeps the first DOM candidate when scores tie,
+    // matching the previous stable sort without allocating score arrays.
+    if (!best || score > bestScore) {
+      best = video;
+      bestScore = score;
+    }
+  }
+  return best || fallback;
+}
+
+function isIgnoredReaderVideoCandidate(video, host = findReaderPlayerHost(video)) {
+  if (!video) {
+    return true;
+  }
+  return Boolean(video.closest(ignoredReaderVideoSelector) || host?.closest?.(ignoredReaderVideoSelector));
+}
+
+function dismissReaderMiniPlayer(playerHost = readerPlayerState.host) {
+  if (isYouTubePage()) return false;
   const explicitClose = Array.from(document.querySelectorAll(".bpx-player-mini-close")).find(isVisibleReaderControl);
   if (explicitClose) {
     explicitClose.click();
@@ -4792,25 +4937,26 @@ function dismissReaderMiniPlayer(playerHost = state.readingPlayerHost) {
 }
 
 function scheduleReaderMiniPlayerDismiss(maxAttempts = 12, delayMs = 180) {
-  if (!state.readingViewOpen) {
+  if (isYouTubePage()) return;
+  if (!readerSessionState.open) {
     return;
   }
-  if (state.readingMiniDismissTimer) {
-    window.clearTimeout(state.readingMiniDismissTimer);
-    state.readingMiniDismissTimer = 0;
+  if (readerPlayerState.miniDismissTimer) {
+    window.clearTimeout(readerPlayerState.miniDismissTimer);
+    readerPlayerState.miniDismissTimer = 0;
   }
 
   let attempts = 0;
   const run = () => {
-    if (!state.readingViewOpen) {
-      state.readingMiniDismissTimer = 0;
+    if (!readerSessionState.open) {
+      readerPlayerState.miniDismissTimer = 0;
       return;
     }
 
     const closed = dismissReaderMiniPlayer();
     const host = findReaderPlayerHost(getRuntimeVideoElement());
     if (host) {
-      state.readingPlayerHost = host;
+      readerPlayerState.host = host;
       normalizeReaderPlayerContainer(host);
       layoutReaderPlayerHost();
     }
@@ -4819,16 +4965,16 @@ function scheduleReaderMiniPlayerDismiss(maxAttempts = 12, delayMs = 180) {
     const miniExists = Boolean(document.querySelector(".bpx-player-mini-close, .bpx-player-mini-warp"));
     const hostFixed = Boolean(host && window.getComputedStyle(host).position === "fixed");
     if (attempts < maxAttempts && (miniExists || hostFixed || closed)) {
-      state.readingMiniDismissTimer = window.setTimeout(run, delayMs);
+      readerPlayerState.miniDismissTimer = window.setTimeout(run, delayMs);
       return;
     }
-    state.readingMiniDismissTimer = 0;
+    readerPlayerState.miniDismissTimer = 0;
   };
 
-  state.readingMiniDismissTimer = window.setTimeout(run, 40);
+  readerPlayerState.miniDismissTimer = window.setTimeout(run, 40);
 }
 
-function getReaderControlsRoot(playerHost = state.readingPlayerHost) {
+function getReaderControlsRoot(playerHost = readerPlayerState.host) {
   return (
     playerHost?.closest?.("#playerWrap") ||
     playerHost?.closest?.("#bilibili-player") ||
@@ -4838,7 +4984,7 @@ function getReaderControlsRoot(playerHost = state.readingPlayerHost) {
   );
 }
 
-function getReaderPlayerControlsState(playerHost = state.readingPlayerHost) {
+function getReaderPlayerControlsState(playerHost = readerPlayerState.host) {
   const controlRoot = getReaderControlsRoot(playerHost);
   const nodes = [".bpx-player-control-wrap", ".bpx-player-control-mask", ".bpx-player-control-entity"].map(
     (selector) => {
@@ -4860,8 +5006,8 @@ function getReaderPlayerControlsState(playerHost = state.readingPlayerHost) {
   };
 }
 
-function hasReaderPlayerControlsIssue(playerHost = state.readingPlayerHost) {
-  if (!state.readingNativePageMode || !playerHost || isWatchlaterPage()) {
+function hasReaderPlayerControlsIssue(playerHost = readerPlayerState.host) {
+  if (!readerSessionState.open || !playerHost || isWatchlaterPage()) {
     return false;
   }
 
@@ -4874,34 +5020,35 @@ function queueEnsureReaderPlayerControlsRecovered({
   delayMs = 120,
   minIntervalMs = 480
 } = {}) {
-  if (!state.readingViewOpen || !state.readingNativePageMode || isWatchlaterPage()) {
+  if (!readerSessionState.open || isWatchlaterPage() || isYouTubePage()) {
     return;
   }
-  const playerHost = state.readingPlayerHost;
-  if (!playerHost?.isConnected || state.readingControlsRecoveryInFlight) {
+  const playerHost = readerPlayerState.host;
+  if (!playerHost?.isConnected || readerPlayerState.controlsRecoveryInFlight) {
     return;
   }
 
   const now = Date.now();
-  if (state.readingControlsRecoveryTimer) {
+  if (readerPlayerState.controlsRecoveryTimer) {
     return;
   }
-  if (now - state.readingControlsLastRecoverAt < minIntervalMs) {
+  if (now - readerPlayerState.controlsLastRecoverAt < minIntervalMs) {
     return;
   }
 
-  state.readingControlsRecoveryTimer = window.setTimeout(() => {
-    state.readingControlsRecoveryTimer = 0;
-    if (!state.readingViewOpen || !state.readingNativePageMode || isWatchlaterPage()) {
+  const sessionId = readerSessionState.id;
+  readerPlayerState.controlsRecoveryTimer = window.setTimeout(() => {
+    readerPlayerState.controlsRecoveryTimer = 0;
+    if (!isReaderSessionActive(sessionId) || isWatchlaterPage()) {
       return;
     }
-    const activeHost = state.readingPlayerHost;
+    const activeHost = readerPlayerState.host;
     if (!activeHost?.isConnected || !hasReaderPlayerControlsIssue(activeHost)) {
       return;
     }
 
-    state.readingControlsRecoveryInFlight = true;
-    state.readingControlsLastRecoverAt = Date.now();
+    readerPlayerState.controlsRecoveryInFlight = true;
+    readerPlayerState.controlsLastRecoverAt = Date.now();
     ensureReaderPlayerControlsRecovered(activeHost, {
       reason,
       retryDelayMs: 120
@@ -4910,13 +5057,13 @@ function queueEnsureReaderPlayerControlsRecovered({
         logWarn("[BOC] queued reader controls recovery failed", { reason, error });
       })
       .finally(() => {
-        state.readingControlsRecoveryInFlight = false;
+        if (sessionId === readerSessionState.id) readerPlayerState.controlsRecoveryInFlight = false;
       });
   }, delayMs);
 }
 
-function setReaderPlayerControlsVisible(visible, playerHost = state.readingPlayerHost) {
-  if (!state.readingNativePageMode || !playerHost) {
+function setReaderPlayerControlsVisible(visible, playerHost = readerPlayerState.host) {
+  if (!readerSessionState.open || !playerHost) {
     return;
   }
 
@@ -4964,10 +5111,11 @@ function setReaderPlayerControlsVisible(visible, playerHost = state.readingPlaye
 }
 
 async function ensureReaderPlayerControlsRecovered(
-  playerHost = state.readingPlayerHost,
+  playerHost = readerPlayerState.host,
   { reason = "unknown", retryDelayMs = 90 } = {}
 ) {
-  if (!state.readingNativePageMode || !playerHost || isWatchlaterPage()) {
+  const sessionId = readerSessionState.id;
+  if (!isReaderSessionActive(sessionId) || !playerHost || isWatchlaterPage()) {
     return false;
   }
 
@@ -5004,6 +5152,7 @@ async function ensureReaderPlayerControlsRecovered(
   }
 
   await sleep(retryDelayMs);
+  if (!isReaderSessionActive(sessionId) || readerPlayerState.host !== playerHost || !playerHost.isConnected) return false;
   logInfo("[BOC] retrying normal reader controls recovery", {
     reason,
     hostClassName: typeof playerHost.className === "string" ? playerHost.className : ""
@@ -5021,43 +5170,43 @@ async function ensureReaderPlayerControlsRecovered(
   return !hasReaderPlayerControlsIssue(playerHost);
 }
 
-function scheduleReaderPlayerControlsHide(playerHost = state.readingControlsHoverHost || state.readingPlayerHost) {
-  if (state.readingControlsHideTimer) {
-    window.clearTimeout(state.readingControlsHideTimer);
+function scheduleReaderPlayerControlsHide(playerHost = readerPlayerState.controlsHoverHost || readerPlayerState.host) {
+  if (readerPlayerState.controlsHideTimer) {
+    window.clearTimeout(readerPlayerState.controlsHideTimer);
   }
-  state.readingControlsHideTimer = window.setTimeout(() => {
-    state.readingControlsHideTimer = 0;
-    if (!state.readingViewOpen) {
+  readerPlayerState.controlsHideTimer = window.setTimeout(() => {
+    readerPlayerState.controlsHideTimer = 0;
+    if (!readerSessionState.open) {
       return;
     }
     setReaderPlayerControlsVisible(false, playerHost);
   }, 1200);
 }
 
-function bindReaderPlayerControlsHover(playerHost = state.readingPlayerHost) {
-  if (!state.readingNativePageMode || !isWatchlaterPage() || !playerHost) {
+function bindReaderPlayerControlsHover(playerHost = readerPlayerState.host) {
+  if (!readerSessionState.open || !isWatchlaterPage() || !playerHost) {
     return;
   }
 
-  if (state.readingControlsHoverHost && state.readingControlsHoverHost !== playerHost) {
+  if (readerPlayerState.controlsHoverHost && readerPlayerState.controlsHoverHost !== playerHost) {
     unbindReaderPlayerControlsHover();
   }
   if (playerHost.__blrReaderControlsHoverBound) {
-    state.readingControlsHoverHost = playerHost;
+    readerPlayerState.controlsHoverHost = playerHost;
     return;
   }
 
   const showControls = () => {
-    if (!state.readingViewOpen) {
+    if (!readerSessionState.open) {
       return;
     }
     setReaderPlayerControlsVisible(true, playerHost);
     scheduleReaderPlayerControlsHide(playerHost);
   };
   const hideControls = () => {
-    if (state.readingControlsHideTimer) {
-      window.clearTimeout(state.readingControlsHideTimer);
-      state.readingControlsHideTimer = 0;
+    if (readerPlayerState.controlsHideTimer) {
+      window.clearTimeout(readerPlayerState.controlsHideTimer);
+      readerPlayerState.controlsHideTimer = 0;
     }
     setReaderPlayerControlsVisible(false, playerHost);
   };
@@ -5066,17 +5215,17 @@ function bindReaderPlayerControlsHover(playerHost = state.readingPlayerHost) {
   playerHost.addEventListener("mousemove", showControls, true);
   playerHost.addEventListener("mouseleave", hideControls, true);
   playerHost.__blrReaderControlsHoverBound = { showControls, hideControls };
-  state.readingControlsHoverHost = playerHost;
+  readerPlayerState.controlsHoverHost = playerHost;
 }
 
 function unbindReaderPlayerControlsHover() {
-  const playerHost = state.readingControlsHoverHost;
-  if (state.readingControlsHideTimer) {
-    window.clearTimeout(state.readingControlsHideTimer);
-    state.readingControlsHideTimer = 0;
+  const playerHost = readerPlayerState.controlsHoverHost;
+  if (readerPlayerState.controlsHideTimer) {
+    window.clearTimeout(readerPlayerState.controlsHideTimer);
+    readerPlayerState.controlsHideTimer = 0;
   }
   if (!playerHost?.__blrReaderControlsHoverBound) {
-    state.readingControlsHoverHost = null;
+    readerPlayerState.controlsHoverHost = null;
     return;
   }
 
@@ -5086,386 +5235,7 @@ function unbindReaderPlayerControlsHover() {
   playerHost.removeEventListener("mouseleave", hideControls, true);
   delete playerHost.__blrReaderControlsHoverBound;
   setReaderPlayerControlsVisible(false, playerHost);
-  state.readingControlsHoverHost = null;
-}
-
-function setReaderHeaderActionsVisible(visible) {
-  const actions = document.querySelector(".blr-reading-actions");
-  if (!actions) {
-    return;
-  }
-  if (visible) {
-    actions.removeAttribute("data-blr-icon-hidden");
-    return;
-  }
-  actions.setAttribute("data-blr-icon-hidden", "1");
-}
-
-function scheduleReaderHeaderActionsHide(delayMs = 10000) {
-  if (state.readingHeaderHideTimer) {
-    window.clearTimeout(state.readingHeaderHideTimer);
-    state.readingHeaderHideTimer = 0;
-  }
-  state.readingHeaderHideTimer = window.setTimeout(() => {
-    state.readingHeaderHideTimer = 0;
-    if (!state.readingViewOpen) {
-      return;
-    }
-    setReaderHeaderActionsVisible(false);
-  }, delayMs);
-}
-
-function bindReaderHeaderActionsHover() {
-  if (!state.readingViewOpen) {
-    return;
-  }
-  const header = document.querySelector(".blr-reading-header");
-  if (!header || header.__blrReaderHeaderHoverBound) {
-    state.readingHeaderHoverHost = header || null;
-    return;
-  }
-
-  const showActions = () => {
-    if (!state.readingViewOpen) {
-      return;
-    }
-    if (state.readingHeaderHideTimer) {
-      window.clearTimeout(state.readingHeaderHideTimer);
-      state.readingHeaderHideTimer = 0;
-    }
-    setReaderHeaderActionsVisible(true);
-  };
-  const hideActionsLater = () => {
-    if (!state.readingViewOpen) {
-      return;
-    }
-    scheduleReaderHeaderActionsHide();
-  };
-
-  header.addEventListener("mouseenter", showActions, true);
-  header.addEventListener("mouseleave", hideActionsLater, true);
-  header.__blrReaderHeaderHoverBound = { showActions, hideActionsLater };
-  state.readingHeaderHoverHost = header;
-  setReaderHeaderActionsVisible(true);
-  scheduleReaderHeaderActionsHide();
-}
-
-function unbindReaderHeaderActionsHover() {
-  const header = state.readingHeaderHoverHost;
-  if (state.readingHeaderHideTimer) {
-    window.clearTimeout(state.readingHeaderHideTimer);
-    state.readingHeaderHideTimer = 0;
-  }
-  if (!header?.__blrReaderHeaderHoverBound) {
-    state.readingHeaderHoverHost = null;
-    return;
-  }
-  const { showActions, hideActionsLater } = header.__blrReaderHeaderHoverBound;
-  header.removeEventListener("mouseenter", showActions, true);
-  header.removeEventListener("mouseleave", hideActionsLater, true);
-  delete header.__blrReaderHeaderHoverBound;
-  state.readingHeaderHoverHost = null;
-  setReaderHeaderActionsVisible(true);
-}
-
-function startPlayerAiQuickActionObserver() {
-  if (state.playerAiQuickActionObserver || !document.body) {
-    return;
-  }
-
-  const observer = new MutationObserver(() => {
-    schedulePlayerAiQuickActionSync();
-  });
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
-  state.playerAiQuickActionObserver = observer;
-}
-
-function bindPlayerAiQuickActionLayoutEvents() {
-  if (state.playerAiQuickActionLayoutBound) {
-    return;
-  }
-  const schedule = () => schedulePlayerAiQuickActionSync(80);
-  window.addEventListener("resize", schedule, { passive: true });
-  window.addEventListener("scroll", schedule, { passive: true });
-  window.addEventListener("pageshow", schedule, { passive: true });
-  document.addEventListener("fullscreenchange", schedule);
-  document.addEventListener("webkitfullscreenchange", schedule);
-  window.visualViewport?.addEventListener?.("resize", schedule, { passive: true });
-  state.playerAiQuickActionLayoutBound = true;
-}
-
-function schedulePlayerAiQuickActionSync(delayMs = 120) {
-  if (state.playerAiQuickActionSyncTimer) {
-    window.clearTimeout(state.playerAiQuickActionSyncTimer);
-  }
-  state.playerAiQuickActionSyncTimer = window.setTimeout(() => {
-    state.playerAiQuickActionSyncTimer = 0;
-    syncPlayerAiQuickActionButton();
-  }, delayMs);
-}
-
-function syncPlayerAiQuickActionButton() {
-  if (state.readingModeTransition?.direction === "exit") return;
-  const existing = document.getElementById("blr-player-ai-quick-action");
-  const existingWrap = existing?.closest(".blr-player-ai-wrap");
-  if (!state.settings?.enablePlayerAiQuickAction || state.readingViewOpen || isReaderMode()) {
-    removePlayerAiQuickActionButton();
-    return;
-  }
-
-  if (!hasPlayerSubtitleControl()) {
-    removePlayerAiQuickActionButton();
-    return;
-  }
-
-  const playerHost = findPlayerAiQuickActionHost();
-  if (!playerHost) {
-    if (!existingWrap?.isConnected) {
-      existingWrap?.remove();
-      existing?.remove();
-    } else {
-      schedulePlayerAiQuickActionSync(260);
-    }
-    return;
-  }
-
-  let button = existing;
-  let wrap = existingWrap instanceof HTMLElement ? existingWrap : null;
-  if (!wrap) {
-    wrap = document.createElement("div");
-    wrap.className = "blr-player-ai-wrap";
-    wrap.setAttribute("data-blr-extension-node", "ai-quick-action");
-  }
-  if (!button) {
-    button = document.createElement("button");
-    button.id = "blr-player-ai-quick-action";
-    button.type = "button";
-    button.className = "blr-player-ai-quick-action";
-    button.title = "用 AI 分析这期视频";
-    button.setAttribute("aria-label", "用 AI 分析这期视频");
-    button.innerHTML = buildPlayerAiQuickActionIconSvg();
-    button.addEventListener("click", handlePlayerAiQuickActionClick, true);
-  }
-
-  if (button.parentElement !== wrap) {
-    wrap.replaceChildren(button);
-  }
-  if (wrap.parentElement !== playerHost) {
-    playerHost.appendChild(wrap);
-  }
-  bindPlayerAiQuickActionCursorSync(wrap);
-  syncPlayerAiQuickActionVisuals(button);
-}
-
-function removePlayerAiQuickActionButton() {
-  if (state.playerAiQuickActionRevealTimer) {
-    window.clearTimeout(state.playerAiQuickActionRevealTimer);
-    state.playerAiQuickActionRevealTimer = 0;
-  }
-  if (state.playerAiQuickActionHideTimer) {
-    window.clearTimeout(state.playerAiQuickActionHideTimer);
-    state.playerAiQuickActionHideTimer = 0;
-  }
-  if (state.playerAiQuickActionCursorHideTimer) {
-    window.clearTimeout(state.playerAiQuickActionCursorHideTimer);
-    state.playerAiQuickActionCursorHideTimer = 0;
-  }
-  document.getElementById("blr-player-ai-quick-action")?.closest(".blr-player-ai-wrap")?.remove();
-}
-
-function bindPlayerAiQuickActionCursorSync(wrap) {
-  if (!(wrap instanceof HTMLElement)) {
-    return;
-  }
-  const host = wrap.parentElement instanceof HTMLElement ? wrap.parentElement : null;
-  if (!host || wrap.__blrPlayerAiCursorHost === host) {
-    return;
-  }
-  const hideForIdle = () => {
-    state.playerAiQuickActionCursorHideTimer = 0;
-    wrap.classList.remove("is-active");
-  };
-  const showForCursorActivity = () => {
-    if (!wrap.isConnected || state.readingViewOpen || isReaderMode()) {
-      wrap.classList.remove("is-active");
-      return;
-    }
-    wrap.classList.add("is-active");
-    if (state.playerAiQuickActionCursorHideTimer) {
-      window.clearTimeout(state.playerAiQuickActionCursorHideTimer);
-    }
-    state.playerAiQuickActionCursorHideTimer = window.setTimeout(hideForIdle, 1900);
-  };
-  const hideImmediately = () => {
-    if (state.playerAiQuickActionCursorHideTimer) {
-      window.clearTimeout(state.playerAiQuickActionCursorHideTimer);
-      state.playerAiQuickActionCursorHideTimer = 0;
-    }
-    wrap.classList.remove("is-active");
-  };
-  host.addEventListener("mousemove", showForCursorActivity, { passive: true });
-  host.addEventListener("mouseenter", showForCursorActivity, { passive: true });
-  host.addEventListener("mouseleave", hideImmediately, { passive: true });
-  host.addEventListener("pointermove", showForCursorActivity, { passive: true });
-  wrap.__blrPlayerAiCursorHost = host;
-}
-
-function hasPlayerSubtitleControl() {
-  return Boolean(findPlayerSubtitleControlNode());
-}
-
-function findPlayerSubtitleControlNode() {
-  const controlRoots = Array.from(
-    document.querySelectorAll(
-      "#bilibili-player .bpx-player-control-wrap, #playerWrap .bpx-player-control-wrap, .bpx-player-container .bpx-player-control-wrap, #bilibili-player, #playerWrap, .bpx-player-container"
-    )
-  );
-
-  for (const root of controlRoots) {
-    const candidates = Array.from(
-      root.querySelectorAll(
-        "[aria-label*='字幕'], [title*='字幕'], [data-text*='字幕'], [class*='subtitle'], [class*='caption'], button, [role='button']"
-      )
-    );
-    const matched = candidates.find((node) => isPlayerSubtitleControlNode(node));
-    if (matched) {
-      return matched;
-    }
-  }
-
-  return null;
-}
-
-function isPlayerSubtitleControlNode(node) {
-  if (!(node instanceof Element)) {
-    return false;
-  }
-  const text = [
-    node.getAttribute("aria-label"),
-    node.getAttribute("title"),
-    node.getAttribute("data-text"),
-    node.textContent,
-    typeof node.className === "string" ? node.className : ""
-  ]
-    .filter((item) => typeof item === "string" && item.trim())
-    .join(" ");
-  return /字幕|subtitle/i.test(text);
-}
-
-function findPlayerAiQuickActionHost() {
-  const candidates = [
-    document.querySelector(".bpx-player-container"),
-    document.querySelector(".bpx-player-video-area"),
-    document.getElementById("bilibili-player"),
-    document.getElementById("playerWrap")
-  ];
-  return candidates.find((node) => node instanceof HTMLElement && isVisibleReaderControl(node)) || null;
-}
-
-function buildPlayerAiQuickActionIconSvg() {
-  const variants = {
-    badge: `
-      <svg viewBox="0 0 132 132" focusable="false" aria-hidden="true" data-ai-icon="badge">
-        <path stroke-width="8.25" d="M22 90.7494C22 99.8618 29.3873 107.249 38.5 107.249C38.5 114.843 44.6561 120.999 52.25 120.999C59.8438 120.999 66 114.843 66 107.249C66 114.843 72.1562 120.999 79.75 120.999C87.3438 120.999 93.5 114.843 93.5 107.249C102.613 107.249 110 99.8613 110 90.7489C110 87.621 109.13 84.6967 107.618 82.2046C115.24 80.7466 121 74.0454 121 65.9989C121 57.9518 115.24 51.2507 107.618 49.7929C109.13 47.3006 110 44.3763 110 41.2487C110 32.1359 102.613 24.7487 93.5 24.7487C93.5 17.1547 87.3438 10.9987 79.75 10.9987C72.1562 10.9987 66 17.1552 66 24.7492C66 17.1552 59.8438 10.9992 52.25 10.9992C44.6561 10.9992 38.5 17.1552 38.5 24.7492C29.3873 24.7492 22 32.1365 22 41.2492C22 44.3768 22.8702 47.3012 24.3817 49.7934C16.76 51.2512 11 57.9524 11 65.9994C11 74.0459 16.76 80.7471 24.3817 82.2052C22.8702 84.6972 22 87.6216 22 90.7494Z"></path>
-        <path stroke-width="8.25" d="M41.25 79.7494L51.3804 49.3582C51.8997 47.8002 53.3577 46.7493 55 46.7493C56.6423 46.7493 58.1004 47.8002 58.6196 49.3582L68.75 79.7494M85.25 46.7493V79.7494M46.75 68.7494H63.25"></path>
-      </svg>
-    `,
-    sparkles: `
-      <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true" data-ai-icon="sparkles">
-        <path stroke-width="1.8" d="M12 3.6l1.84 4.96 4.96 1.84-4.96 1.84L12 17.2l-1.84-4.96L5.2 10.4l4.96-1.84L12 3.6z"></path>
-        <path stroke-width="1.8" d="M18.2 3.8l.64 1.72 1.72.64-1.72.64-.64 1.72-.64-1.72-1.72-.64 1.72-.64.64-1.72z"></path>
-        <path stroke-width="1.8" d="M18 14.2l.48 1.28 1.28.48-1.28.48-.48 1.28-.48-1.28-1.28-.48 1.28-.48.48-1.28z"></path>
-      </svg>
-    `,
-    nodes: `
-      <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true" data-ai-icon="nodes">
-        <circle stroke-width="1.8" cx="7" cy="8" r="2.1"></circle>
-        <circle stroke-width="1.8" cx="17" cy="7" r="2.1"></circle>
-        <circle stroke-width="1.8" cx="12" cy="16.8" r="2.1"></circle>
-        <path stroke-width="1.8" d="M8.8 8.7l2.4 5.2"></path>
-        <path stroke-width="1.8" d="M15.2 7.8l-2.2 5.8"></path>
-        <path stroke-width="1.8" d="M8.9 8.1h5.9"></path>
-      </svg>
-    `,
-    chip: `
-      <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true" data-ai-icon="chip">
-        <rect stroke-width="1.8" x="7.2" y="7.2" width="9.6" height="9.6" rx="2.1"></rect>
-        <path stroke-width="1.8" d="M10 10h4"></path>
-        <path stroke-width="1.8" d="M10 12h4"></path>
-        <path stroke-width="1.8" d="M10 14h2.8"></path>
-        <path stroke-width="1.8" d="M9 4.8v2"></path>
-        <path stroke-width="1.8" d="M12 4.8v2"></path>
-        <path stroke-width="1.8" d="M15 4.8v2"></path>
-        <path stroke-width="1.8" d="M9 17.2v2"></path>
-        <path stroke-width="1.8" d="M12 17.2v2"></path>
-        <path stroke-width="1.8" d="M15 17.2v2"></path>
-        <path stroke-width="1.8" d="M4.8 9h2"></path>
-        <path stroke-width="1.8" d="M4.8 12h2"></path>
-        <path stroke-width="1.8" d="M4.8 15h2"></path>
-        <path stroke-width="1.8" d="M17.2 9h2"></path>
-        <path stroke-width="1.8" d="M17.2 12h2"></path>
-        <path stroke-width="1.8" d="M17.2 15h2"></path>
-      </svg>
-    `
-  };
-  return variants[PLAYER_AI_ICON_VARIANT] || variants.badge;
-}
-
-function syncPlayerAiQuickActionVisuals(button) {
-  if (!(button instanceof HTMLElement)) {
-    return;
-  }
-  const wrap = button.parentElement instanceof HTMLElement ? button.parentElement : null;
-  const hitSize = 36;
-  const iconSize = 24;
-  const baseColor = "#f6f7f8";
-  [wrap, button].filter(Boolean).forEach((node) => {
-    node.style.setProperty("--blr-player-ai-action-hit-size", `${hitSize}px`);
-    node.style.setProperty("--blr-player-ai-action-color", baseColor);
-    node.style.setProperty("--blr-player-ai-action-hover-color", baseColor);
-  });
-  button.style.setProperty("--blr-player-ai-action-icon-size", `${iconSize}px`);
-}
-
-async function handlePlayerAiQuickActionClick(event) {
-  event.preventDefault();
-  event.stopPropagation();
-  if (
-    state.playerAiQuickActionSubmitting ||
-    state.readingViewOpen ||
-    isReaderMode() ||
-    Date.now() < state.playerAiQuickActionSuppressedUntil
-  ) {
-    return;
-  }
-
-  state.playerAiQuickActionSubmitting = true;
-  const button = event.currentTarget instanceof HTMLButtonElement ? event.currentTarget : null;
-  if (button) {
-    button.disabled = true;
-  }
-
-  try {
-    state.settings = await getSettings();
-    if (!state.settings?.enablePlayerAiQuickAction) {
-      throw new Error("AI 按钮未开启");
-    }
-    const resp = await sendRuntimeMessage({ type: "player-ai-quick-action" });
-    if (!resp?.ok) {
-      throw new Error(resp?.error || "打开 AI 侧边栏失败");
-    }
-    setMessage("已打开 AI 侧边栏并发送快捷提示词。");
-  } catch (error) {
-    setMessage(`AI 快捷操作失败：${getErrorMessage(error)}`);
-  } finally {
-    state.playerAiQuickActionSubmitting = false;
-    if (button) {
-      button.disabled = false;
-    }
-  }
+  readerPlayerState.controlsHoverHost = null;
 }
 
 function isVisibleReaderControl(node) {
@@ -5480,8 +5250,8 @@ function isVisibleReaderControl(node) {
   return style.display !== "none" && style.visibility !== "hidden" && style.pointerEvents !== "none";
 }
 
-function normalizeReaderPlayerContainer(playerHost = state.readingPlayerHost) {
-  if (!playerHost) {
+function normalizeReaderPlayerContainer(playerHost = readerPlayerState.host) {
+  if (!readerSessionState.open || !playerHost) {
     return;
   }
 
@@ -5504,9 +5274,7 @@ function normalizeReaderPlayerContainer(playerHost = state.readingPlayerHost) {
       hasFloatingPosition ||
       /mini|picture|float|fixed-player/i.test(className) ||
       current.matches?.(".bpx-player-mini-warp, .bpx-player-mini-close");
-    const shouldReset = state.readingNativePageMode
-      ? Boolean(isExplicitMiniNode || (isPlayerLayoutNode && isMiniLike))
-      : isPlayerLayoutNode || isMiniLike;
+    const shouldReset = isExplicitMiniNode || (isPlayerLayoutNode && isMiniLike);
 
     if (shouldReset) {
       adjusted.push({
@@ -5541,11 +5309,11 @@ function normalizeReaderPlayerContainer(playerHost = state.readingPlayerHost) {
     depth += 1;
   }
 
-  state.readingPlayerAdjustedNodes = adjusted;
+  readerPlayerState.adjustedNodes = adjusted;
 }
 
 function restoreReaderPlayerContainer() {
-  const adjusted = Array.isArray(state.readingPlayerAdjustedNodes) ? state.readingPlayerAdjustedNodes : [];
+  const adjusted = Array.isArray(readerPlayerState.adjustedNodes) ? readerPlayerState.adjustedNodes : [];
   adjusted.forEach((item) => {
     const node = item?.node;
     if (!node?.isConnected) {
@@ -5563,7 +5331,7 @@ function restoreReaderPlayerContainer() {
     node.style.zIndex = item.zIndex || "";
     node.removeAttribute("data-blr-reader-player-reset");
   });
-  state.readingPlayerAdjustedNodes = [];
+  readerPlayerState.adjustedNodes = [];
 }
 
 function alignReaderViewportToPlayer() {
@@ -5587,17 +5355,138 @@ function alignReaderViewportToPlayer() {
     } else {
       root.style.removeProperty("scroll-behavior");
     }
-    if (state.readingViewOpen && isReaderMode()) {
+    if (readerSessionState.open && isReaderMode()) {
       layoutReaderPlayerHost();
     }
   });
 }
 
+function cleanupReaderFloatingArtifacts(playerHost = readerPlayerState.host) {
+  if (document.pictureInPictureElement) {
+    document.exitPictureInPicture().catch(() => {});
+  }
+  dismissReaderMiniPlayer(playerHost);
+  const runtimeHost = findReaderPlayerHost(getRuntimeVideoElement());
+  if (runtimeHost && runtimeHost !== playerHost) {
+    dismissReaderMiniPlayer(runtimeHost);
+  }
+}
+
+function findReaderPlayerHost(video) {
+  if (!video) {
+    return null;
+  }
+  if (isYouTubePage()) return video.closest("#movie_player");
+
+  return (
+    video.closest(".bpx-player-container") ||
+    video.closest(".bpx-player-video-area") ||
+    video.closest("#bilibili-player") ||
+    video.parentElement
+  );
+}
+
+// Data commits replace arrays. WeakMap entries disappear with old clip data.
+const readingSubtitleCache = new WeakMap();
+const readingChapterCache = new WeakMap();
+const readerNodeCache = new WeakMap();
+const readerContainerNodeCache = new WeakMap();
+
+function invalidateReaderNodeCache(container) {
+  if (!container) return;
+  const entries = readerContainerNodeCache.get(container);
+  entries?.forEach((cache) => { cache.invalidated = true; });
+  readerContainerNodeCache.delete(container);
+}
+
+function getReaderNodeCache(container, selector, indexAttribute = "data-index") {
+  if (!container) return null;
+  const key = `${selector}|${indexAttribute}`;
+  let containerEntries = readerContainerNodeCache.get(container);
+  const existing = containerEntries?.get(key);
+  if (existing && !existing.invalidated && existing.first.isConnected &&
+      container.contains(existing.first) && existing.childCount === existing.root.childElementCount) return existing;
+  const first = container?.querySelector(selector);
+  if (!first) return null;
+  const root = first.parentElement;
+  let entries = readerNodeCache.get(root);
+  if (!entries) {
+    entries = new Map();
+    readerNodeCache.set(root, entries);
+  }
+  let cached = entries.get(key);
+  if (!cached || cached.invalidated || cached.first !== first || cached.childCount !== root.childElementCount) {
+    const nodes = root.querySelectorAll(selector);
+    const byIndex = new Map();
+    let activeNode = null;
+    for (const node of nodes) {
+      const index = Number(node.getAttribute(indexAttribute));
+      if (!byIndex.has(index)) byIndex.set(index, node);
+      if (node.classList.contains("is-active")) activeNode = node;
+    }
+    cached = { root, first, nodes, byIndex, activeNode, childCount: root.childElementCount, invalidated: false };
+    entries.set(key, cached);
+  }
+  if (!containerEntries) {
+    containerEntries = new Map();
+    readerContainerNodeCache.set(container, containerEntries);
+  }
+  containerEntries.set(key, cached);
+  return cached;
+}
+
+function setCachedReaderActiveNode(cache, next) {
+  if (!cache || cache.activeNode === next) return;
+  cache.activeNode?.classList.remove("is-active");
+  next?.classList.add("is-active");
+  cache.activeNode = next;
+}
+
+function getCachedSubtitleData(body = clipState.subtitleBody) {
+  if (!Array.isArray(body)) return { intervals: [], items: [], canBinarySearch: true, hasHourTimestamp: false };
+  let cached = readingSubtitleCache.get(body);
+  if (cached) return cached;
+  const intervals = body.map((item, index) => {
+    const from = Number(item?.from || 0) || 0;
+    const rawTo = Number(item?.to || 0) || 0;
+    return { index, from, rawTo, to: rawTo > from ? rawTo : from + 2 };
+  });
+  // Arbitrary ordering and overlaps must keep the original first-match rule.
+  const canBinarySearch = intervals.every((item, index) =>
+    Number.isFinite(item.from) && Number.isFinite(item.to) &&
+    item.rawTo > item.from && (index === 0 || intervals[index - 1].to <= item.from)
+  );
+  const items = body.map((item, index) => ({
+    index,
+    from: Number(item?.from || 0) || 0,
+    to: Number(item?.to || 0) || 0,
+    content: String(item?.content || "").trim()
+  })).filter((item) => item.content);
+  const hasHourTimestamp = intervals.some((item) => Number.isFinite(item.rawTo) && item.rawTo >= 3600);
+  cached = { intervals, items, canBinarySearch, hasHourTimestamp };
+  readingSubtitleCache.set(body, cached);
+  return cached;
+}
+
+function getCachedReadingTranscriptItems(body = clipState.subtitleBody) {
+  return getCachedSubtitleData(body).items;
+}
+
+function getCachedReadingChapters(chapters = clipState.chapters) {
+  if (!Array.isArray(chapters)) return [];
+  let cached = readingChapterCache.get(chapters);
+  if (!cached) {
+    cached = normalizeChapters(chapters);
+    readingChapterCache.set(chapters, cached);
+  }
+  return cached;
+}
+
 function stopTranscriptScroll(container) {
   if (!container) return;
   const until = Date.now() + 120;
-  state.readingProgrammaticScrollUntil = Math.max(state.readingProgrammaticScrollUntil, until);
-  state.nativeTranscriptProgrammaticScrollUntil = Math.max(state.nativeTranscriptProgrammaticScrollUntil, until);
+  readerSessionState.programmaticScrollUntil = Math.max(readerSessionState.programmaticScrollUntil, until);
+  nativeTranscriptState.programmaticScrollUntil = Math.max(nativeTranscriptState.programmaticScrollUntil, until);
   container.scrollTo({ top: container.scrollTop, left: container.scrollLeft, behavior: "instant" });
 }
 
@@ -5606,10 +5495,25 @@ function captureTranscriptScrollAnchor(container, selector) {
   stopTranscriptScroll(container);
   const bounds = container.getBoundingClientRect();
   const headingHeight = container.querySelector(".blr-reading-transcript-heading")?.getBoundingClientRect().height || 0;
-  const node = Array.from(container.querySelectorAll(selector)).find((item) => {
-    const rect = item.getBoundingClientRect();
-    return rect.bottom > bounds.top + headingHeight && rect.top < bounds.bottom;
-  });
+  const indexAttribute = selector === ".blr-native-transcript-segment"
+    ? "data-native-transcript-index" : "data-index";
+  const nodes = getReaderNodeCache(container, selector, indexAttribute)?.nodes;
+  let node = null;
+  if (nodes?.length) {
+    // Both transcript templates use inline segments in document order. Their
+    // bottom edges are monotonic even when one segment wraps onto several lines.
+    const visibleTop = bounds.top + headingHeight;
+    let low = 0;
+    let high = nodes.length;
+    while (low < high) {
+      const mid = (low + high) >>> 1;
+      if (nodes[mid].getBoundingClientRect().bottom <= visibleTop) low = mid + 1;
+      else high = mid;
+    }
+    const candidate = nodes[low];
+    const rect = candidate?.getBoundingClientRect();
+    if (rect && rect.bottom > visibleTop && rect.top < bounds.bottom) node = candidate;
+  }
   return {
     container, node, headingHeight,
     offset: node ? node.getBoundingClientRect().top - bounds.top : 0,
@@ -5621,7 +5525,9 @@ function transferTranscriptScrollAnchor(anchor, container, indexAttribute) {
   if (!anchor?.node || !container) return;
   const index = Number(anchor.node.dataset.index ?? anchor.node.dataset.nativeTranscriptIndex);
   if (!Number.isInteger(index) || index < 0) return;
-  const node = container.querySelector(`[${indexAttribute}="${index}"]`);
+  const selector = indexAttribute === "data-native-transcript-index"
+    ? ".blr-native-transcript-segment" : ".blr-reading-complete-segment";
+  const node = getReaderNodeCache(container, selector, indexAttribute)?.byIndex.get(index);
   if (!node) return;
   const headingHeight = container.querySelector(".blr-reading-transcript-heading")?.getBoundingClientRect().height || 0;
   restoreTranscriptScrollAnchor({
@@ -5641,25 +5547,21 @@ function restoreTranscriptScrollAnchor(anchor) {
 }
 
 function syncReadingViewPlayback(forceScroll = false) {
-  if (!state.readingViewOpen || state.readingModeTransition?.phase === "animating") {
+  if (!readerSessionState.open || readerSessionState.transition?.phase === "animating") {
     return;
-  }
-
-  if (state.readingNativePageMode) {
-    layoutReaderPlayerHost();
   }
 
   const runtimeVideo = getRuntimeVideoElement();
   const runtimeHost = findReaderPlayerHost(runtimeVideo);
   if (runtimeVideo && runtimeHost) {
     const playerChanged =
-      runtimeVideo !== state.readingVideoEl || runtimeHost !== state.readingPlayerHost;
+      runtimeVideo !== readerPlayerState.videoEl || runtimeHost !== readerPlayerState.host;
     if (playerChanged) {
       queueEnsureReaderPlayerMounted();
     }
   }
 
-  const video = bindReadingViewVideo(runtimeVideo || state.readingVideoEl);
+  const video = bindReadingViewVideo(runtimeVideo || readerPlayerState.videoEl);
   if (!video) {
     renderReadingStatus("当前页面没有找到可联动的视频播放器。");
     return;
@@ -5669,8 +5571,8 @@ function syncReadingViewPlayback(forceScroll = false) {
   const subtitleIndex = findActiveSubtitleIndex(currentTime);
   const chapterIndex = findActiveChapterIndex(currentTime);
   const changed =
-    subtitleIndex !== state.readingActiveSubtitleIndex ||
-    chapterIndex !== state.readingActiveChapterIndex;
+    subtitleIndex !== readerSessionState.activeSubtitleIndex ||
+    chapterIndex !== readerSessionState.activeChapterIndex;
 
   setActiveReadingItems(subtitleIndex, chapterIndex, forceScroll || changed);
   updateReaderFollowState();
@@ -5678,21 +5580,27 @@ function syncReadingViewPlayback(forceScroll = false) {
 }
 
 function findActiveSubtitleIndex(currentTime) {
-  const items = Array.isArray(state.subtitleBody) ? state.subtitleBody : [];
-  for (let index = 0; index < items.length; index += 1) {
-    const item = items[index];
-    const from = Number(item?.from || 0) || 0;
-    const rawTo = Number(item?.to || 0) || 0;
-    const to = rawTo > from ? rawTo : from + 2;
-    if (currentTime >= from && currentTime < to) {
-      return index;
+  const { intervals, canBinarySearch } = getCachedSubtitleData();
+  if (canBinarySearch) {
+    let low = 0;
+    let high = intervals.length - 1;
+    while (low <= high) {
+      const mid = (low + high) >>> 1;
+      const item = intervals[mid];
+      if (currentTime < item.from) high = mid - 1;
+      else if (currentTime >= item.to) low = mid + 1;
+      else return currentTime >= item.from && currentTime < item.to ? item.index : -1;
     }
+    return -1;
+  }
+  for (const item of intervals) {
+    if (currentTime >= item.from && currentTime < item.to) return item.index;
   }
   return -1;
 }
 
 function findActiveChapterIndex(currentTime) {
-  const chapters = normalizeChapters(state.chapters || []);
+  const chapters = getCachedReadingChapters();
   for (let index = 0; index < chapters.length; index += 1) {
     const item = chapters[index];
     const from = Number(item?.from || 0) || 0;
@@ -5708,31 +5616,25 @@ function findActiveChapterIndex(currentTime) {
 }
 
 function setActiveReadingItems(subtitleIndex, chapterIndex, shouldScroll = false) {
+  const transcriptChanged = subtitleIndex !== readerSessionState.activeSubtitleIndex;
+  const chapterChanged = chapterIndex !== readerSessionState.activeChapterIndex;
+  if (!transcriptChanged && !chapterChanged && !shouldScroll) return;
   const transcriptList = byId(ids.readingTranscriptList);
   const chapterList = byId(ids.readingChapterList);
-  const nextTranscript = transcriptList.querySelector(`[data-index="${subtitleIndex}"]`);
-  const nextChapter = chapterList.querySelector(`[data-index="${chapterIndex}"]`);
-  const currentTranscript = transcriptList.querySelector(".blr-reading-complete-segment.is-active");
-  const currentChapter = chapterList.querySelector(".blr-reading-chapter.is-active");
+  const transcriptCache = getReaderNodeCache(transcriptList, ".blr-reading-complete-segment");
+  const chapterCache = getReaderNodeCache(chapterList, ".blr-reading-chapter");
+  const nextTranscript = transcriptChanged || shouldScroll
+    ? transcriptCache?.byIndex.get(subtitleIndex) || null : null;
+  const nextChapter = chapterChanged || shouldScroll
+    ? chapterCache?.byIndex.get(chapterIndex) || null : null;
+  if (transcriptChanged) setCachedReaderActiveNode(transcriptCache, nextTranscript);
+  if (chapterChanged) setCachedReaderActiveNode(chapterCache, nextChapter);
 
-  if (currentTranscript && currentTranscript !== nextTranscript) {
-    currentTranscript.classList.remove("is-active");
-  }
-  if (currentChapter && currentChapter !== nextChapter) {
-    currentChapter.classList.remove("is-active");
-  }
-  if (nextTranscript) {
-    nextTranscript.classList.add("is-active");
-  }
-  if (nextChapter) {
-    nextChapter.classList.add("is-active");
-  }
-
-  if (shouldScroll && state.readingAutoScroll) {
-    if (document.body.hasAttribute("data-blr-reader-resizing") || Date.now() < state.readingManualScrollPauseUntil) {
+  if (shouldScroll) {
+    if (document.body.hasAttribute("data-blr-reader-resizing") || Date.now() < readerSessionState.manualScrollPauseUntil) {
       updateReaderFollowState();
-      state.readingActiveSubtitleIndex = subtitleIndex;
-      state.readingActiveChapterIndex = chapterIndex;
+      readerSessionState.activeSubtitleIndex = subtitleIndex;
+      readerSessionState.activeChapterIndex = chapterIndex;
       return;
     }
     const behavior = getReadingScrollBehavior();
@@ -5744,21 +5646,21 @@ function setActiveReadingItems(subtitleIndex, chapterIndex, shouldScroll = false
     }
   }
 
-  state.readingActiveSubtitleIndex = subtitleIndex;
-  state.readingActiveChapterIndex = chapterIndex;
+  readerSessionState.activeSubtitleIndex = subtitleIndex;
+  readerSessionState.activeChapterIndex = chapterIndex;
 }
 
 function getReadingScrollBehavior() {
   // "instant" also overrides smooth scrolling inherited from the host page.
-  return state.readingNextScrollBehavior === "auto" || !state.readingViewReady ||
-    state.readingModeTransition?.direction === "enter" ? "instant" : "smooth";
+  return readerSessionState.nextScrollBehavior === "auto" || !readerSessionState.ready ||
+    readerSessionState.transition?.direction === "enter" ? "instant" : "smooth";
 }
 
 function scrollReadingRailItemIntoView(node, behavior = getReadingScrollBehavior()) {
   if (!node) {
     return;
   }
-  state.readingProgrammaticScrollUntil = Date.now() + (behavior === "instant" ? 120 : 600);
+  readerSessionState.programmaticScrollUntil = Date.now() + (behavior === "instant" ? 120 : 600);
   node.scrollIntoView({
     behavior,
     block: "nearest",
@@ -5767,7 +5669,7 @@ function scrollReadingRailItemIntoView(node, behavior = getReadingScrollBehavior
 }
 
 function scrollReadingTranscriptItemIntoView(node, behavior = getReadingScrollBehavior()) {
-  if (!node) {
+  if (!readerSessionState.open || !node) {
     return;
   }
 
@@ -5780,9 +5682,9 @@ function scrollReadingTranscriptItemIntoView(node, behavior = getReadingScrollBe
     return;
   }
 
-  state.readingProgrammaticScrollUntil = Date.now() + (behavior === "instant" ? 120 : 800);
-  state.readingNextScrollBehavior = "smooth";
-  if (state.readingNativePageMode && inlineHost && inlineHost.scrollHeight > inlineHost.clientHeight + 8) {
+  readerSessionState.programmaticScrollUntil = Date.now() + (behavior === "instant" ? 120 : 800);
+  readerSessionState.nextScrollBehavior = "smooth";
+  if (inlineHost && inlineHost.scrollHeight > inlineHost.clientHeight + 8) {
     const hostRect = inlineHost.getBoundingClientRect();
     const computed = window.getComputedStyle(node);
     const lineHeight = Number.parseFloat(computed.lineHeight) || itemRect.height || 32;
@@ -5798,20 +5700,10 @@ function scrollReadingTranscriptItemIntoView(node, behavior = getReadingScrollBe
     });
     return;
   }
-  if (state.readingNativePageMode || transcriptList.scrollHeight <= transcriptList.clientHeight + 8) {
-    const desiredTop = listRect.top + Math.max(72, Math.min(listRect.height * 0.24, 220));
-    const nextTop = window.scrollY + itemRect.top - desiredTop;
-    window.scrollTo({
-      top: Math.max(0, Math.round(nextTop)),
-      behavior
-    });
-    return;
-  }
-
-  const targetScrollTop =
-    transcriptList.scrollTop + (itemRect.top - listRect.top) - Math.max(48, Math.min(listRect.height * 0.24, 180));
-  transcriptList.scrollTo({
-    top: Math.max(0, Math.round(targetScrollTop)),
+  const desiredTop = listRect.top + Math.max(72, Math.min(listRect.height * 0.24, 220));
+  const nextTop = window.scrollY + itemRect.top - desiredTop;
+  window.scrollTo({
+    top: Math.max(0, Math.round(nextTop)),
     behavior
   });
 }
@@ -5824,8 +5716,8 @@ function jumpReadingTarget(seconds) {
   }
 
   const nextTime = Math.max(0, Number(seconds || 0) || 0);
-  state.readingManualScrollPauseUntil = 0;
-  state.readingNextScrollBehavior = "auto";
+  readerSessionState.manualScrollPauseUntil = 0;
+  readerSessionState.nextScrollBehavior = "auto";
   updateReaderFollowState();
   video.currentTime = nextTime;
   if (video.paused) {
@@ -5844,7 +5736,7 @@ function onReadingChapterClick(event) {
 
 async function onReadingCollectionClick(event) {
   const target = event.target.closest(".blr-reading-collection-item");
-  if (!target || target.classList.contains("is-active") || state.readingCollectionSwitchInFlight) {
+  if (!target || target.classList.contains("is-active") || readerSessionState.collectionSwitchInFlight) {
     return;
   }
   const bvid = String(target.dataset.bvid || "").trim();
@@ -5855,9 +5747,9 @@ async function onReadingCollectionClick(event) {
 
   const pageIndex = Number(target.dataset.page || 0);
   const targetIndex = Number(target.dataset.index);
-  const currentIndex = Number(state.collection?.currentIndex);
+  const currentIndex = Number(clipState.collection?.currentIndex);
   const expectedSignature = [bvid, pageIndex > 0 ? pageIndex : 1].join("|");
-  state.readingCollectionSwitchInFlight = true;
+  readerSessionState.collectionSwitchInFlight = true;
   target.setAttribute("aria-busy", "true");
   renderReadingStatus("正在使用播放器原生逻辑切换选集...");
 
@@ -5867,7 +5759,7 @@ async function onReadingCollectionClick(event) {
       targetIndex,
       bvid,
       pageIndex,
-      cid: String(state.collection?.episodes?.[targetIndex]?.cid || "")
+      cid: String(clipState.collection?.episodes?.[targetIndex]?.cid || "")
     });
     if (nativeTriggered && (await waitForClipSignature(expectedSignature, 4500))) {
       return;
@@ -5882,7 +5774,7 @@ async function onReadingCollectionClick(event) {
     nextUrl.searchParams.set("bilibli_reader", "1");
     location.assign(nextUrl.toString());
   } finally {
-    state.readingCollectionSwitchInFlight = false;
+    readerSessionState.collectionSwitchInFlight = false;
     target.removeAttribute("aria-busy");
   }
 }
@@ -5919,7 +5811,7 @@ function findNativePlayerEpisodeControl(direction) {
         "[title*='下一集']",
         "[data-text*='下一集']"
       ];
-  const roots = [getReaderControlsRoot(), getReaderPlayerWrapNode(), state.readingPlayerHost, document].filter(
+  const roots = [getReaderControlsRoot(), getReaderPlayerWrapNode(), readerPlayerState.host, document].filter(
     Boolean
   );
 
@@ -6032,11 +5924,7 @@ function onReadingTranscriptClick(event) {
 }
 
 function noteManualReaderInteraction(durationMs = 3000) {
-  if (!state.readingAutoScroll) {
-    updateReaderFollowState();
-    return;
-  }
-  state.readingManualScrollPauseUntil = Date.now() + durationMs;
+  readerSessionState.manualScrollPauseUntil = Date.now() + durationMs;
   updateReaderFollowState();
 }
 
@@ -6045,12 +5933,12 @@ function updateReaderFollowState() {
   if (!readingView) {
     return;
   }
-  const mode =
-    !state.readingAutoScroll ? "off" : Date.now() < state.readingManualScrollPauseUntil ? "manual" : "auto";
+  const mode = Date.now() < readerSessionState.manualScrollPauseUntil ? "manual" : "auto";
   readingView.setAttribute("data-blr-reader-follow", mode);
 }
 
 function computeCurrentClipSignature(url = location.href) {
+  if (isYouTubePage(url)) return `youtube|${extractYouTubeVideoId(url)}`;
   const bvid = extractBvid(url);
   const page = extractPageIndex(url);
   return [bvid, page].map((item) => String(item || "").trim()).join("|");
@@ -6098,40 +5986,7 @@ function getErrorMessage(error, fallback = "未知错误") {
 }
 
 function sendRuntimeMessage(message) {
-  return new Promise((resolve, reject) => {
-    try {
-      chrome.runtime.sendMessage(message, (resp) => {
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
-          return;
-        }
-        resolve(resp);
-      });
-    } catch (error) {
-      reject(error);
-    }
-  });
-}
-
-function isExtensionContextInvalidated(error) {
-  const msg = String(error?.message || "");
-  return msg.includes("Extension context invalidated");
-}
-
-function requestOpenOptions() {
-  sendRuntimeMessage({ type: "open-options" })
-    .then((resp) => {
-      if (!resp?.ok) {
-        setMessage(`打开设置失败：${toReadableText(resp?.error, "未知错误")}`);
-      }
-    })
-    .catch((error) => {
-      if (isExtensionContextInvalidated(error)) {
-        setMessage("扩展刚刚更新，请刷新当前页面后重试。");
-        return;
-      }
-      setMessage(`打开设置失败：${getErrorMessage(error)}`);
-    });
+  return new Promise((resolve) => chrome.runtime.sendMessage(message, resolve));
 }
 
 async function getSettings() {
@@ -6150,19 +6005,26 @@ async function getSettings() {
   }
 }
 
-async function refreshOpenReadingView(statusText, runId = state.fetchRunId) {
-  if (!isRunActive(runId) || !state.readingViewOpen || !isReaderMode()) {
+async function refreshOpenReadingView(statusText, runId = clipState.fetchRunId, request = null) {
+  const sessionId = readerSessionState.id;
+  if ((request && !isSubtitleRequestActive(request)) || !isRunActive(runId) || !isReaderSessionActive(sessionId)) {
     return;
   }
 
-  setReadingViewReady(false);
+  // Updating subtitle data does not make an already stable player unready.
+  // Hiding the shell here made a direct-reader reload flash a second time.
+  if (!isReaderPresentationStable()) setReadingViewReady(false);
+  const readingView = document.getElementById(ids.readingView);
+  if (!readingView?.classList.contains("open")) openReaderViewShell(readingView);
   let mounted = false;
   try {
     mounted = await ensureReaderPlayerMounted({ retries: 24, delayMs: 120, forceLayout: true });
   } catch (error) {
+    if (!isReaderSessionActive(sessionId) || !isRunActive(runId) ||
+      (request && !isSubtitleRequestActive(request))) return;
     logWarn("[BOC] failed to remount reader after clip change", error);
   }
-  if (!isRunActive(runId) || !state.readingViewOpen || !isReaderMode()) {
+  if ((request && !isSubtitleRequestActive(request)) || !isRunActive(runId) || !isReaderSessionActive(sessionId)) {
     return;
   }
 
@@ -6184,11 +6046,20 @@ async function refreshOpenReadingView(statusText, runId = state.fetchRunId) {
 function migrateReaderDefaults(savedSettings) {
   const saved = savedSettings && typeof savedSettings === "object" ? savedSettings : {};
   const merged = { ...DEFAULT_SETTINGS, ...saved };
-  const hadLegacyTranscriptMode = Object.hasOwn(merged, "readerTranscriptMode");
-  delete merged.readerTranscriptMode;
+  let removedLegacySettings = false;
+  for (const key of [
+    "readerTranscriptMode", "readerVideoHeightPx", "readerChapterVisibility",
+    "readerTimestampVisible", "readerChapterVisible", "readerTranscriptVisible",
+    "enablePlayerAiQuickAction", "playerAiQuickPrompt"
+  ]) {
+    if (Object.hasOwn(merged, key)) {
+      delete merged[key];
+      removedLegacySettings = true;
+    }
+  }
   const savedDefaultsVersion = Number(saved.readerDefaultsVersion || 0);
   if (savedDefaultsVersion >= 3) {
-    return { settings: merged, changed: hadLegacyTranscriptMode };
+    return { settings: merged, changed: removedLegacySettings };
   }
 
   const legacyDefaults = {
@@ -6209,9 +6080,6 @@ function migrateReaderDefaults(savedSettings) {
     merged.readerLineHeight = DEFAULT_SETTINGS.readerLineHeight;
   }
 
-  // v3 将“未手动指定高度”的默认含义统一为当前窗口可用的最大高度。
-  // 清除旧版本曾保存的固定像素值，避免它继续覆盖新的最大高度默认值。
-  merged.readerVideoHeightPx = 0;
   merged.readerDefaultsVersion = 3;
   return { settings: merged, changed: true };
 }
@@ -6300,8 +6168,8 @@ function extractOid(url) {
 
 function isRunActive(runId) {
   return (
-    runId === state.fetchRunId &&
-    state.fetchClipSignature === computeCurrentClipSignature()
+    runId === clipState.fetchRunId &&
+    clipState.fetchClipSignature === computeCurrentClipSignature()
   );
 }
 
@@ -6388,7 +6256,6 @@ async function fetchVideoMeta(bvid) {
     aid: data.aid ? String(data.aid) : "",
     title: String(data.title || ""),
     author: String(data.owner?.name || ""),
-    description: String(data.desc || ""),
     uploadDate,
     defaultCid: data.cid ? String(data.cid) : "",
     defaultDuration: Number(data.duration || 0) || 0,
@@ -6553,13 +6420,6 @@ function readVideoAuthor() {
 
   const author = document.querySelector('meta[name="author"]');
   return author?.getAttribute("content")?.trim() || "";
-}
-
-function readVideoDescription() {
-  const descNode = document.querySelector(
-    ".desc-info-text, .video-desc .desc-info-text, .video-info-detail .text, .basic-desc-info"
-  );
-  return descNode?.textContent?.trim() || "";
 }
 
 function readUploadDate() {
@@ -6914,10 +6774,11 @@ function buildSubtitleCandidates(subtitles, preferred) {
   return list;
 }
 
-async function tryLoadSubtitleCandidates(candidates, runId, forceRefresh) {
+async function tryLoadSubtitleCandidates(candidates, runId, forceRefresh, request) {
   let lastError = null;
   let lastLoadError = null;
   for (const item of candidates || []) {
+    ensureSubtitleRequestActive(request);
     try {
       logInfo("[BOC] try subtitle track", {
         id: item.id,
@@ -6930,10 +6791,13 @@ async function tryLoadSubtitleCandidates(candidates, runId, forceRefresh) {
         item.lanDoc || item.lan || "unknown",
         runId,
         item.id,
-        forceRefresh
+        forceRefresh,
+        request
       );
+      ensureSubtitleRequestActive(request);
       return item;
     } catch (error) {
+      ensureSubtitleRequestActive(request);
       lastError = error;
       if (!isUnavailableSubtitleError(error)) {
         lastLoadError = error;
@@ -6951,7 +6815,6 @@ async function tryLoadSubtitleCandidates(candidates, runId, forceRefresh) {
       } else {
         logWarn(`[BOC] subtitle track rejected ${JSON.stringify(meta)}`);
       }
-      ensureRunActive(runId);
       continue;
     }
   }
@@ -6967,12 +6830,6 @@ async function tryLoadSubtitleCandidates(candidates, runId, forceRefresh) {
 
 function isUnavailableSubtitleError(error) {
   return ["SUBTITLE_EMPTY", "SUBTITLE_DURATION_MISMATCH", "NO_USABLE_SUBTITLE"].includes(error?.code);
-}
-
-function isAiSubtitle(item) {
-  const lan = String(item?.lan || "").toLowerCase();
-  // B站 AI 自动字幕的 lan 以 "ai-" 开头
-  return lan.startsWith("ai-");
 }
 
 function subtitlePriority(item) {
@@ -7059,128 +6916,29 @@ function readRuntimeVideoDuration() {
 }
 
 async function fetchSubtitleBody(url) {
+  if (isYouTubePage()) return { body: await fetchYouTubeSubtitleBody(url) };
   logInfo("[BOC] fetch subtitle body", { url });
-  return fetchJsonInBackground(url);
+  return fetchJson(url);
 }
 
 async function fetchJson(url) {
-  if (typeof url === "string" && url.startsWith("https://api.bilibili.com/")) {
-    return fetchJsonInBackground(url);
+  const response = await sendRuntimeMessage({ type: "fetch-json", url });
+  if (!response?.ok) {
+    throw new Error(toReadableText(response?.error, "网络请求失败"));
   }
+  return response.data;
+}
+let readerHtmlPolicy = null;
 
-  const response = await fetch(url, {
-    credentials: "include",
-    cache: "no-store"
+function readerHtml(html) {
+  // YouTube enforces Trusted Types. Keep this policy private to the reader;
+  // generated markup still escapes every video/subtitle-derived string.
+  const types = isYouTubePage() ? getYouTubePageWindow().trustedTypes : null;
+  if (!types) return html;
+  if (!readerHtmlPolicy) readerHtmlPolicy = types.createPolicy("bilibli-reader", {
+    createHTML: (value) => value
   });
-
-  if (!response.ok) {
-    throw new Error(`请求失败：${response.status}`);
-  }
-
-  return response.json();
-}
-
-async function fetchJsonInBackground(url) {
-  try {
-    const resp = await sendRuntimeMessage({ type: "fetch-json", url });
-    if (!resp?.ok) {
-      throw new Error(toReadableText(resp?.error, "Background fetch failed"));
-    }
-    return resp.data;
-  } catch (error) {
-    if (isExtensionContextInvalidated(error)) {
-      throw new Error("扩展刚刚更新，请刷新当前页面后重试。");
-    }
-    throw error;
-  }
-}
-
-function normalizeHotComments(comments, limit = 20) {
-  if (!Array.isArray(comments)) {
-    return [];
-  }
-
-  return comments
-    .map((item) => ({
-      uname: String(item?.uname || "匿名").trim() || "匿名",
-      like: Number(item?.like || 0) || 0,
-      message: String(item?.message || "").trim().slice(0, 500)
-    }))
-    .filter((item) => item.message)
-    .slice(0, limit);
-}
-
-function getCurrentAid() {
-  let aid = Number(state.aid) || 0;
-  if (!aid && typeof window !== "undefined") {
-    try {
-      aid = Number(window?.__INITIAL_STATE__?.aid) || 0;
-    } catch {}
-  }
-  return aid;
-}
-
-async function fetchHotComments(count = 20) {
-  const safeCount = Math.max(0, Number(count) || 0);
-  if (!safeCount) {
-    return [];
-  }
-
-  const aid = getCurrentAid();
-  if (!aid) {
-    return [];
-  }
-
-  const url = `https://api.bilibili.com/x/v2/reply/main?type=1&oid=${aid}&mode=3&ps=${safeCount}&pn=1`;
-  const resp = await sendRuntimeMessage({ type: "fetch-json", url });
-  if (!resp?.ok) {
-    throw new Error(resp?.error || "评论接口失败");
-  }
-
-  const replies = Array.isArray(resp?.data?.data?.replies) ? resp.data.data.replies : [];
-  return normalizeHotComments(
-    replies.map((item) => ({
-      uname: item?.member?.uname || "匿名",
-      like: item?.like || 0,
-      message: item?.content?.message || ""
-    })),
-    safeCount
-  );
-}
-
-function rebuildDerivedContent() {
-  const body = Array.isArray(state.subtitleBody) ? state.subtitleBody : [];
-  state.markdown = body.length ? buildMarkdown(state, body, state.settings) : "";
-  state.srt = body.length ? buildSrt(body) : "";
-  state.txt = body.length ? buildTxt(body, state.settings) : "";
-  byId(ids.preview).value = body.length ? buildSubtitlePreview(body, state.settings) : "";
-}
-
-async function refreshDerivedContent({ refreshComments = false, runId = null } = {}) {
-  if (state.settings?.includeHotCommentsInNote) {
-    const shouldFetchComments =
-      refreshComments || !Array.isArray(state.hotComments) || state.hotComments.length === 0;
-    if (shouldFetchComments) {
-      try {
-        const comments = await fetchHotComments(20);
-        if (runId !== null) {
-          ensureRunActive(runId);
-        }
-        state.hotComments = comments;
-      } catch (error) {
-        if (runId !== null) {
-          ensureRunActive(runId);
-        }
-        state.hotComments = [];
-        logWarn("[BOC] failed to fetch hot comments for note export", error);
-      }
-    }
-  }
-
-  if (runId !== null) {
-    ensureRunActive(runId);
-  }
-  rebuildDerivedContent();
+  return readerHtmlPolicy.createHTML(html);
 }
 
 function normalizeSubtitleUrl(url) {
@@ -7199,523 +6957,6 @@ function normalizeSubtitleUrl(url) {
   return `https://${url.replace(/^\/+/, "")}`;
 }
 
-function buildSubtitlePreview(body, settings) {
-  const compactWithHours = shouldShowHoursInSubtitle(body);
-  return (body || [])
-    .map((item) => {
-      const text = String(item?.content || "").trim();
-      if (!text) {
-        return "";
-      }
-      if (settings.includeTimestampInBody) {
-        return `\`${formatCompactTimestamp(item.from, compactWithHours)}\` ${text}`;
-      }
-      return text;
-    })
-    .filter(Boolean)
-    .join("\n");
-}
-
-function buildMarkdown(meta, body, settings) {
-  const created = formatLocalDate();
-  const tags = (settings.tags || "")
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-  const tagsCsv = tags.join(", ");
-  const tagsYaml =
-    tags.length === 0 ? "[]" : `[${tags.map((tag) => `"${tag.replace(/"/g, '\\"')}"`).join(", ")}]`;
-
-  const compactWithHours = shouldShowHoursInNote(meta, body);
-  const chapterLines = buildChapterLines(meta.chapters || [], compactWithHours);
-  const subtitleSectionLines = buildSubtitleSectionLines(
-    body,
-    meta.chapters || [],
-    settings,
-    compactWithHours
-  );
-  const frontMatter = buildFrontMatter(meta, settings, created, tagsCsv, tagsYaml);
-
-  const page = extractPageIndex(location.href);
-  const embedIframe = buildBilibiliEmbedIframe(meta, page);
-  const intro = String(meta.description || "").trim();
-  const noteSectionContext = buildNotePlaceholderTemplateContext(meta, intro);
-  const noteSections = groupNotePlaceholderSections(settings, noteSectionContext);
-
-  const lines = [];
-  if (frontMatter) {
-    lines.push(frontMatter, "");
-  }
-  lines.push(embedIframe, "");
-  pushOptionalLines(lines, noteSections.before_intro);
-
-  if (intro) {
-    lines.push("## 简介", "", intro, "");
-  }
-
-  pushOptionalLines(lines, noteSections.before_chapters);
-
-  if (chapterLines.length > 0) {
-    lines.push("## 章节", "", ...chapterLines, "");
-  }
-
-  pushOptionalLines(lines, noteSections.before_subtitle);
-  lines.push("## 字幕", "", ...subtitleSectionLines);
-
-  const hotCommentLines = buildHotCommentLines(
-    settings?.includeHotCommentsInNote ? meta?.hotComments || [] : []
-  );
-  if (hotCommentLines.length > 0) {
-    lines.push("", "## 评论", "", ...hotCommentLines);
-  }
-
-  return lines.join("\n");
-}
-
-function buildHotCommentLines(comments) {
-  const items = normalizeHotComments(comments, 20);
-  if (items.length === 0) {
-    return [];
-  }
-
-  return items.flatMap((item, index) => [
-    `${index + 1}. ${item.uname}（赞 ${item.like}）`,
-    item.message,
-    ""
-  ]).slice(0, -1);
-}
-
-function buildFrontMatter(meta, settings, created, tagsCsv, tagsYaml) {
-  const enabled = getEnabledFrontmatterFields(settings);
-  const fixedPropertyLines = getFixedFrontmatterPropertyLines(
-    settings,
-    buildFrontmatterTemplateContext(meta, created, tagsCsv, tagsYaml)
-  );
-  if (enabled.length === 0 && fixedPropertyLines.length === 0) {
-    return "";
-  }
-
-  const fieldLines = {
-    title: `title: "${escapeYaml(meta.title)}"`,
-    url: `url: "${escapeYaml(cleanVideoUrl())}"`,
-    bvid: `bvid: "${escapeYaml(meta.bvid)}"`,
-    cid: `cid: "${escapeYaml(meta.cid)}"`,
-    author: `author: "${escapeYaml(meta.author || "unknown")}"`,
-    upload_date: `upload_date: "${escapeYaml(meta.uploadDate || "unknown")}"`,
-    subtitle_lang: `subtitle_lang: "${escapeYaml(meta.selectedSubtitleLang || "unknown")}"`,
-    created: `created: "${created}"`,
-    tags: `tags: ${tagsYaml}`
-  };
-
-  const lines = enabled.map((field) => fieldLines[field]).filter(Boolean);
-  lines.push(...fixedPropertyLines);
-  if (lines.length === 0) {
-    return "";
-  }
-
-  return ["---", ...lines, "---"].join("\n");
-}
-
-function getEnabledFrontmatterFields(settings) {
-  const defaultFields = Array.isArray(DEFAULT_SETTINGS.frontmatterFields)
-    ? DEFAULT_SETTINGS.frontmatterFields
-    : [];
-  const raw = Array.isArray(settings?.frontmatterFields) ? settings.frontmatterFields : defaultFields;
-  const allowed = new Set(defaultFields);
-  const unique = [];
-  raw.forEach((item) => {
-    const key = String(item || "").trim();
-    if (!key || !allowed.has(key) || unique.includes(key)) {
-      return;
-    }
-    unique.push(key);
-  });
-  return unique;
-}
-
-function getFixedFrontmatterPropertyLines(settings, templateContext = {}) {
-  const customPropertyKeyPattern = /^[\p{L}\p{N}_\-\s]+$/u;
-  const systemFields = new Set(
-    (Array.isArray(DEFAULT_SETTINGS.frontmatterFields) ? DEFAULT_SETTINGS.frontmatterFields : []).map((field) =>
-      String(field).toLowerCase()
-    )
-  );
-  const rows = Array.isArray(settings?.fixedFrontmatterProperties) ? settings.fixedFrontmatterProperties : [];
-  const seenKeys = new Set();
-  const lines = [];
-
-  rows.forEach((item) => {
-    const key = String(item?.key || "").trim();
-    const type = normalizeFixedPropertyType(item?.type);
-    const value = item?.value;
-    const lowerKey = key.toLowerCase();
-    if (!key || isFixedPropertyRowEffectivelyEmpty(type, value)) {
-      return;
-    }
-    if (!customPropertyKeyPattern.test(key)) {
-      return;
-    }
-    if (systemFields.has(lowerKey) || seenKeys.has(lowerKey)) {
-      return;
-    }
-    seenKeys.add(lowerKey);
-    const yamlLine = formatFixedPropertyYamlLine(key, type, value, templateContext);
-    if (yamlLine) {
-      lines.push(yamlLine);
-    }
-  });
-
-  return lines;
-}
-
-function normalizeFixedPropertyType(value) {
-  const type = String(value || "").trim().toLowerCase();
-  return type === "number" || type === "checkbox" || type === "list" || type === "date" ? type : "text";
-}
-
-function isFixedPropertyRowEffectivelyEmpty(type, value) {
-  return !String(value || "").trim();
-}
-
-function buildFrontmatterTemplateContext(meta, created, tagsCsv, tagsYaml) {
-  return {
-    title: String(meta?.title || "").trim(),
-    url: String(cleanVideoUrl() || "").trim(),
-    bvid: String(meta?.bvid || "").trim(),
-    cid: String(meta?.cid || "").trim(),
-    author: String(meta?.author || "unknown").trim(),
-    upload_date: String(meta?.uploadDate || "unknown").trim(),
-    subtitle_lang: String(meta?.selectedSubtitleLang || "unknown").trim(),
-    created: String(created || "").trim(),
-    tags: String(tagsCsv || "").trim(),
-    tags_csv: String(tagsCsv || "").trim(),
-    tags_yaml: String(tagsYaml || "").trim()
-  };
-}
-
-function sanitizeFolderTemplateValue(value) {
-  return String(value || "")
-    .replace(/[\/\\:*?"<>|]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function buildFolderTemplateContext(meta, created = formatLocalDate()) {
-  return {
-    created: sanitizeFolderTemplateValue(created),
-    upload_date: sanitizeFolderTemplateValue(meta?.uploadDate || ""),
-    author: sanitizeFolderTemplateValue(meta?.author || ""),
-    bvid: sanitizeFolderTemplateValue(meta?.bvid || "")
-  };
-}
-
-function resolveFolderTemplate(template, meta) {
-  const normalized = normalizeFolder(template);
-  if (!normalized) {
-    return "";
-  }
-
-  const allowedKeys = new Set(["created", "upload_date", "author", "bvid"]);
-  const context = buildFolderTemplateContext(meta);
-  const resolved = String(normalized).replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_match, rawKey) => {
-    const key = String(rawKey || "").trim().toLowerCase();
-    if (!allowedKeys.has(key)) {
-      return "";
-    }
-    return context[key] || "";
-  });
-
-  return resolved
-    .split("/")
-    .map((segment) => sanitizeFolderTemplateValue(segment))
-    .filter(Boolean)
-    .join("/");
-}
-
-function buildNotePlaceholderTemplateContext(meta, description) {
-  return {
-    title: String(meta?.title || "").trim(),
-    author: String(meta?.author || "").trim(),
-    url: String(cleanVideoUrl() || "").trim(),
-    upload_date: String(meta?.uploadDate || "").trim(),
-    description: String(description || "").trim()
-  };
-}
-
-function groupNotePlaceholderSections(settings, templateContext = {}) {
-  const groups = {
-    before_intro: [],
-    before_chapters: [],
-    before_subtitle: []
-  };
-  const rows = normalizeNotePlaceholderSections(settings?.notePlaceholderSections);
-  rows.forEach((item) => {
-    const renderedLines = buildNotePlaceholderLines(item, templateContext);
-    if (!renderedLines.length) {
-      return;
-    }
-    groups[item.position].push(...renderedLines);
-  });
-  return groups;
-}
-
-function buildNotePlaceholderLines(item, templateContext = {}) {
-  const title = String(item?.title || "").trim();
-  if (!title) {
-    return [];
-  }
-  const content = resolveFrontmatterTemplateValue(item?.content, templateContext).trim();
-  const lines = [`## ${title}`, ""];
-  if (content) {
-    lines.push(content, "");
-  }
-  return lines;
-}
-
-function pushOptionalLines(targetLines, extraLines) {
-  if (!Array.isArray(extraLines) || !extraLines.length) {
-    return;
-  }
-  targetLines.push(...extraLines);
-}
-
-function resolveFrontmatterTemplateValue(value, templateContext = {}) {
-  return String(value || "").replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_match, rawKey) => {
-    const key = String(rawKey || "").trim().toLowerCase();
-    if (!key) {
-      return "";
-    }
-    const resolved = templateContext[key];
-    return resolved == null ? "" : String(resolved);
-  });
-}
-
-function isYamlDateValue(value) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(String(value || "").trim());
-}
-
-function parseFrontmatterArrayItems(value) {
-  return String(value || "")
-    .split(/[，,]/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-function formatFixedPropertyYamlLine(key, type, value, templateContext = {}) {
-  const normalizedType = normalizeFixedPropertyType(type);
-  const resolvedValue = resolveFrontmatterTemplateValue(value, templateContext).trim();
-
-  if (!resolvedValue) {
-    return "";
-  }
-
-  if (normalizedType === "number") {
-    const num = Number(resolvedValue);
-    if (!Number.isFinite(num)) {
-      return "";
-    }
-    return `${key}: ${resolvedValue}`;
-  }
-
-  if (normalizedType === "checkbox") {
-    const normalizedValue = resolvedValue.toLowerCase();
-    if (normalizedValue !== "true" && normalizedValue !== "false") {
-      return "";
-    }
-    return `${key}: ${normalizedValue}`;
-  }
-
-  if (normalizedType === "list") {
-    const items = parseFrontmatterArrayItems(resolvedValue);
-    return `${key}: [${items.map((item) => `"${escapeYaml(item)}"`).join(", ")}]`;
-  }
-
-  if (normalizedType === "date") {
-    if (!isYamlDateValue(resolvedValue)) {
-      return "";
-    }
-    return `${key}: ${resolvedValue}`;
-  }
-
-  return `${key}: "${escapeYaml(resolvedValue)}"`;
-}
-
-function normalizeNotePlaceholderSections(items) {
-  const allowedPositions = new Set(["before_intro", "before_chapters", "before_subtitle"]);
-  if (!Array.isArray(items)) {
-    return [];
-  }
-  return items
-    .map((item) => {
-      const title = String(item?.title || "").trim();
-      const position = allowedPositions.has(String(item?.position || "").trim())
-        ? String(item?.position || "").trim()
-        : "before_intro";
-      const content = String(item?.content || "").trim();
-      return {
-        title,
-        position,
-        content
-      };
-    })
-    .filter((item) => item.title)
-    .slice(0, 5);
-}
-
-function buildSubtitleSectionLines(body, chapters, settings, withHours) {
-  const subtitleItems = (body || [])
-    .map((item, index) => ({
-      ...item,
-      _index: index,
-      text: String(item?.content || "").trim()
-    }))
-    .filter((item) => item.text);
-  if (subtitleItems.length === 0) {
-    return ["（暂无字幕）"];
-  }
-
-  const chapterItems = normalizeChapters(chapters);
-  if (chapterItems.length === 0) {
-    return subtitleItems.map((item) => formatSubtitleLine(item, settings, withHours));
-  }
-
-  const lines = [];
-  const usedIndexes = new Set();
-
-  chapterItems.forEach((chapter, idx) => {
-    const start = Number(chapter.from || 0) || 0;
-    const next = chapterItems[idx + 1];
-    const chapterTo = Number(chapter.to || 0) || 0;
-    let end = Infinity;
-    if (next && Number(next.from) > start) {
-      end = Number(next.from);
-    } else if (chapterTo > start) {
-      end = chapterTo;
-    }
-
-    const sectionItems = subtitleItems.filter((item) => {
-      const from = Number(item.from || 0) || 0;
-      const inStart = from + 0.001 >= start;
-      const inEnd = end === Infinity ? true : from < end;
-      return inStart && inEnd;
-    });
-
-    if (sectionItems.length === 0) {
-      return;
-    }
-
-    const chapterStamp = settings.includeTimestampInBody
-      ? ` \`${formatCompactTimestamp(start, withHours)}\``
-      : "";
-    lines.push(`### ${chapter.title}${chapterStamp}`, "");
-    sectionItems.forEach((item) => {
-      usedIndexes.add(item._index);
-      lines.push(formatSubtitleLine(item, settings, withHours));
-    });
-    lines.push("");
-  });
-
-  const remaining = subtitleItems.filter((item) => !usedIndexes.has(item._index));
-  if (remaining.length > 0) {
-    lines.push("### 其他片段", "");
-    remaining.forEach((item) => {
-      lines.push(formatSubtitleLine(item, settings, withHours));
-    });
-    lines.push("");
-  }
-
-  if (lines.length === 0) {
-    return subtitleItems.map((item) => formatSubtitleLine(item, settings, withHours));
-  }
-
-  while (lines.length > 0 && !lines[lines.length - 1]) {
-    lines.pop();
-  }
-  return lines;
-}
-
-function formatSubtitleLine(item, settings, withHours) {
-  const text = String(item?.content || "").trim();
-  if (!text) {
-    return "";
-  }
-  if (!settings.includeTimestampInBody) {
-    return text;
-  }
-  return `\`${formatCompactTimestamp(item.from, withHours)}\` ${text}`;
-}
-
-function buildChapterLines(chapters, withHours = false) {
-  const chapterItems = normalizeChapters(chapters);
-  if (chapterItems.length === 0) {
-    return [];
-  }
-
-  return chapterItems.map((item) => {
-    const fromText = formatCompactTimestamp(item.from, withHours);
-    return `- \`${fromText}\` ${item.title}`;
-  });
-}
-
-function buildBilibiliEmbedIframe(meta, page = 1) {
-  const safeAid = encodeURIComponent(String(meta?.aid || "").trim());
-  const safeBvid = encodeURIComponent(String(meta?.bvid || "").trim());
-  const safeCid = encodeURIComponent(String(meta?.cid || "").trim());
-  const safePage = Number(page) > 0 ? Number(page) : 1;
-
-  return `<iframe src="https://player.bilibili.com/player.html?aid=${safeAid}&bvid=${safeBvid}&cid=${safeCid}&page=${safePage}&autoplay=0" scrolling="no" border="0" frameborder="no" framespacing="0" allow="fullscreen; picture-in-picture" allowfullscreen="true" style="height:100%;width:100%; aspect-ratio: 16 / 9;"> </iframe>`;
-}
-
-function buildSrt(body) {
-  return body
-    .map((item, index) => {
-      const from = formatTimestamp(item.from, true);
-      const to = formatTimestamp(item.to, true);
-      const text = (item.content || "").trim();
-      return `${index + 1}\n${from} --> ${to}\n${text}`;
-    })
-    .join("\n\n");
-}
-
-function buildTxt(body, settings) {
-  const withHours = shouldShowHoursInSubtitle(body);
-  return (body || [])
-    .map((item) => {
-      const text = String(item?.content || "").trim();
-      if (!text) {
-        return "";
-      }
-      if (!settings?.includeTimestampInBody) {
-        return text;
-      }
-      return `${formatCompactTimestamp(item.from, withHours)} ${text}`;
-    })
-    .filter(Boolean)
-    .join("\n");
-}
-
-function shouldShowHoursInSubtitle(body) {
-  const maxTo = (body || []).reduce((max, item) => {
-    const to = Number(item?.to || 0);
-    return Number.isFinite(to) && to > max ? to : max;
-  }, 0);
-  return maxTo >= 3600;
-}
-
-function shouldShowHoursInNote(meta, body) {
-  const subtitleMaxTo = (body || []).reduce((max, item) => {
-    const to = Number(item?.to || 0);
-    return Number.isFinite(to) && to > max ? to : max;
-  }, 0);
-  const chapterMaxTo = normalizeChapters(meta?.chapters || []).reduce((max, item) => {
-    const from = Number(item?.from || 0) || 0;
-    const to = Number(item?.to || 0) || 0;
-    return Math.max(max, from, to);
-  }, 0);
-  const duration = Number(meta?.videoDuration || 0) || 0;
-  return Math.max(subtitleMaxTo, chapterMaxTo, duration) >= 3600;
-}
-
 function formatCompactTimestamp(seconds, withHours) {
   const safe = Math.max(0, Math.floor(Number(seconds) || 0));
   const hour = Math.floor(safe / 3600);
@@ -7732,56 +6973,42 @@ function formatCompactTimestamp(seconds, withHours) {
   return `${String(totalMinutes).padStart(2, "0")}:${String(second).padStart(2, "0")}`;
 }
 
-function formatTimestamp(seconds, forSrt = false) {
-  const safe = Number(seconds) || 0;
-  const msTotal = Math.max(0, Math.floor(safe * 1000));
-  const hour = Math.floor(msTotal / 3600000);
-  const minute = Math.floor((msTotal % 3600000) / 60000);
-  const second = Math.floor((msTotal % 60000) / 1000);
-  const ms = msTotal % 1000;
+const subtitleLanguageSelectCache = new WeakMap();
 
-  const hh = String(hour).padStart(2, "0");
-  const mm = String(minute).padStart(2, "0");
-  const ss = String(second).padStart(2, "0");
-  if (!forSrt) {
-    return `${hh}:${mm}:${ss}.${String(ms).padStart(3, "0")}`;
+function syncSubtitleLanguageSelect(select) {
+  if (!select) return;
+  const selectedUrlKey = normalizeSubtitleUrlForCache(clipState.selectedSubtitleUrl);
+  const previous = subtitleLanguageSelectCache.get(select);
+  if (!previous || previous.tracks !== clipState.subtitles ||
+      previous.selectedId !== clipState.selectedSubtitleId || previous.selectedUrl !== selectedUrlKey) {
+    select.innerHTML = readerHtml(clipState.subtitles.length
+      ? clipState.subtitles.map((item) => {
+          const selected =
+            (clipState.selectedSubtitleId && String(item.id) === String(clipState.selectedSubtitleId)) ||
+            normalizeSubtitleUrlForCache(item.subtitleUrl) === selectedUrlKey;
+          return `<option value="${escapeHtml(item.subtitleUrl)}" data-id="${escapeHtml(
+            item.id
+          )}" data-lang="${escapeHtml(item.lanDoc || item.lan || "unknown")}"${
+            selected ? " selected" : ""
+          }>${escapeHtml(item.lanDoc || item.lan || "字幕")}</option>`;
+        }).join("")
+      : '<option value="">字幕</option>');
+    subtitleLanguageSelectCache.set(select, {
+      tracks: clipState.subtitles, selectedId: clipState.selectedSubtitleId, selectedUrl: selectedUrlKey
+    });
   }
-
-  return `${hh}:${mm}:${ss},${String(ms).padStart(3, "0")}`;
+  const disabled = clipState.subtitles.length === 0 || clipState.subtitleFetchState === "loading";
+  if (select.disabled !== disabled) select.disabled = disabled;
+  syncSubtitleSelection(select);
 }
 
-function sanitizeFileName(value) {
-  return value.replace(/[\\/:*?"<>|]/g, "_").replace(/\s+/g, " ").trim().slice(0, 120);
-}
-
-function normalizeDownloadFormat(value) {
-  return value === "txt" ? "txt" : "srt";
-}
-
-function buildNoteFilename(meta) {
-  const includeDate = state.settings?.includeDateInFilename !== false;
-  const baseParts = [];
-
-  if (includeDate) {
-    baseParts.push(formatLocalDate());
-  }
-
-  baseParts.push(meta.title || meta.bvid || "bilibili-subtitle");
-
-  if (Number(meta.pageCount) > 1) {
-    baseParts.push(`P${Number(meta.pageIndex) > 0 ? Number(meta.pageIndex) : 1}`);
-    const pageTitle = String(meta.pageTitle || "").trim();
-    if (pageTitle) {
-      baseParts.push(pageTitle);
-    }
-  }
-
-  const baseName = sanitizeFileName(baseParts.filter(Boolean).join("-"));
-  return `${baseName || "bilibili-subtitle"}.md`;
-}
-
-function normalizeFolder(input) {
-  return String(input || "").trim().replace(/^\/+|\/+$/g, "");
+// A failed request keeps the last committed language. Restore the control
+// separately from its options cache; user selection does not change attributes.
+function syncSubtitleSelection(select) {
+  if (clipState.subtitleFetchState === "loading") return;
+  const option = select.querySelector("option[selected]");
+  const index = option?.index ?? 0;
+  if (select.selectedIndex !== index) select.selectedIndex = index;
 }
 
 function escapeHtml(value) {
@@ -7793,9 +7020,7 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
-function escapeYaml(value) {
-  return String(value).replaceAll("\\", "\\\\").replaceAll('"', '\\"');
-}
+init();
 
 })();
 
