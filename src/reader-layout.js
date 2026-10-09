@@ -31,12 +31,11 @@ function getReaderMainWidthLimit(columns = null) {
 
 function getReaderPlayerMaxHeightPx(playerTop) {
   const isDesktop = window.innerWidth > 1180;
-  const hasChapterRail = isDesktop && readerPreferences.chapterVisible &&
-    getCachedReadingChapters().length > 0;
+  const hasChapterRail = isDesktop && getCachedReadingChapters().length > 0;
   // Only visible chapters reserve space below the video.
   const bottomSpace = hasChapterRail ? 148 : 0;
   let playerBottomLimit = window.innerHeight - bottomSpace;
-  if (isDesktop && readerPreferences.transcriptVisible) {
+  if (isDesktop) {
     const transcriptRect = document.getElementById("blr-reading-inline-host")?.getBoundingClientRect();
     // Before the transcript mounts, use its desktop CSS bottom inset (24px).
     const transcriptBottom = transcriptRect?.width > 0 && transcriptRect.height > 0
@@ -267,13 +266,16 @@ function unbindReaderLayout() {
 // Size YouTube with scoped CSS while keeping its player in the native DOM.
 // Its inline dimensions and controls belong to YouTube and survive reader exit.
 function layoutYouTubeReaderPlayer() {
-  if (document.fullscreenElement) return;
+  if (
+    document.fullscreenElement || document.webkitFullscreenElement ||
+    readerPlayerState.host?.classList.contains("ytp-fullscreen")
+  ) return;
   const columns = getEffectiveReaderColumnWidths();
   applyReaderColumnLayout(columns);
   const padding = getReaderPagePaddingPx();
   const top = 98;
   const desktop = window.innerWidth > 1180;
-  const hasChapters = readerPreferences.chapterVisible && getCachedReadingChapters().length > 0;
+  const hasChapters = getCachedReadingChapters().length > 0;
   const availableWidth = desktop
     ? window.innerWidth - padding * 2 - columns.transcriptWidth - columns.gap
     : window.innerWidth - padding * 2;

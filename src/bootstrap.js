@@ -14,7 +14,6 @@ const DEFAULT_SETTINGS = {
   readerContentWidth: "medium",
   readerChapterWidthPx: 220,
   readerTranscriptWidthPx: 440,
-  readerTranscriptVisible: true,
   nativeTranscriptTheme: "light",
   nativeTranscriptFontSize: 14,
   nativeTranscriptFontWeight: 500,
@@ -78,7 +77,6 @@ const readerSessionState = {
 
 // Persisted settings and their normalized presentation values.
 const readerPreferences = {
-  autoScroll: true,
   theme: "light",
   fontScale: "m",
   fontWeight: "normal",
@@ -87,8 +85,6 @@ const readerPreferences = {
   contentWidth: "medium",
   chapterWidthPx: 220,
   transcriptWidthPx: 440,
-  chapterVisible: true,
-  transcriptVisible: true,
   nativeTheme: "light",
   nativeFontSize: 14,
   nativeFontWeight: 500,
@@ -139,7 +135,6 @@ const uiState = {
   settingsWatcherBound: false,
   normalPageStateGuardBound: false,
   urlWatcherStarted: false,
-  normalPageStateObserver: null,
   collectionSnapshot: null
 };
 
@@ -207,10 +202,6 @@ function normalizeNativeTranscriptFontSize(value) {
   return [12, 14, 16, 18, 20, 22].includes(size) ? size : 14;
 }
 
-function normalizeNativeTranscriptTheme(value) {
-  return ["light", "dark", "paper"].includes(value) ? value : "light";
-}
-
 function normalizeNativeTranscriptFontWeight(value) {
   const weight = Number(value);
   return [300, 400, 500, 600, 700].includes(weight) ? weight : 500;
@@ -226,10 +217,6 @@ function normalizeReaderLineHeight(value) {
 
 function normalizeReaderContentWidth(value) {
   return ["compact", "narrow", "medium", "wide", "full"].includes(value) ? value : "medium";
-}
-
-function normalizeReaderTranscriptVisible(value) {
-  return value !== false;
 }
 
 function shouldDebugLog() {
@@ -320,7 +307,7 @@ function init() {
     document.documentElement.setAttribute("data-blr-reader-mode", "1");
     document.body.setAttribute("data-blr-reader-mode", "1");
   } else {
-    clearReaderModePageState();
+    clearReaderPresentationAttributes();
   }
 
   bindRuntimeEvents();
@@ -369,17 +356,12 @@ function ensureUiReady({ forceRecreate = false } = {}) {
 function clearReaderPresentationAttributes() {
   const attributes = [
     "mode", "platform", "theme", "font-scale", "font-weight", "letter-spacing", "line-height",
-    "content-width", "chapter-visibility", "has-chapters", "transcript-visible",
-    "timestamp-visible", "transcript-mode", "resizing"
+    "content-width", "has-chapters", "resizing"
   ];
   [document.documentElement, document.body].forEach((node) => {
     attributes.forEach((name) => node.removeAttribute(`data-blr-reader-${name}`));
   });
   document.body.removeAttribute("data-blr-reading-active");
-}
-
-function clearReaderModePageState() {
-  clearReaderPresentationAttributes();
 }
 
 function onTranscriptReaderEntryClick(event) {

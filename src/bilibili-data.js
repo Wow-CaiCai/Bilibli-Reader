@@ -48,19 +48,7 @@ function getErrorMessage(error, fallback = "未知错误") {
 }
 
 function sendRuntimeMessage(message) {
-  return new Promise((resolve, reject) => {
-    try {
-      chrome.runtime.sendMessage(message, (resp) => {
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
-          return;
-        }
-        resolve(resp);
-      });
-    } catch (error) {
-      reject(error);
-    }
-  });
+  return new Promise((resolve) => chrome.runtime.sendMessage(message, resolve));
 }
 
 async function getSettings() {
@@ -123,7 +111,8 @@ function migrateReaderDefaults(savedSettings) {
   let removedLegacySettings = false;
   for (const key of [
     "readerTranscriptMode", "readerVideoHeightPx", "readerChapterVisibility",
-    "readerTimestampVisible", "enablePlayerAiQuickAction", "playerAiQuickPrompt"
+    "readerTimestampVisible", "readerChapterVisible", "readerTranscriptVisible",
+    "enablePlayerAiQuickAction", "playerAiQuickPrompt"
   ]) {
     if (Object.hasOwn(merged, key)) {
       delete merged[key];

@@ -1,4 +1,3 @@
-const readingTranscriptLanguageCache = new WeakMap();
 function shouldForceNormalPageState(url = location.href) {
   return !isReaderMode(url) && !readerSessionState.open;
 }
@@ -7,7 +6,7 @@ function enforceNormalPageStateIfNeeded(url = location.href) {
   if (!shouldForceNormalPageState(url)) {
     return;
   }
-  clearReaderModePageState();
+  clearReaderPresentationAttributes();
 }
 
 function bindNormalPageStateGuard() {
@@ -28,16 +27,13 @@ function bindNormalPageStateGuard() {
       "data-blr-reader-font-scale",
       "data-blr-reader-letter-spacing",
       "data-blr-reader-content-width",
-      "data-blr-reader-chapter-visibility",
-      "data-blr-reader-has-chapters",
-      "data-blr-reader-transcript-visible"
+      "data-blr-reader-has-chapters"
     ]
   });
   observer.observe(document.body, {
     attributes: true,
     attributeFilter: ["data-blr-reader-mode", "data-blr-reader-line-height", "data-blr-reading-active"]
   });
-  uiState.normalPageStateObserver = observer;
   enforceNormalPageStateIfNeeded();
 }
 
@@ -92,7 +88,6 @@ function bindSettingsWatcher() {
       !changes.readerContentWidth &&
       !changes.readerChapterWidthPx &&
       !changes.readerTranscriptWidthPx &&
-      !changes.readerTranscriptVisible &&
       !changes.nativeTranscriptTheme &&
       !changes.nativeTranscriptFontSize &&
       !changes.nativeTranscriptFontWeight
@@ -355,7 +350,7 @@ function clearSubtitleContent({
 
 async function finishNoSubtitleLoad(request) {
   ensureSubtitleRequestActive(request);
-  applyNoSubtitleState();
+  clearSubtitleContent({ clearTracks: true, fetchState: "empty" });
 
   await refreshOpenReadingView("当前视频无可用字幕。", request.runId, request);
   ensureSubtitleRequestActive(request);
@@ -818,33 +813,7 @@ function syncReadingTranscriptHeaderControls() {
     fontWeightSelect.value = readerPreferences.fontWeight;
   }
   const languageSelect = heading.querySelector(`#${ids.readingTranscriptQuickSubtitleSelect}`);
-  if (!languageSelect) {
-    return;
-  }
-  const selectedUrlKey = normalizeSubtitleUrlForCache(clipState.selectedSubtitleUrl);
-  const previous = readingTranscriptLanguageCache.get(languageSelect);
-  if (!previous || previous.tracks !== clipState.subtitles ||
-      previous.selectedId !== clipState.selectedSubtitleId || previous.selectedUrl !== selectedUrlKey) {
-    languageSelect.innerHTML = readerHtml(clipState.subtitles.length
-      ? clipState.subtitles
-          .map((item) => {
-            const selected =
-              (clipState.selectedSubtitleId && String(item.id) === String(clipState.selectedSubtitleId)) ||
-              normalizeSubtitleUrlForCache(item.subtitleUrl) === selectedUrlKey;
-            return `<option value="${escapeHtml(item.subtitleUrl)}" data-id="${escapeHtml(
-              item.id
-            )}" data-lang="${escapeHtml(item.lanDoc || item.lan || "unknown")}"${
-              selected ? " selected" : ""
-            }>${escapeHtml(item.lanDoc || item.lan || "字幕")}</option>`;
-          })
-          .join("")
-      : '<option value="">字幕</option>');
-    readingTranscriptLanguageCache.set(languageSelect, {
-      tracks: clipState.subtitles, selectedId: clipState.selectedSubtitleId, selectedUrl: selectedUrlKey
-    });
-  }
-  languageSelect.disabled = clipState.subtitles.length === 0 || clipState.subtitleFetchState === "loading";
-  syncSubtitleSelection(languageSelect);
+  syncSubtitleLanguageSelect(languageSelect);
 }
 
 function returnReadingTranscriptToCurrent() {
@@ -918,8 +887,4 @@ function bindReadingTranscriptHeaderControls(heading) {
       );
     });
   heading.dataset.blrControlsBound = "1";
-}
-
-function applyNoSubtitleState() {
-  clearSubtitleContent({ clearTracks: true, fetchState: "empty" });
 }

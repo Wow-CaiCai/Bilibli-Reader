@@ -46,14 +46,9 @@
 
   const chrome = {
     runtime: {
-      lastError: null,
       onMessage: {
         addListener(listener) {
           runtimeListeners.push(listener);
-        },
-        removeListener(listener) {
-          const index = runtimeListeners.indexOf(listener);
-          if (index >= 0) runtimeListeners.splice(index, 1);
         }
       },
       sendMessage(message, callback) {
@@ -66,10 +61,6 @@
       onChanged: {
         addListener(listener) {
           storageListeners.push(listener);
-        },
-        removeListener(listener) {
-          const index = storageListeners.indexOf(listener);
-          if (index >= 0) storageListeners.splice(index, 1);
         }
       },
       local: {
@@ -115,17 +106,10 @@
       storageListeners.forEach((listener) => listener(changes, "sync"));
       return { ok: true };
     }
-    if (message?.type === "fetch-json") {
-      return { ok: true, data: await requestJson(String(message.url || "")) };
-    }
-    if (message?.type === "fetch-text") {
-      return { ok: true, data: await requestResource(String(message.url || ""), true) };
+    if (message?.type === "fetch-json" || message?.type === "fetch-text") {
+      return { ok: true, data: await requestResource(String(message.url || ""), message.type === "fetch-text") };
     }
     return { ok: false, error: "此功能在独立阅读脚本中不可用" };
-  }
-
-  async function requestJson(url) {
-    return requestResource(url);
   }
 
   async function requestResource(url, asText = false) {

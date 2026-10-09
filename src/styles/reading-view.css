@@ -1,4 +1,3 @@
-
 #blr-reading-view {
   position: fixed;
   left: 16px;
@@ -391,10 +390,6 @@ html[data-blr-reader-entering="1"] #blr-reading-view[data-blr-reader-ready="1"] 
   cursor: pointer;
 }
 
-
-
-
-
 .blr-reading-icon-btn {
   display: inline-flex;
   align-items: center;
@@ -419,17 +414,6 @@ html[data-blr-reader-entering="1"] #blr-reading-view[data-blr-reader-ready="1"] 
   background: #f3f4f6;
   border-color: #d1d5db;
 }
-
-
-
-
-
-
-
-
-
-
-
 
 .blr-reading-list,
 .blr-reading-transcript {
@@ -475,8 +459,6 @@ html[data-blr-reader-entering="1"] #blr-reading-view[data-blr-reader-ready="1"] 
   color: #4b5563;
 }
 
-
-
 .blr-reading-chapter:hover {
   background: #f9fafb;
 }
@@ -506,8 +488,6 @@ html[data-blr-reader-entering="1"] #blr-reading-view[data-blr-reader-ready="1"] 
   text-decoration-thickness: 2px;
   text-underline-offset: 3px;
 }
-
-
 
 .blr-reading-empty {
   padding: 12px 4px;
@@ -560,9 +540,6 @@ html[data-blr-reader-entering="1"] #blr-reading-view[data-blr-reader-ready="1"] 
   .blr-reading-title {
     font-size: 16px;
   }
-
-
-
 
 }
 
@@ -925,27 +902,6 @@ body[data-blr-reader-mode="1"] #app {
   box-shadow: none;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #blr-reading-view .blr-reading-main {
   justify-content: center;
   background: transparent;
@@ -954,19 +910,6 @@ body[data-blr-reader-mode="1"] #app {
 #blr-reading-view .blr-reading-transcript {
   width: min(100%, var(--blr-reader-content-max));
 }
-
-html[data-blr-reader-mode="1"][data-blr-reader-transcript-visible="0"] #blr-reading-view .blr-reading-main,
-body[data-blr-reader-mode="1"][data-blr-reader-transcript-visible="0"] #blr-reading-view .blr-reading-main,
-#blr-reading-view[data-transcript-visible="0"] .blr-reading-main {
-  display: none !important;
-}
-
-#blr-reading-view[data-transcript-visible="0"] #blr-reading-inline-host {
-  border: none;
-  background: transparent;
-}
-
-
 
 #blr-reading-view .blr-reading-chapter:hover {
   background: var(--blr-reader-surface-2);
@@ -979,8 +922,6 @@ body[data-blr-reader-mode="1"][data-blr-reader-transcript-visible="0"] #blr-read
 #blr-reading-view .blr-reading-chapter-time {
   color: var(--blr-reader-accent);
 }
-
-
 
 body[data-blr-reading-active="1"] .blr-reader-player-host .bpx-player-subtitle-wrap,
 body[data-blr-reading-active="1"] .blr-reader-player-host .bpx-player-subtitle-panel,
@@ -1008,8 +949,6 @@ body[data-blr-reader-mode="1"] .blr-reading-actions {
   pointer-events: auto;
   justify-content: flex-end;
 }
-
-
 
 /* The native player stays in normal flow; the transcript uses its own scroll. */
 body[data-blr-reader-mode="1"] .blr-reading-layout,
@@ -1160,12 +1099,9 @@ body[data-blr-reader-mode="1"] .blr-reading-rail {
   z-index: 2147483646;
 }
 
-html[data-blr-reader-mode="1"][data-blr-reader-chapter-visibility="hide"] .blr-reading-rail,
-body[data-blr-reader-mode="1"][data-blr-reader-chapter-visibility="hide"] .blr-reading-rail,
-#blr-reading-view[data-chapter-visibility="hide"] .blr-reading-rail,
-html[data-blr-reader-mode="1"][data-blr-reader-chapter-visibility="auto"][data-blr-reader-has-chapters="0"] .blr-reading-rail,
-body[data-blr-reader-mode="1"][data-blr-reader-chapter-visibility="auto"][data-blr-reader-has-chapters="0"] .blr-reading-rail,
-#blr-reading-view[data-chapter-visibility="auto"][data-has-chapters="0"] .blr-reading-rail {
+html[data-blr-reader-mode="1"][data-blr-reader-has-chapters="0"] .blr-reading-rail,
+body[data-blr-reader-mode="1"][data-blr-reader-has-chapters="0"] .blr-reading-rail,
+#blr-reading-view[data-has-chapters="0"] .blr-reading-rail {
   display: none !important;
 }
 
@@ -1258,8 +1194,6 @@ body[data-blr-reader-mode="1"] .blr-reading-empty {
   color: var(--blr-reader-text) !important;
 }
 
-
-
 body[data-blr-reader-mode="1"] .blr-reading-tail-spacer {
   width: 100%;
   min-height: 320px;
@@ -1348,10 +1282,6 @@ body[data-blr-reader-mode="1"] [class*="mini-player"],
 body[data-blr-reader-mode="1"] [class*="picture-in-picture"] {
   display: none !important;
 }
-
-
-
-
 
 .blr-reading-complete {
   padding: 12px 10px 20px;
@@ -1509,13 +1439,6 @@ body[data-blr-reader-mode="1"] [class*="picture-in-picture"] {
     z-index: 2147483645;
   }
 
-  html[data-blr-reader-mode="1"][data-blr-reader-transcript-visible="0"]
-    #blr-reading-inline-host,
-  body[data-blr-reader-mode="1"][data-blr-reader-transcript-visible="0"]
-    #blr-reading-inline-host {
-    display: none !important;
-  }
-
   body[data-blr-reader-mode="1"] #blr-reading-inline-host .blr-reading-transcript-heading {
     position: sticky;
     top: 0;
@@ -1652,8 +1575,6 @@ body[data-blr-reader-mode="1"] [class*="picture-in-picture"] {
     overflow: visible;
   }
 
-
-
   body[data-blr-reader-mode="1"] .blr-reading-tail-spacer {
     min-height: 45vh;
   }
@@ -1700,9 +1621,6 @@ body[data-blr-reader-mode="1"] [class*="picture-in-picture"] {
     user-select: none !important;
   }
 
-  body[data-blr-reader-transcript-visible="0"] .blr-reading-resize-handle-right {
-    display: none !important;
-  }
 }
 
 @media (max-width: 1180px) {
@@ -1719,7 +1637,8 @@ body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] {
 
 body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] :is(
   ytd-app, #content.ytd-app, ytd-page-manager, ytd-watch-flexy,
-  #full-bleed-container.ytd-watch-flexy, #columns.ytd-watch-flexy,
+  #full-bleed-container.ytd-watch-flexy, #player-full-bleed-container.ytd-watch-flexy,
+  #columns.ytd-watch-flexy,
   #primary.ytd-watch-flexy, #primary-inner.ytd-watch-flexy,
   #player.ytd-watch-flexy, #player-container-outer.ytd-watch-flexy,
   #player-container-inner.ytd-watch-flexy, #player-container.ytd-watch-flexy,
@@ -1728,9 +1647,27 @@ body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] :is(
   transform: none !important;
   contain: none !important;
   overflow: visible !important;
+  /* Keep the docking hosts visible without painting YouTube's theater
+     backdrop across the reader. The video keeps its own player background. */
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
-body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] #movie_player:not(.ytp-fullscreen):not(:fullscreen) {
+body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] :is(
+  #full-bleed-container.ytd-watch-flexy, #player-full-bleed-container.ytd-watch-flexy
+)::before,
+body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] :is(
+  #full-bleed-container.ytd-watch-flexy, #player-full-bleed-container.ytd-watch-flexy
+)::after {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] #cinematics {
+  display: none !important;
+}
+
+body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] #movie_player:not(.ytp-fullscreen):not(:fullscreen):not(:fullscreen *) {
   position: fixed !important;
   inset: auto !important;
   top: var(--blr-reader-player-top, 98px) !important;
@@ -1744,7 +1681,38 @@ body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] #movie_player
   z-index: 100 !important;
 }
 
-body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] #movie_player:not(.ytp-fullscreen):not(:fullscreen) :is(.html5-video-container, video) {
+/* Fullscreen can belong to the player itself or one of YouTube's wrappers.
+   Fill that viewport instead of falling back to stale native inline sizes,
+   and paint letterboxing black rather than exposing the reader page. */
+body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] :is(
+  #movie_player.ytp-fullscreen, #movie_player:fullscreen, :fullscreen #movie_player
+) {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  margin: 0 !important;
+  transform: none !important;
+  background: #000 !important;
+  z-index: 100 !important;
+}
+
+/* A fullscreen docking host overrides its transparent theater background. */
+body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] :fullscreen:has(#movie_player),
+body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] :fullscreen:has(#movie_player)::backdrop,
+body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] #movie_player:fullscreen::backdrop {
+  background: #000 !important;
+}
+
+body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"]:has(
+  #movie_player.ytp-fullscreen, #movie_player:fullscreen, :fullscreen #movie_player
+) :is(#blr-root, #blr-reading-inline-host) {
+  display: none !important;
+}
+
+body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] #movie_player :is(.html5-video-container, video) {
   width: 100% !important;
   height: 100% !important;
   top: 0 !important;
@@ -1752,7 +1720,7 @@ body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] #movie_player
   object-fit: contain !important;
 }
 
-body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] #movie_player:not(.ytp-fullscreen):not(:fullscreen) .ytp-chrome-bottom {
+body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] #movie_player .ytp-chrome-bottom {
   width: calc(100% - 24px) !important;
   left: 12px !important;
 }

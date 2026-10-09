@@ -487,10 +487,3 @@ async function fetchYouTubeSubtitleBody(url) {
     controller.abort();
   }
 }
-
-function expandYouTubeTranscriptPanel() {
-  if (!extractYouTubeVideoId()) return;
-  nativeTranscriptState.open = true;
-  ensureNativeTranscriptPanel();
-  return ensureNativeTranscriptLoaded();
-}

@@ -243,7 +243,7 @@ function setActiveReadingItems(subtitleIndex, chapterIndex, shouldScroll = false
   if (transcriptChanged) setCachedReaderActiveNode(transcriptCache, nextTranscript);
   if (chapterChanged) setCachedReaderActiveNode(chapterCache, nextChapter);
 
-  if (shouldScroll && readerPreferences.autoScroll) {
+  if (shouldScroll) {
     if (document.body.hasAttribute("data-blr-reader-resizing") || Date.now() < readerSessionState.manualScrollPauseUntil) {
       updateReaderFollowState();
       readerSessionState.activeSubtitleIndex = subtitleIndex;
@@ -537,10 +537,6 @@ function onReadingTranscriptClick(event) {
 }
 
 function noteManualReaderInteraction(durationMs = 3000) {
-  if (!readerPreferences.autoScroll) {
-    updateReaderFollowState();
-    return;
-  }
   readerSessionState.manualScrollPauseUntil = Date.now() + durationMs;
   updateReaderFollowState();
 }
@@ -550,7 +546,6 @@ function updateReaderFollowState() {
   if (!readingView) {
     return;
   }
-  const mode =
-    !readerPreferences.autoScroll ? "off" : Date.now() < readerSessionState.manualScrollPauseUntil ? "manual" : "auto";
+  const mode = Date.now() < readerSessionState.manualScrollPauseUntil ? "manual" : "auto";
   readingView.setAttribute("data-blr-reader-follow", mode);
 }

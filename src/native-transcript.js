@@ -1,5 +1,4 @@
 const nativeTranscriptRenderCache = new WeakMap();
-const nativeTranscriptLanguageCache = new WeakMap();
 
 function startNativeTranscriptPanelObserver() {
   if (nativeTranscriptState.observer || !document.body) {
@@ -263,7 +262,7 @@ function setNativeTranscriptExpanded(panel, expanded) {
 }
 
 function hydrateNativeTranscriptSettings(settings = readerPreferences.settings) {
-  readerPreferences.nativeTheme = normalizeNativeTranscriptTheme(settings?.nativeTranscriptTheme);
+  readerPreferences.nativeTheme = normalizeReaderTheme(settings?.nativeTranscriptTheme);
   readerPreferences.nativeFontSize = normalizeNativeTranscriptFontSize(
     settings?.nativeTranscriptFontSize
   );
@@ -316,7 +315,7 @@ function applyNativeTranscriptTypography(panel = document.getElementById(ids.nat
 }
 
 function updateNativeTranscriptTheme(theme) {
-  readerPreferences.nativeTheme = normalizeNativeTranscriptTheme(theme);
+  readerPreferences.nativeTheme = normalizeReaderTheme(theme);
   readerPreferences.settings = {
     ...readerPreferences.settings,
     nativeTranscriptTheme: readerPreferences.nativeTheme
@@ -345,34 +344,7 @@ function updateNativeTranscriptTypography({ fontSize, fontWeight } = {}) {
 
 function renderNativeTranscriptHeaderControls(panel) {
   const languageSelect = panel.querySelector(`#${ids.nativeTranscriptSelect}`);
-  if (languageSelect) {
-    const selectedUrlKey = normalizeSubtitleUrlForCache(clipState.selectedSubtitleUrl);
-    const previous = nativeTranscriptLanguageCache.get(languageSelect);
-    if (!previous || previous.tracks !== clipState.subtitles ||
-        previous.selectedId !== clipState.selectedSubtitleId || previous.selectedUrl !== selectedUrlKey) {
-      const optionsHtml = clipState.subtitles.length
-        ? clipState.subtitles
-            .map((item) => {
-              const selected =
-                (clipState.selectedSubtitleId && String(item.id) === String(clipState.selectedSubtitleId)) ||
-                normalizeSubtitleUrlForCache(item.subtitleUrl) === selectedUrlKey;
-              return `<option value="${escapeHtml(item.subtitleUrl)}" data-id="${escapeHtml(
-                item.id
-              )}" data-lang="${escapeHtml(item.lanDoc || item.lan || "unknown")}"${
-                selected ? " selected" : ""
-              }>${escapeHtml(item.lanDoc || item.lan || "字幕")}</option>`;
-            })
-            .join("")
-        : '<option value="">字幕</option>';
-      languageSelect.innerHTML = readerHtml(optionsHtml);
-      nativeTranscriptLanguageCache.set(languageSelect, {
-        tracks: clipState.subtitles, selectedId: clipState.selectedSubtitleId, selectedUrl: selectedUrlKey
-      });
-    }
-    const disabled = clipState.subtitles.length === 0 || clipState.subtitleFetchState === "loading";
-    if (languageSelect.disabled !== disabled) languageSelect.disabled = disabled;
-    syncSubtitleSelection(languageSelect);
-  }
+  syncSubtitleLanguageSelect(languageSelect);
   applyNativeTranscriptTypography(panel);
 }
 

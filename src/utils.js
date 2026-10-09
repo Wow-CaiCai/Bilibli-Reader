@@ -43,6 +43,35 @@ function formatCompactTimestamp(seconds, withHours) {
   return `${String(totalMinutes).padStart(2, "0")}:${String(second).padStart(2, "0")}`;
 }
 
+const subtitleLanguageSelectCache = new WeakMap();
+
+function syncSubtitleLanguageSelect(select) {
+  if (!select) return;
+  const selectedUrlKey = normalizeSubtitleUrlForCache(clipState.selectedSubtitleUrl);
+  const previous = subtitleLanguageSelectCache.get(select);
+  if (!previous || previous.tracks !== clipState.subtitles ||
+      previous.selectedId !== clipState.selectedSubtitleId || previous.selectedUrl !== selectedUrlKey) {
+    select.innerHTML = readerHtml(clipState.subtitles.length
+      ? clipState.subtitles.map((item) => {
+          const selected =
+            (clipState.selectedSubtitleId && String(item.id) === String(clipState.selectedSubtitleId)) ||
+            normalizeSubtitleUrlForCache(item.subtitleUrl) === selectedUrlKey;
+          return `<option value="${escapeHtml(item.subtitleUrl)}" data-id="${escapeHtml(
+            item.id
+          )}" data-lang="${escapeHtml(item.lanDoc || item.lan || "unknown")}"${
+            selected ? " selected" : ""
+          }>${escapeHtml(item.lanDoc || item.lan || "字幕")}</option>`;
+        }).join("")
+      : '<option value="">字幕</option>');
+    subtitleLanguageSelectCache.set(select, {
+      tracks: clipState.subtitles, selectedId: clipState.selectedSubtitleId, selectedUrl: selectedUrlKey
+    });
+  }
+  const disabled = clipState.subtitles.length === 0 || clipState.subtitleFetchState === "loading";
+  if (select.disabled !== disabled) select.disabled = disabled;
+  syncSubtitleSelection(select);
+}
+
 // A failed request keeps the last committed language. Restore the control
 // separately from its options cache; user selection does not change attributes.
 function syncSubtitleSelection(select) {

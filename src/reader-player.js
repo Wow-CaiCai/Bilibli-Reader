@@ -162,6 +162,13 @@ function startReaderPlayerObserver() {
     if (nextVideo && nextHost && (nextVideo !== readerPlayerState.videoEl || nextHost !== readerPlayerState.host)) {
       queueEnsureReaderPlayerMounted();
     }
+    if (isYouTubePage()) {
+      // Theater/fullscreen switches can reparent an unchanged player. Refresh
+      // its keep path even when neither the video nor the player was replaced.
+      applyReaderPageFocus();
+      scheduleReaderLayout();
+      return;
+    }
     if (document.querySelector(".bpx-player-mini-close, .bpx-player-mini-warp")) {
       scheduleReaderMiniPlayerDismiss();
     }

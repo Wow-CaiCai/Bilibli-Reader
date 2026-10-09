@@ -191,10 +191,6 @@ function hydrateReaderStateFromSettings(settings = readerPreferences.settings) {
   readerPreferences.contentWidth = normalizeReaderContentWidth(settings?.readerContentWidth);
   readerPreferences.chapterWidthPx = normalizeReaderColumnWidth(settings?.readerChapterWidthPx, 220, 140, 360);
   readerPreferences.transcriptWidthPx = normalizeReaderColumnWidth(settings?.readerTranscriptWidthPx, 440, 280, 720);
-  // The retired settings panel could persist hidden sections. Keep both visible now that
-  // the only reader controls live in the transcript header.
-  readerPreferences.chapterVisible = true;
-  readerPreferences.transcriptVisible = true;
 }
 
 function setReaderDatasetValue(node, key, value) {
@@ -209,9 +205,7 @@ function applyReaderRootPresentation(node) {
     FontWeight: readerPreferences.fontWeight,
     LetterSpacing: readerPreferences.letterSpacing,
     LineHeight: readerPreferences.lineHeight,
-    ContentWidth: readerPreferences.contentWidth,
-    ChapterVisibility: readerPreferences.chapterVisible ? "auto" : "hide",
-    TranscriptVisible: readerPreferences.transcriptVisible ? "1" : "0"
+    ContentWidth: readerPreferences.contentWidth
   };
   Object.entries(values).forEach(([name, value]) => setReaderDatasetValue(node, `blrReader${name}`, value));
 }
@@ -224,36 +218,12 @@ function applyReadingViewPresentation() {
   setReaderDatasetValue(readingView, "letterSpacing", readerPreferences.letterSpacing);
   setReaderDatasetValue(readingView, "lineHeight", readerPreferences.lineHeight);
   setReaderDatasetValue(readingView, "contentWidth", readerPreferences.contentWidth);
-  setReaderDatasetValue(readingView, "chapterVisibility", readerPreferences.chapterVisible ? "auto" : "hide");
-  setReaderDatasetValue(readingView, "transcriptVisible", readerPreferences.transcriptVisible ? "1" : "0");
   applyReaderRootPresentation(document.documentElement);
   applyReaderRootPresentation(document.body);
   [document.documentElement, document.body].forEach((node) => {
     setReaderDatasetValue(node, "blrReaderPlatform", isYouTubePage() ? "youtube" : "bilibili");
   });
   applyReaderColumnLayout();
-  const main = document.querySelector(".blr-reading-main");
-  if (main) {
-    main.style.display = readerPreferences.transcriptVisible ? "" : "none";
-  }
-  const inlineHost = document.getElementById("blr-reading-inline-host");
-  if (inlineHost) {
-    if (readerPreferences.transcriptVisible) {
-      inlineHost.style.border = "";
-      inlineHost.style.background = "";
-      inlineHost.style.marginTop = "";
-      inlineHost.style.boxShadow = "";
-      inlineHost.style.borderRadius = "";
-    } else {
-      const leftContainer = document.querySelector(".left-container");
-      const bgColor = leftContainer ? getComputedStyle(leftContainer).backgroundColor : "";
-      inlineHost.style.border = "none";
-      inlineHost.style.background = bgColor;
-      inlineHost.style.marginTop = "0";
-      inlineHost.style.boxShadow = "none";
-      inlineHost.style.borderRadius = "0";
-    }
-  }
   syncReadingTranscriptHeaderControls();
 }
 
@@ -280,10 +250,6 @@ function updateReaderPreferences(next, { persist = true } = {}) {
   );
   readerPreferences.lineHeight = normalizeReaderLineHeight(next.readerLineHeight ?? readerPreferences.lineHeight);
   readerPreferences.contentWidth = normalizeReaderContentWidth(next.readerContentWidth ?? readerPreferences.contentWidth);
-  readerPreferences.chapterVisible = next.readerChapterVisible !== undefined ? Boolean(next.readerChapterVisible) : readerPreferences.chapterVisible;
-  readerPreferences.transcriptVisible = normalizeReaderTranscriptVisible(
-    next.readerTranscriptVisible ?? readerPreferences.transcriptVisible
-  );
   readerPreferences.settings = {
     ...readerPreferences.settings,
     readerTheme: readerPreferences.theme,
@@ -291,9 +257,7 @@ function updateReaderPreferences(next, { persist = true } = {}) {
     readerFontWeight: readerPreferences.fontWeight,
     readerLetterSpacing: readerPreferences.letterSpacing,
     readerLineHeight: readerPreferences.lineHeight,
-    readerContentWidth: readerPreferences.contentWidth,
-    readerChapterVisible: readerPreferences.chapterVisible,
-    readerTranscriptVisible: readerPreferences.transcriptVisible
+    readerContentWidth: readerPreferences.contentWidth
   };
   applyReadingViewPresentation();
   updateReadingTranscriptTailSpacer();
@@ -511,6 +475,16 @@ function applyReaderPageFocus() {
     markReaderKeepPath(node);
   });
 
+  if (isYouTubePage()) {
+    // YouTube moves the same player between these hosts when theater mode
+    // changes. Keep both paths available before it moves into the empty host.
+    document.querySelectorAll(
+      "ytd-watch-flexy #player, ytd-watch-flexy #player-container-outer, " +
+      "ytd-watch-flexy #player-container-inner, ytd-watch-flexy #full-bleed-container, " +
+      "ytd-watch-flexy #player-full-bleed-container"
+    ).forEach(markReaderKeepPath);
+  }
+
   const keepNodes = Array.from(document.querySelectorAll("[data-blr-reader-keep='1']"));
   keepNodes.forEach((parent) => {
     Array.from(parent.children || []).forEach((child) => {
@@ -605,21 +579,6 @@ function moveReadingMainInline() {
 
   if (readingMain.parentElement !== inlineHost) {
     inlineHost.appendChild(readingMain);
-  }
-  const leftContainer = document.querySelector(".left-container");
-  const bgColor = leftContainer ? getComputedStyle(leftContainer).backgroundColor : "";
-  if (readerPreferences.transcriptVisible) {
-    inlineHost.style.border = "";
-    inlineHost.style.background = "";
-    inlineHost.style.marginTop = "";
-    inlineHost.style.boxShadow = "";
-    inlineHost.style.borderRadius = "";
-  } else {
-    inlineHost.style.border = "none";
-    inlineHost.style.background = bgColor;
-    inlineHost.style.marginTop = "0";
-    inlineHost.style.boxShadow = "none";
-    inlineHost.style.borderRadius = "0";
   }
   updateReadingTranscriptTailSpacer();
 }
