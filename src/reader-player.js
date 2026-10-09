@@ -57,6 +57,7 @@ function clearNativeReaderFloatingStyles(playerHost = readerPlayerState.host) {
 }
 
 function getReaderPlayerWrapNode(playerHost = readerPlayerState.host) {
+  if (isYouTubePage()) return playerHost || document.getElementById("movie_player");
   return (
     playerHost?.closest?.("#playerWrap") ||
     playerHost?.closest?.(".player-wrap") ||
@@ -66,6 +67,7 @@ function getReaderPlayerWrapNode(playerHost = readerPlayerState.host) {
 }
 
 function hasNativeReaderPlayerLayoutIssue(playerHost = readerPlayerState.host) {
+  if (isYouTubePage()) return false;
   if (!readerSessionState.open || !playerHost) {
     return false;
   }
@@ -140,7 +142,7 @@ function cleanupReaderPlayerHost() {
     node.style.removeProperty("--blr-reader-player-width");
   });
   const playerHost = readerPlayerState.host;
-  if (playerHost) {
+  if (playerHost && !isYouTubePage()) {
     setReaderPlayerControlsVisible(false, playerHost);
     cleanupReaderPlayerHostNode(playerHost);
   }
@@ -225,6 +227,7 @@ function bindReadingViewVideo(video = getRuntimeVideoElement()) {
 }
 
 function getRuntimeVideoElement() {
+  if (isYouTubePage()) return document.querySelector("#movie_player video");
   if (readerPlayerState.videoEl?.isConnected) {
     const currentHost = findReaderPlayerHost(readerPlayerState.videoEl);
     const currentRect = readerPlayerState.videoEl.getBoundingClientRect();
@@ -275,6 +278,7 @@ function isIgnoredReaderVideoCandidate(video, host = findReaderPlayerHost(video)
 }
 
 function dismissReaderMiniPlayer(playerHost = readerPlayerState.host) {
+  if (isYouTubePage()) return false;
   const explicitClose = Array.from(document.querySelectorAll(".bpx-player-mini-close")).find(isVisibleReaderControl);
   if (explicitClose) {
     explicitClose.click();
@@ -357,6 +361,7 @@ function dismissReaderMiniPlayer(playerHost = readerPlayerState.host) {
 }
 
 function scheduleReaderMiniPlayerDismiss(maxAttempts = 12, delayMs = 180) {
+  if (isYouTubePage()) return;
   if (!readerSessionState.open) {
     return;
   }
@@ -439,7 +444,7 @@ function queueEnsureReaderPlayerControlsRecovered({
   delayMs = 120,
   minIntervalMs = 480
 } = {}) {
-  if (!readerSessionState.open || isWatchlaterPage()) {
+  if (!readerSessionState.open || isWatchlaterPage() || isYouTubePage()) {
     return;
   }
   const playerHost = readerPlayerState.host;
@@ -795,6 +800,7 @@ function findReaderPlayerHost(video) {
   if (!video) {
     return null;
   }
+  if (isYouTubePage()) return video.closest("#movie_player");
 
   return (
     video.closest(".bpx-player-container") ||

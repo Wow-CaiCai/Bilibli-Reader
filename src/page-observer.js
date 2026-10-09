@@ -2,11 +2,6 @@
 // for direct replacements; comments and recommendation subtrees are excluded.
 const readerPageSubscriptions = new Set();
 const readerPageScopes = {
-  entry: {
-    roots: "#viewbox_report, .video-info-container, .video-info-title",
-    changes: "#viewbox_report, .video-info-container, .video-info-title, #blr-page-reader-entry",
-    subtree: true
-  },
   native: {
     roots: "#danmukuBox, .danmaku-box, .up-panel-container, #playerWrap, #bilibili-player, .bpx-player-container",
     required: "#danmukuBox, .danmaku-box",
@@ -25,6 +20,20 @@ let readerPageRefreshQueued = false;
 let readerPageObservedTargets = new Map();
 let readerPageMissingScopes = new Set();
 let readerPageEnabledScopes = new Set();
+
+if (isYouTubePage()) {
+  readerPageScopes.player = {
+    roots: "ytd-watch-flexy #player, #movie_player",
+    changes: "ytd-watch-flexy, #player, #movie_player, video",
+    subtree: true
+  };
+  readerPageScopes.native = {
+    roots: "ytd-watch-flexy #secondary-inner, #movie_player",
+    required: "ytd-watch-flexy #secondary-inner #related",
+    changes: "#secondary-inner, #related, #movie_player, video, #blr-native-transcript-panel",
+    subtree: false
+  };
+}
 
 function subscribeReaderPageChanges(scope, callback) {
   const subscription = { scope, callback };
@@ -52,8 +61,8 @@ function readerMutationTouches(record, selector) {
 
 function isReaderPageScopeEnabled(scope) {
   if (scope === "player") return isReaderMode();
-  if (scope === "native") return Boolean(extractBvid(location.href)) && !isReaderMode();
-  return Boolean(extractBvid(location.href)) || isWatchlaterPage();
+  if (scope === "native") return isSupportedTranscriptPage() && !isReaderMode();
+  return false;
 }
 
 function hasDetachedReaderPageTarget() {

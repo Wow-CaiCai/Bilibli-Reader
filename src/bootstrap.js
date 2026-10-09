@@ -21,7 +21,7 @@ const DEFAULT_SETTINGS = {
   readerDefaultsVersion: 3
 };
 
-const READER_VERSION = "0.0.10-alpha.4";
+const READER_VERSION = "0.0.10-alpha.19";
 const CACHE_KEY_PREFIX = "bilibli_reader_subtitle_cache_";
 globalThis.__BILIBLI_READER_CONTENT_SCRIPT_LOADED__ = READER_VERSION;
 // Data and request identity for the current video.
@@ -139,8 +139,6 @@ const uiState = {
   settingsWatcherBound: false,
   normalPageStateGuardBound: false,
   urlWatcherStarted: false,
-  pageReaderEntryObserver: null,
-  pageReaderEntrySyncTimer: 0,
   normalPageStateObserver: null,
   collectionSnapshot: null
 };
@@ -151,6 +149,7 @@ function formatLocalDate(value = Date.now()) {
 }
 
 function isReaderMode(url = location.href) {
+  if (isYouTubePage(url) && !extractYouTubeVideoId(url)) return false;
   try {
     return new URL(url).searchParams.get("bilibli_reader") === "1";
   } catch {
@@ -272,6 +271,7 @@ const ids = {
   readingChapterList: "blr-reading-chapters",
   readingTranscriptList: "blr-reading-transcript",
   readingTranscriptTailSpacer: "blr-reading-tail-spacer",
+  readingTranscriptReaderButton: "blr-reading-transcript-reader",
   readingTranscriptReturnButton: "blr-reading-transcript-return",
   readingTranscriptThemeButton: "blr-reading-transcript-theme",
   readingTranscriptQuickSubtitleSelect: "blr-reading-transcript-language",
@@ -281,6 +281,7 @@ const ids = {
   nativeTranscriptHeader: "blr-native-transcript-header",
   nativeTranscriptBody: "blr-native-transcript-body",
   nativeTranscriptControls: "blr-native-transcript-controls",
+  nativeTranscriptReaderButton: "blr-native-transcript-reader",
   nativeTranscriptReturnButton: "blr-native-transcript-return",
   nativeTranscriptThemeButton: "blr-native-transcript-theme",
   nativeTranscriptSelect: "blr-native-transcript-select",
@@ -304,6 +305,12 @@ function init() {
     return;
   }
 
+  // A full reload starts in the native view. Preserve other query parameters,
+  // the hash and history state, without navigating or restoring a reader session.
+  if (isReaderMode() && performance.getEntriesByType("navigation")[0]?.type === "reload") {
+    history.replaceState(history.state, "", stripReaderModeUrl());
+  }
+
   logInfo(`[Bilibili Reader] content script loaded, version=${READER_VERSION}`);
   ensureUiReady({ forceRecreate: true });
   installReaderDebugHelpers();
@@ -320,7 +327,6 @@ function init() {
   bindSettingsWatcher();
   bindNormalPageStateGuard();
 
-  startPageReaderEntryObserver();
   startNativeTranscriptPanelObserver();
   startUrlWatcher();
   getSettings().then((settings) => {
@@ -328,7 +334,6 @@ function init() {
     hydrateReaderStateFromSettings(settings);
     hydrateNativeTranscriptSettings(settings);
     applyReadingViewPresentation();
-
 
     scheduleNativeTranscriptPanelSync(0);
     if (shouldEnterReaderMode) {
@@ -350,7 +355,7 @@ function ensureUiReady({ forceRecreate = false } = {}) {
   if (!root) {
     root = document.createElement("div");
     root.id = ids.root;
-    root.innerHTML = buildUiHtml();
+    root.innerHTML = readerHtml(buildUiHtml());
     document.body.appendChild(root);
     uiState.uiEventsBound = false;
   }
@@ -363,7 +368,7 @@ function ensureUiReady({ forceRecreate = false } = {}) {
 
 function clearReaderPresentationAttributes() {
   const attributes = [
-    "mode", "theme", "font-scale", "font-weight", "letter-spacing", "line-height",
+    "mode", "platform", "theme", "font-scale", "font-weight", "letter-spacing", "line-height",
     "content-width", "chapter-visibility", "has-chapters", "transcript-visible",
     "timestamp-visible", "transcript-mode", "resizing"
   ];
@@ -377,62 +382,7 @@ function clearReaderModePageState() {
   clearReaderPresentationAttributes();
 }
 
-function startPageReaderEntryObserver() {
-  ensurePageReaderEntryButton();
-  if (uiState.pageReaderEntryObserver) return;
-  uiState.pageReaderEntryObserver = subscribeReaderPageChanges("entry", schedulePageReaderEntrySync);
-}
-
-function schedulePageReaderEntrySync(delayMs = 120) {
-  if (uiState.pageReaderEntrySyncTimer) {
-    return;
-  }
-  uiState.pageReaderEntrySyncTimer = window.setTimeout(() => {
-    uiState.pageReaderEntrySyncTimer = 0;
-    ensurePageReaderEntryButton();
-  }, delayMs);
-}
-
-function ensurePageReaderEntryButton() {
-  if (!extractBvid(location.href) && !isWatchlaterPage()) {
-    return;
-  }
-
-  const host = document.querySelector(
-    "#viewbox_report, .video-info-container, .video-info-title"
-  );
-  if (!host) {
-    return;
-  }
-
-  let button = document.getElementById("blr-page-reader-entry");
-  if (button && button.parentElement === host) {
-    return;
-  }
-  if (button) {
-    button.parentElement?.classList.remove("blr-page-reader-entry-host");
-    button.remove();
-  }
-
-  host.classList.add("blr-page-reader-entry-host");
-  button = document.createElement("button");
-  button.id = "blr-page-reader-entry";
-  button.type = "button";
-  button.title = "进入 Bilibili Reader 阅读模式";
-  button.setAttribute("aria-label", "进入阅读模式");
-  button.innerHTML = `
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M4.5 5.5A2.5 2.5 0 0 1 7 3h4a3 3 0 0 1 3 3v13a3 3 0 0 0-3-3H7a2.5 2.5 0 0 0-2.5 2.5z"></path>
-      <path d="M19.5 5.5A2.5 2.5 0 0 0 17 3h-1"></path>
-      <path d="M19.5 5.5v13A2.5 2.5 0 0 0 17 16h-1"></path>
-    </svg>
-    <span>阅读</span>
-  `;
-  button.addEventListener("click", onPageReaderEntryClick);
-  host.appendChild(button);
-}
-
-function onPageReaderEntryClick(event) {
+function onTranscriptReaderEntryClick(event) {
   event.preventDefault();
   event.stopPropagation();
   if (readerSessionState.open) {
@@ -445,9 +395,14 @@ function onPageReaderEntryClick(event) {
   ensureUiReady();
 
   enterReaderMode({ animate: true }).catch((error) => {
+    if (readerSessionState.open) {
+      readerSessionState.transition?.cancel();
+      replaceReaderModeUrl(stripReaderModeUrl());
+      closeReadingView();
+    }
     button.disabled = false;
     button.classList.remove("is-loading");
-    logWarn("[Bilibili Reader] page entry failed", error);
+    logWarn("[Bilibili Reader] transcript entry failed", error);
     renderReadingStatus(`阅读视图启动失败：${getErrorMessage(error)}`);
   });
 }

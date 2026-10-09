@@ -2,7 +2,7 @@
 // @name         Bilibili Reader｜哔哩哔哩阅读模式
 // @namespace    https://github.com/bilibli-reader
 // @version      __BLR_VERSION__
-// @description  将 B 站视频切换为视频、章节与字幕联动的阅读视图
+// @description  B 站与 YouTube 阅读模式，支持连续字幕、章节联动、点击跳转与语言切换
 // @author       Wow-CaiCai
 // @license      MIT
 // @homepageURL  https://github.com/Wow-CaiCai/Bilibli-Reader
@@ -13,6 +13,8 @@
 // @match        https://www.bilibili.com/video/*
 // @match        https://www.bilibili.com/watchlater/*
 // @match        https://www.bilibili.com/list/watchlater*
+// @match        https://www.youtube.com/*
+// @match        https://youtube.com/*
 // @icon         data:image/png;base64,__BLR_ICON__
 // @run-at       document-idle
 // @grant        GM_addStyle
@@ -29,6 +31,8 @@
 // @connect      i1.hdslb.com
 // @connect      i2.hdslb.com
 // @connect      *.hdslb.com
+// @connect      www.youtube.com
+// @connect      youtube.com
 // ==/UserScript==
 
 (() => {
@@ -114,13 +118,23 @@
     if (message?.type === "fetch-json") {
       return { ok: true, data: await requestJson(String(message.url || "")) };
     }
+    if (message?.type === "fetch-text") {
+      return { ok: true, data: await requestResource(String(message.url || ""), true) };
+    }
     return { ok: false, error: "此功能在独立阅读脚本中不可用" };
   }
 
   async function requestJson(url) {
+    return requestResource(url);
+  }
+
+  async function requestResource(url, asText = false) {
     if (!url) throw new Error("缺少请求地址");
     const normalizedUrl = url.startsWith("//") ? `https:${url}` : url;
-    const deadline = Date.now() + 20000;
+    const parsedUrl = new URL(normalizedUrl);
+    const isYouTubeSubtitle = asText && /(^|\.)youtube\.com$/.test(parsedUrl.hostname) &&
+      parsedUrl.pathname === "/api/timedtext";
+    const deadline = Date.now() + (isYouTubeSubtitle ? 3500 : 20000);
     const controller = new AbortController();
     let timeout = 0;
     let directError = null;
@@ -139,13 +153,13 @@
             signal: controller.signal
           });
           if (!response.ok) throw new Error(`页面请求 HTTP ${response.status}`);
-          return response.json();
+          return asText ? response.text() : response.json();
         })(),
         new Promise((_, reject) => {
           timeout = window.setTimeout(() => {
             reject(new Error("页面请求超时"));
             controller.abort();
-          }, 5000);
+          }, isYouTubeSubtitle ? 1500 : 5000);
         })
       ]);
     } catch (error) {
@@ -154,10 +168,10 @@
       window.clearTimeout(timeout);
     }
 
-    return requestJsonWithUserscriptApi(normalizedUrl, directError, Math.max(1, deadline - Date.now()));
+    return requestJsonWithUserscriptApi(normalizedUrl, directError, Math.max(1, deadline - Date.now()), asText);
   }
 
-  function requestJsonWithUserscriptApi(url, directError, timeoutMs) {
+  function requestJsonWithUserscriptApi(url, directError, timeoutMs, asText = false) {
     return new Promise((resolve, reject) => {
       let settled = false;
       let timeout = 0;
@@ -171,6 +185,10 @@
       const onload = (response) => {
         if (response.status < 200 || response.status >= 300) {
           finish(reject, new Error(`HTTP ${response.status}`));
+          return;
+        }
+        if (asText) {
+          finish(resolve, response.responseText || response.response || "");
           return;
         }
         try {
@@ -197,7 +215,8 @@
         headers: {
           Accept: "application/json, text/plain, */*",
           "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
-          Referer: "https://www.bilibili.com/"
+          Referer: /(^|\.)youtube\.com$/.test(new URL(url).hostname)
+            ? "https://www.youtube.com/" : "https://www.bilibili.com/"
         },
         responseType: "text",
         anonymous: false,
@@ -252,7 +271,8 @@
     });
   }
 
-  GM_registerMenuCommand("进入阅读模式", () => {
+  const isYouTube = ["www.youtube.com", "youtube.com"].includes(location.hostname);
+  GM_registerMenuCommand(isYouTube ? "展开 YouTube 字幕" : "进入阅读模式", () => {
     const readerUrl = new URL(location.href);
     readerUrl.searchParams.set("bilibli_reader", "1");
     dispatchRuntimeMessage({
@@ -261,7 +281,12 @@
     });
   });
 
-  GM_registerMenuCommand("退出阅读模式", () => {
+  GM_registerMenuCommand(isYouTube ? "收起 YouTube 字幕" : "退出阅读模式", () => {
+    if (isYouTube) {
+      const panel = document.getElementById("blr-native-transcript-panel");
+      if (panel && !panel.classList.contains("is-folded")) panel.querySelector("[data-native-transcript-toggle]")?.click();
+      return;
+    }
     const closeButton = document.getElementById("blr-reading-close-btn");
     if (closeButton) closeButton.click();
   });

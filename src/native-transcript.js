@@ -29,10 +29,11 @@ function scheduleNativeTranscriptPanelSync(delayMs = 120) {
 }
 
 function shouldShowNativeTranscriptPanel() {
-  return Boolean(extractBvid(location.href)) && !isReaderMode() && !readerSessionState.open;
+  return isSupportedTranscriptPage() && !isReaderMode() && !readerSessionState.open;
 }
 
 function findNativeTranscriptAnchor() {
+  if (isYouTubePage()) return document.querySelector("ytd-watch-flexy #secondary-inner #related");
   const danmaku = document.getElementById("danmukuBox") || document.querySelector(".danmaku-box");
   const rightContainer = danmaku?.closest(".right-container-inner");
   const collaborationPanel = rightContainer?.querySelector(
@@ -45,6 +46,7 @@ function findNativeTranscriptAnchor() {
 function ensureNativeTranscriptPanel() {
   const existing = document.getElementById(ids.nativeTranscriptPanel);
   if (!shouldShowNativeTranscriptPanel()) {
+    existing?.parentElement?.removeAttribute("data-blr-youtube-transcript-open");
     stopNativeTranscriptPlaybackSync();
     nativeTranscriptState.resizeObserver?.disconnect();
     nativeTranscriptState.observedPlayer = null;
@@ -64,7 +66,7 @@ function ensureNativeTranscriptPanel() {
     panel.id = ids.nativeTranscriptPanel;
     panel.className = "blr-native-transcript-panel";
     panel.setAttribute("data-blr-extension-node", "native-transcript");
-    panel.innerHTML = `
+    panel.innerHTML = readerHtml(`
       <div id="${ids.nativeTranscriptHeader}" class="blr-native-transcript-header">
         <button
           class="blr-native-transcript-title-button"
@@ -74,6 +76,16 @@ function ensureNativeTranscriptPanel() {
           aria-expanded="true"
         >字幕</button>
         <div id="${ids.nativeTranscriptControls}" class="blr-native-transcript-controls">
+          <button
+            id="${ids.nativeTranscriptReaderButton}"
+            class="blr-native-transcript-reader-button"
+            type="button"
+            title="进入阅读模式"
+            aria-label="进入阅读模式"
+            aria-pressed="false"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5.5C9 3.5 5.5 3.5 2.5 4.5v15c3-1 6.5-1 9.5 1 3-2 6.5-2 9.5-1v-15c-3-1-6.5-1-9.5 1Z"/><path d="M12 5.5v15M5.5 8h3M5.5 11.5h3M15.5 8h3M15.5 11.5h3"/></svg>
+          </button>
           <button
             id="${ids.nativeTranscriptReturnButton}"
             class="blr-native-transcript-return-button"
@@ -122,13 +134,15 @@ function ensureNativeTranscriptPanel() {
       <div id="${ids.nativeTranscriptBody}" class="blr-native-transcript-body">
         <div class="blr-native-transcript-state">正在加载字幕...</div>
       </div>
-    `;
+    `);
     bindNativeTranscriptPanelEvents(panel);
   }
 
   if (panel.parentElement !== anchor.parentElement || panel.nextElementSibling !== anchor) {
+    panel.parentElement?.removeAttribute("data-blr-youtube-transcript-open");
     anchor.insertAdjacentElement("beforebegin", panel);
   }
+  panel.dataset.platform = isYouTubePage() ? "youtube" : "bilibili";
 
   panel.classList.toggle(
     "is-collaboration-layout",
@@ -136,6 +150,7 @@ function ensureNativeTranscriptPanel() {
   );
 
   setNativeTranscriptExpanded(panel, nativeTranscriptState.open);
+  if (created && isYouTubePage()) nativeTranscriptState.observedPlayer = null;
   bindNativeTranscriptPanelResize();
   const playerRect = syncNativeTranscriptPanelAlignment();
   syncNativeTranscriptPanelHeight(playerRect);
@@ -146,6 +161,7 @@ function ensureNativeTranscriptPanel() {
 
 function bindNativeTranscriptPanelEvents(panel) {
   const body = panel.querySelector(`#${ids.nativeTranscriptBody}`);
+  panel.querySelector(`#${ids.nativeTranscriptReaderButton}`)?.addEventListener("click", onTranscriptReaderEntryClick);
   const returnButton = panel.querySelector(`#${ids.nativeTranscriptReturnButton}`);
   const themeButton = panel.querySelector(`#${ids.nativeTranscriptThemeButton}`);
   const toggle = () => {
@@ -228,6 +244,9 @@ function setNativeTranscriptExpanded(panel, expanded) {
   }
   const isExpanded = Boolean(expanded) && !isNativeTranscriptEmpty();
   panel.classList.toggle("is-folded", !isExpanded);
+  if (isYouTubePage()) {
+    panel.parentElement?.toggleAttribute("data-blr-youtube-transcript-open", isExpanded);
+  }
   panel.querySelectorAll("[data-native-transcript-toggle]").forEach((button) => {
     const value = String(isExpanded);
     if (button.getAttribute("aria-expanded") !== value) button.setAttribute("aria-expanded", value);
@@ -345,7 +364,7 @@ function renderNativeTranscriptHeaderControls(panel) {
             })
             .join("")
         : '<option value="">字幕</option>';
-      languageSelect.innerHTML = optionsHtml;
+      languageSelect.innerHTML = readerHtml(optionsHtml);
       nativeTranscriptLanguageCache.set(languageSelect, {
         tracks: clipState.subtitles, selectedId: clipState.selectedSubtitleId, selectedUrl: selectedUrlKey
       });
@@ -405,12 +424,12 @@ function renderNativeTranscriptPanel({ force = false } = {}) {
   invalidateReaderNodeCache(document.getElementById(ids.nativeTranscriptList));
   if (transcriptItems.length === 0) {
     const retry = clipState.subtitleFetchState === "error";
-    body.innerHTML = `
+    body.innerHTML = readerHtml(`
       <div class="blr-native-transcript-state${retry ? " is-error" : ""}">
         <span>${escapeHtml(getNativeTranscriptPlaceholderText())}</span>
         ${retry ? '<button type="button" data-native-transcript-retry>重试</button>' : ""}
       </div>
-    `;
+    `);
     nativeTranscriptState.activeIndex = -1;
     stopNativeTranscriptPlaybackSync();
     return;
@@ -434,11 +453,11 @@ function renderNativeTranscriptPanel({ force = false } = {}) {
     </div>
   `;
 
-  body.innerHTML = `
+  body.innerHTML = readerHtml(`
     <div id="${ids.nativeTranscriptList}" class="blr-native-transcript-list">
       ${transcriptHtml}
     </div>
-  `;
+  `);
   nativeTranscriptState.activeIndex = -1;
   startNativeTranscriptPlaybackSync();
   syncNativeTranscriptPlayback(true);
@@ -517,7 +536,7 @@ function autoFoldNativeTranscriptIfEmpty(signature = computeCurrentClipSignature
 }
 
 function bindNativeTranscriptPanelResize() {
-  const player = document.getElementById("playerWrap") || document.getElementById("bilibili-player");
+  const player = getNativeTranscriptPlayerNode();
   if (!player || nativeTranscriptState.observedPlayer === player) {
     return;
   }
@@ -532,12 +551,21 @@ function bindNativeTranscriptPanelResize() {
     restoreTranscriptScrollAnchor(scrollAnchor);
   });
   nativeTranscriptState.resizeObserver.observe(player);
+  if (isYouTubePage()) {
+    const header = document.getElementById(ids.nativeTranscriptHeader);
+    if (header) nativeTranscriptState.resizeObserver.observe(header);
+  }
   nativeTranscriptState.observedPlayer = player;
 }
 
 function getNativeTranscriptPlayerRect() {
-  const player = document.getElementById("playerWrap") || document.getElementById("bilibili-player");
+  const player = getNativeTranscriptPlayerNode();
   return player?.getBoundingClientRect() || null;
+}
+
+function getNativeTranscriptPlayerNode() {
+  return isYouTubePage() ? document.getElementById("movie_player") :
+    document.getElementById("playerWrap") || document.getElementById("bilibili-player");
 }
 
 function syncNativeTranscriptPanelAlignment() {
@@ -573,9 +601,12 @@ function syncNativeTranscriptPanelHeight(playerRect = getNativeTranscriptPlayerR
   if (!(playerHeight > 120)) {
     return;
   }
+  const headerHeight = isYouTubePage()
+    ? (panel.querySelector(`#${ids.nativeTranscriptHeader}`)?.getBoundingClientRect().height || 44) + 8
+    : 56;
   setReaderStyle(panel,
     "--blr-native-transcript-body-height",
-    `${Math.max(0, Math.round(playerHeight - 56))}px`
+    `${Math.max(0, Math.round(playerHeight - headerHeight))}px`
   );
 }
 

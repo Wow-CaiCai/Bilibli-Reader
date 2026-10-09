@@ -13,6 +13,7 @@ SOURCE_PATHS = tuple(
     ROOT / "src" / name
     for name in (
         "bootstrap.js",
+        "youtube-data.js",
         "page-observer.js",
         "reader-session.js",
         "reader-layout.js",

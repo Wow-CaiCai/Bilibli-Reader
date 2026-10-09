@@ -1,4 +1,6 @@
 async function enterReaderMode({ animate = false } = {}) {
+  if (readerSessionState.open) return;
+  if (isYouTubePage() && !extractYouTubeVideoId()) return;
   readerSessionState.transition?.cancel();
   const sessionId = invalidateReaderSession();
   const open = () => {
@@ -257,9 +259,6 @@ function invalidateReaderSession() {
   readerSessionState.layoutDirty = false;
   clearReaderMountTimers();
   clearReaderPlayerTimers();
-  document.querySelectorAll("[data-blr-reader-fading]").forEach((node) => {
-    node.removeAttribute("data-blr-reader-fading");
-  });
   return readerSessionState.id;
 }
 
@@ -271,33 +270,20 @@ async function prepareReaderMode(sessionId = readerSessionState.id) {
   const readingView = byId(ids.readingView);
   readerSessionState.open = true;
   stopNativeTranscriptPlaybackSync();
+  ensureNativeTranscriptPanel();
   document.body.setAttribute("data-blr-reading-active", "1");
   hydrateReaderStateFromSettings(readerPreferences.settings);
   // Each entry gives the video its largest fitted size before allocating subtitles.
   readerSessionState.transcriptAutoWidth = true;
   applyReadingViewPresentation();
   alignReaderViewportToPlayer();
-  await sleep(0);
-  if (!isReaderSessionActive(sessionId)) return;
   openReaderViewShell(readingView);
   applyReaderPageFocus();
   renderReadingView();
 
-  const earlyPlayerHost = findReaderPlayerHost(getRuntimeVideoElement());
-  if (earlyPlayerHost) {
-    earlyPlayerHost.setAttribute("data-blr-reader-fading", "1");
-  }
-
-  await sleep(0);
-  if (!isReaderSessionActive(sessionId)) return;
-
   // Try to mount player, with more retries for slower pages (like watch later)
   const mounted = await ensureReaderPlayerMounted({ retries: 50, delayMs: 150, forceLayout: true });
   if (!isReaderSessionActive(sessionId)) return;
-  const mountedPlayerHost = readerPlayerState.host || earlyPlayerHost;
-  if (mountedPlayerHost) {
-    mountedPlayerHost.removeAttribute("data-blr-reader-fading");
-  }
   if (!mounted) {
     // Don't throw - keep UI open and keep retrying in background
     renderReadingStatus("正在等待视频播放器就绪...");
@@ -320,10 +306,6 @@ function scheduleReaderPlayerRetry() {
     if (!isReaderSessionActive(sessionId)) return;
     const mounted = await ensureReaderPlayerMounted({ retries: 10, delayMs: 200, forceLayout: true });
     if (!isReaderSessionActive(sessionId)) return;
-    const retryHost = readerPlayerState.host;
-    if (retryHost) {
-      retryHost.removeAttribute("data-blr-reader-fading");
-    }
     if (mounted) {
       finishEnterReaderMode();
     } else if (readerSessionState.open) {
@@ -428,6 +410,13 @@ async function mountReaderPlayer({ retries = 1, delayMs = 100, forceLayout = fal
     const video = getRuntimeVideoElement();
     const playerHost = findReaderPlayerHost(video);
     if (video && playerHost) {
+      if (isYouTubePage()) {
+        readerPlayerState.host = playerHost;
+        bindReadingViewVideo(video);
+        bindReaderLayout();
+        layoutReaderPlayerHost();
+        return true;
+      }
       const previousHost = readerPlayerState.host;
       const previousVideo = readerPlayerState.videoEl;
       video.controls = false;
@@ -537,11 +526,6 @@ function closeReadingView() {
   readingView.setAttribute("data-blr-reader-ready", "0");
   readingView.removeAttribute("data-blr-reader-follow");
   clearReaderPresentationAttributes();
-  const pageReaderEntry = document.getElementById("blr-page-reader-entry");
-  if (pageReaderEntry) {
-    pageReaderEntry.disabled = false;
-    pageReaderEntry.classList.remove("is-loading");
-  }
   [document.documentElement, document.body, readingView].forEach((node) => {
     node.style.removeProperty("--blr-reader-rail-width");
     node.style.removeProperty("--blr-reader-transcript-width");

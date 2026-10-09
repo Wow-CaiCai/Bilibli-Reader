@@ -27,7 +27,7 @@ function renderReadingView() {
     chapters.some((item) => Math.max(Number(item.from) || 0, Number(item.to) || 0) >= 3600);
   updateReaderChapterPresence(chapters.length > 0);
 
-  const title = clipState.title || "B站字幕阅读";
+  const title = clipState.title || (isYouTubePage() ? "YouTube 字幕阅读" : "B站字幕阅读");
   if (titleNode && titleNode.textContent !== title) titleNode.textContent = title;
   if (pageTitleNode) {
     if (pageTitleNode.textContent !== title) pageTitleNode.textContent = title;
@@ -42,7 +42,7 @@ function renderReadingView() {
   });
   if (chaptersChanged) {
     invalidateReaderNodeCache(chapterList);
-    chapterList.innerHTML = chapters.length === 0
+    chapterList.innerHTML = readerHtml(chapters.length === 0
       ? '<div class="blr-reading-empty">当前视频没有章节。</div>'
       : chapters.map((item, index) => `
           <button type="button" class="blr-reading-chapter" data-index="${index}"
@@ -50,7 +50,7 @@ function renderReadingView() {
             <span class="blr-reading-chapter-time">${escapeHtml(formatCompactTimestamp(item.from, withHours))}</span>
             <span class="blr-reading-chapter-title">${escapeHtml(item.title)}</span>
           </button>
-        `).join("");
+        `).join(""));
     readerSessionState.activeChapterIndex = -1;
   }
 
@@ -62,9 +62,9 @@ function renderReadingView() {
   if (transcriptChanged) {
     invalidateReaderNodeCache(transcriptList);
     if (transcriptItems.length === 0) {
-      transcriptList.innerHTML = `<div class="blr-reading-empty">${escapeHtml(placeholder)}</div>`;
+      transcriptList.innerHTML = readerHtml(`<div class="blr-reading-empty">${escapeHtml(placeholder)}</div>`);
     } else {
-      transcriptList.innerHTML = `
+      transcriptList.innerHTML = readerHtml(`
         <div class="blr-reading-complete" role="document">
           ${transcriptItems.map((item) => `
               <button type="button" class="blr-reading-complete-segment"
@@ -74,7 +74,7 @@ function renderReadingView() {
             `).join(" ")}
         </div>
         <div id="${ids.readingTranscriptTailSpacer}" class="blr-reading-tail-spacer" aria-hidden="true"></div>
-      `;
+      `);
     }
     readerSessionState.activeSubtitleIndex = -1;
     // Only newly created text needs an immediate initial position.
@@ -107,7 +107,7 @@ function renderReadingCollection() {
     episodeTitle.textContent = "";
     episodeTitle.removeAttribute("title");
     collectionNav.hidden = true;
-    collectionList.innerHTML = "";
+    collectionList.replaceChildren();
     return;
   }
 
@@ -116,7 +116,7 @@ function renderReadingCollection() {
   episodeTitle.textContent = currentEpisode?.title || clipState.pageTitle || clipState.title || "";
   episodeTitle.hidden = !episodeTitle.textContent;
   episodeTitle.title = episodeTitle.textContent;
-  collectionList.innerHTML = episodes
+  collectionList.innerHTML = readerHtml(episodes
     .map((episode, index) => {
       const isCurrent = index === currentIndex;
       const label = episode.title || `第 ${index + 1} 集`;
@@ -136,7 +136,7 @@ function renderReadingCollection() {
         </button>
       `;
     })
-    .join("");
+    .join(""));
 
   collectionNav.hidden = false;
   const sessionId = readerSessionState.id;
@@ -201,6 +201,21 @@ function setReaderDatasetValue(node, key, value) {
   if (node.dataset[key] !== value) node.dataset[key] = value;
 }
 
+function applyReaderRootPresentation(node) {
+  if (!node) return;
+  const values = {
+    Theme: readerPreferences.theme,
+    FontScale: readerPreferences.fontScale,
+    FontWeight: readerPreferences.fontWeight,
+    LetterSpacing: readerPreferences.letterSpacing,
+    LineHeight: readerPreferences.lineHeight,
+    ContentWidth: readerPreferences.contentWidth,
+    ChapterVisibility: readerPreferences.chapterVisible ? "auto" : "hide",
+    TranscriptVisible: readerPreferences.transcriptVisible ? "1" : "0"
+  };
+  Object.entries(values).forEach(([name, value]) => setReaderDatasetValue(node, `blrReader${name}`, value));
+}
+
 function applyReadingViewPresentation() {
   const readingView = byId(ids.readingView);
   setReaderDatasetValue(readingView, "theme", readerPreferences.theme);
@@ -211,22 +226,11 @@ function applyReadingViewPresentation() {
   setReaderDatasetValue(readingView, "contentWidth", readerPreferences.contentWidth);
   setReaderDatasetValue(readingView, "chapterVisibility", readerPreferences.chapterVisible ? "auto" : "hide");
   setReaderDatasetValue(readingView, "transcriptVisible", readerPreferences.transcriptVisible ? "1" : "0");
-  setReaderDatasetValue(document.documentElement, "blrReaderTheme", readerPreferences.theme);
-  setReaderDatasetValue(document.documentElement, "blrReaderFontScale", readerPreferences.fontScale);
-  setReaderDatasetValue(document.documentElement, "blrReaderFontWeight", readerPreferences.fontWeight);
-  setReaderDatasetValue(document.documentElement, "blrReaderLetterSpacing", readerPreferences.letterSpacing);
-  setReaderDatasetValue(document.documentElement, "blrReaderLineHeight", readerPreferences.lineHeight);
-  setReaderDatasetValue(document.documentElement, "blrReaderContentWidth", readerPreferences.contentWidth);
-  setReaderDatasetValue(document.documentElement, "blrReaderChapterVisibility", readerPreferences.chapterVisible ? "auto" : "hide");
-  setReaderDatasetValue(document.documentElement, "blrReaderTranscriptVisible", readerPreferences.transcriptVisible ? "1" : "0");
-  setReaderDatasetValue(document.body, "blrReaderTheme", readerPreferences.theme);
-  setReaderDatasetValue(document.body, "blrReaderFontScale", readerPreferences.fontScale);
-  setReaderDatasetValue(document.body, "blrReaderFontWeight", readerPreferences.fontWeight);
-  setReaderDatasetValue(document.body, "blrReaderLetterSpacing", readerPreferences.letterSpacing);
-  setReaderDatasetValue(document.body, "blrReaderLineHeight", readerPreferences.lineHeight);
-  setReaderDatasetValue(document.body, "blrReaderContentWidth", readerPreferences.contentWidth);
-  setReaderDatasetValue(document.body, "blrReaderChapterVisibility", readerPreferences.chapterVisible ? "auto" : "hide");
-  setReaderDatasetValue(document.body, "blrReaderTranscriptVisible", readerPreferences.transcriptVisible ? "1" : "0");
+  applyReaderRootPresentation(document.documentElement);
+  applyReaderRootPresentation(document.body);
+  [document.documentElement, document.body].forEach((node) => {
+    setReaderDatasetValue(node, "blrReaderPlatform", isYouTubePage() ? "youtube" : "bilibili");
+  });
   applyReaderColumnLayout();
   const main = document.querySelector(".blr-reading-main");
   if (main) {
@@ -314,7 +318,7 @@ function buildReadingMetaLine() {
   if (clipState.uploadDate) {
     parts.push(clipState.uploadDate);
   }
-  parts.push("bilibili.com");
+  parts.push(isYouTubePage() ? "youtube.com" : "bilibili.com");
   if (Number(clipState.pageCount) > 1) {
     const pageParts = [`P${Number(clipState.pageIndex) > 0 ? Number(clipState.pageIndex) : 1}`];
     if (clipState.pageTitle) {
@@ -474,6 +478,7 @@ function startReadingViewSync() {
     window.clearInterval(readerSessionState.syncTimer);
   }
   readerSessionState.syncTimer = window.setInterval(() => {
+    syncYouTubeReadingChapters();
     syncReadingViewPlayback();
     scheduleReaderLayout();
   }, 1500);
@@ -497,7 +502,7 @@ function applyReaderPageFocus() {
   const root = byId(ids.root);
   const video = getRuntimeVideoElement();
   const playerHost = findReaderPlayerHost(video);
-  const titleNode = findReaderTitleContainer();
+  const titleNode = isYouTubePage() ? null : findReaderTitleContainer();
   const inlineHost = document.getElementById("blr-reading-inline-host");
   const keepRoots = [root, inlineHost, playerHost, titleNode].filter(Boolean);
 
@@ -576,9 +581,9 @@ function moveReadingMainInline() {
     transcriptHeading.className = "blr-reading-transcript-heading";
     transcriptHeading.setAttribute("role", "heading");
     transcriptHeading.setAttribute("aria-level", "2");
-    transcriptHeading.innerHTML = buildReadingTranscriptHeadingHtml();
+    transcriptHeading.innerHTML = readerHtml(buildReadingTranscriptHeadingHtml());
   } else if (!transcriptHeading.querySelector(".blr-reading-transcript-heading-controls")) {
-    transcriptHeading.innerHTML = buildReadingTranscriptHeadingHtml();
+    transcriptHeading.innerHTML = readerHtml(buildReadingTranscriptHeadingHtml());
   }
   if (transcriptHeading.parentElement !== inlineHost || inlineHost.firstElementChild !== transcriptHeading) {
     inlineHost.prepend(transcriptHeading);
@@ -674,7 +679,7 @@ function hideReaderNoiseNodes(keepRoots = []) {
     }
     if (
       node.closest(
-        "#bilibili-player, .bpx-player-container, .bpx-player-video-area, .bpx-player-primary-area, #blr-root, h1.video-title, .video-info-detail, .video-info-meta, .video-data"
+        "#movie_player, #bilibili-player, .bpx-player-container, .bpx-player-video-area, .bpx-player-primary-area, #blr-root, h1.video-title, .video-info-detail, .video-info-meta, .video-data"
       )
     ) {
       return;

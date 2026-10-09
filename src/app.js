@@ -233,6 +233,14 @@ function startUrlWatcher() {
       return;
     }
 
+    // YouTube also navigates to home/search without replacing the document.
+    if (isYouTubePage(nextUrl) && !extractYouTubeVideoId(nextUrl) && readerSessionState.open) {
+      readerSessionState.transition?.cancel();
+      replaceReaderModeUrl(stripReaderModeUrl(nextUrl));
+      closeReadingView();
+      nextUrl = location.href;
+    }
+
     // Native episode navigation can drop the reader query. Keep an open
     // reader session active across clip changes before starting its new run.
     if (readerSessionState.open && !isReaderMode(nextUrl)) {
@@ -278,6 +286,14 @@ function startUrlWatcher() {
     ensureNativeTranscriptLoaded({ force: true });
   };
   window.addEventListener("popstate", checkCurrentClip);
+  window.addEventListener("yt-navigate-finish", () => {
+    checkCurrentClip();
+    scheduleNativeTranscriptPanelSync(0);
+    if (readerSessionState.open) {
+      queueEnsureReaderPlayerMounted();
+      applyReaderPageFocus();
+    }
+  });
   window.setInterval(checkCurrentClip, 250);
 }
 
@@ -382,6 +398,13 @@ async function refreshClipData() {
     const settings = await getSettings();
     ensureSubtitleRequestActive(request);
     readerPreferences.settings = settings;
+
+    if (isYouTubePage(clipUrl)) {
+      await refreshYouTubeClipData(extractYouTubeVideoId(clipUrl), request);
+      ensureSubtitleRequestActive(request);
+      await refreshOpenReadingView("抓取完成，阅读视图已同步最新字幕。", runId, request);
+      return;
+    }
 
     const bvid = extractBvid(clipUrl);
     clipState.bvid = bvid;
@@ -706,6 +729,13 @@ function normalizeSubtitleUrlForCache(url) {
 
   try {
     const parsed = new URL(text);
+    if (parsed.pathname === "/api/timedtext" && isYouTubePage(parsed.origin)) {
+      // YouTube languages share a path; keep their stable identity while
+      // excluding expiring signatures and proof-of-origin tokens.
+      return `${parsed.hostname}${parsed.pathname}?${new URLSearchParams(
+        ["v", "lang", "kind", "name", "tlang"].map((key) => [key, parsed.searchParams.get(key) || ""])
+      )}`;
+    }
     const path = parsed.pathname.replace(/[^\w/.-]+/g, "_");
     return `${parsed.hostname}${path}`;
   } catch {
@@ -747,6 +777,9 @@ function buildReadingTranscriptHeadingHtml() {
   return `
     <span class="blr-reading-transcript-heading-title">字幕</span>
     <div class="blr-reading-transcript-heading-controls">
+      <button id="${ids.readingTranscriptReaderButton}" class="blr-reading-transcript-tool-button is-active" type="button" title="返回普通模式" aria-label="切换到普通模式" aria-pressed="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5.5C9 3.5 5.5 3.5 2.5 4.5v15c3-1 6.5-1 9.5 1 3-2 6.5-2 9.5-1v-15c-3-1-6.5-1-9.5 1Z"/><path d="M12 5.5v15M5.5 8h3M5.5 11.5h3M15.5 8h3M15.5 11.5h3"/></svg>
+      </button>
       <button id="${ids.readingTranscriptReturnButton}" class="blr-reading-transcript-tool-button" type="button" title="回到当前字幕" aria-label="回到当前字幕">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
       </button>
@@ -792,7 +825,7 @@ function syncReadingTranscriptHeaderControls() {
   const previous = readingTranscriptLanguageCache.get(languageSelect);
   if (!previous || previous.tracks !== clipState.subtitles ||
       previous.selectedId !== clipState.selectedSubtitleId || previous.selectedUrl !== selectedUrlKey) {
-    languageSelect.innerHTML = clipState.subtitles.length
+    languageSelect.innerHTML = readerHtml(clipState.subtitles.length
       ? clipState.subtitles
           .map((item) => {
             const selected =
@@ -805,7 +838,7 @@ function syncReadingTranscriptHeaderControls() {
             }>${escapeHtml(item.lanDoc || item.lan || "字幕")}</option>`;
           })
           .join("")
-      : '<option value="">字幕</option>';
+      : '<option value="">字幕</option>');
     readingTranscriptLanguageCache.set(languageSelect, {
       tracks: clipState.subtitles, selectedId: clipState.selectedSubtitleId, selectedUrl: selectedUrlKey
     });
@@ -835,6 +868,16 @@ function bindReadingTranscriptHeaderControls(heading) {
   if (!heading || heading.dataset.blrControlsBound === "1") {
     return;
   }
+  heading.querySelector(`#${ids.readingTranscriptReaderButton}`)?.addEventListener("click", (event) => {
+    const button = event.currentTarget;
+    if (readerSessionState.closing) return;
+    button.disabled = true;
+    exitReaderMode().catch((error) => {
+      logWarn("[Bilibili Reader] transcript mode switch failed", error);
+    }).finally(() => {
+      if (button.isConnected) button.disabled = false;
+    });
+  });
   heading.querySelector(`#${ids.readingTranscriptReturnButton}`)?.addEventListener("click", (event) => {
     const button = event.currentTarget;
     returnReadingTranscriptToCurrent();

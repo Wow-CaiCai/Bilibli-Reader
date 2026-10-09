@@ -1,5 +1,6 @@
 
 function computeCurrentClipSignature(url = location.href) {
+  if (isYouTubePage(url)) return `youtube|${extractYouTubeVideoId(url)}`;
   const bvid = extractBvid(url);
   const page = extractPageIndex(url);
   return [bvid, page].map((item) => String(item || "").trim()).join("|");
@@ -84,7 +85,9 @@ async function refreshOpenReadingView(statusText, runId = clipState.fetchRunId, 
     return;
   }
 
-  setReadingViewReady(false);
+  // Updating subtitle data does not make an already stable player unready.
+  // Hiding the shell here made a direct-reader reload flash a second time.
+  if (!isReaderPresentationStable()) setReadingViewReady(false);
   const readingView = document.getElementById(ids.readingView);
   if (!readingView?.classList.contains("open")) openReaderViewShell(readingView);
   let mounted = false;
@@ -986,6 +989,7 @@ function readRuntimeVideoDuration() {
 }
 
 async function fetchSubtitleBody(url) {
+  if (isYouTubePage()) return { body: await fetchYouTubeSubtitleBody(url) };
   logInfo("[BOC] fetch subtitle body", { url });
   return fetchJson(url);
 }

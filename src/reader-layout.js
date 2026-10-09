@@ -264,6 +264,37 @@ function unbindReaderLayout() {
   readerPlayerState.layoutBound = false;
 }
 
+// Size YouTube with scoped CSS while keeping its player in the native DOM.
+// Its inline dimensions and controls belong to YouTube and survive reader exit.
+function layoutYouTubeReaderPlayer() {
+  if (document.fullscreenElement) return;
+  const columns = getEffectiveReaderColumnWidths();
+  applyReaderColumnLayout(columns);
+  const padding = getReaderPagePaddingPx();
+  const top = 98;
+  const desktop = window.innerWidth > 1180;
+  const hasChapters = readerPreferences.chapterVisible && getCachedReadingChapters().length > 0;
+  const availableWidth = desktop
+    ? window.innerWidth - padding * 2 - columns.transcriptWidth - columns.gap
+    : window.innerWidth - padding * 2;
+  const availableHeight = desktop
+    ? window.innerHeight - top - (hasChapters ? 148 : 24)
+    : Math.min(window.innerHeight * 0.4, window.innerHeight - top - 240 - (hasChapters ? 128 : 0));
+  const ratio = getReaderVideoAspectRatio();
+  const width = Math.max(1, Math.min(availableWidth, Math.max(1, availableHeight) * ratio));
+  const height = width / ratio;
+  const left = desktop ? padding : (window.innerWidth - width) / 2;
+  [document.documentElement, document.body, byId(ids.readingView)].forEach((node) => {
+    setReaderStyle(node, "--blr-reader-player-left", `${Math.round(left)}px`);
+    setReaderStyle(node, "--blr-reader-player-top", `${top}px`);
+    setReaderStyle(node, "--blr-reader-player-bottom", `${Math.round(top + height)}px`);
+    setReaderStyle(node, "--blr-reader-player-width", `${width}px`);
+    setReaderStyle(node, "--blr-reader-player-rendered-width", `${width}px`);
+    setReaderStyle(node, "--blr-reader-player-rendered-height", `${height}px`);
+  });
+  updateReadingTranscriptTailSpacer();
+}
+
 function layoutReaderPlayerHost() {
   if (!readerSessionState.open || !isReaderMode()) {
     return;
@@ -274,6 +305,10 @@ function layoutReaderPlayerHost() {
     return;
   }
   readerSessionState.layoutDirty = false;
+  if (isYouTubePage()) {
+    layoutYouTubeReaderPlayer();
+    return;
+  }
   const readingView = byId(ids.readingView);
   const columns = getEffectiveReaderColumnWidths();
   applyReaderColumnLayout(columns);

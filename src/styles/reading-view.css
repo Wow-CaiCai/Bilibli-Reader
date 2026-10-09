@@ -993,10 +993,6 @@ body[data-blr-reading-active="1"] .bpx-player-sending-bar {
   display: none !important;
 }
 
-body[data-blr-reading-active="1"] [data-blr-reader-fading] {
-  visibility: hidden !important;
-}
-
 body[data-blr-reader-mode="1"] #blr-reading-view {
   background: transparent;
 }
@@ -1715,4 +1711,245 @@ body[data-blr-reader-mode="1"] [class*="picture-in-picture"] {
   }
 }
 
-/* Timestamp-free transcript rows must not retain the desktop time column. */
+/* YouTube reader: keep the native player mounted and let it own its controls. */
+html[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"],
+body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] {
+  overflow: hidden !important;
+}
+
+body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] :is(
+  ytd-app, #content.ytd-app, ytd-page-manager, ytd-watch-flexy,
+  #full-bleed-container.ytd-watch-flexy, #columns.ytd-watch-flexy,
+  #primary.ytd-watch-flexy, #primary-inner.ytd-watch-flexy,
+  #player.ytd-watch-flexy, #player-container-outer.ytd-watch-flexy,
+  #player-container-inner.ytd-watch-flexy, #player-container.ytd-watch-flexy,
+  ytd-player, #container.ytd-player
+) {
+  transform: none !important;
+  contain: none !important;
+  overflow: visible !important;
+}
+
+body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] #movie_player:not(.ytp-fullscreen):not(:fullscreen) {
+  position: fixed !important;
+  inset: auto !important;
+  top: var(--blr-reader-player-top, 98px) !important;
+  left: var(--blr-reader-player-left, var(--blr-reader-page-padding)) !important;
+  width: var(--blr-reader-player-rendered-width) !important;
+  height: var(--blr-reader-player-rendered-height) !important;
+  max-width: none !important;
+  max-height: none !important;
+  margin: 0 !important;
+  transform: none !important;
+  z-index: 100 !important;
+}
+
+body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] #movie_player:not(.ytp-fullscreen):not(:fullscreen) :is(.html5-video-container, video) {
+  width: 100% !important;
+  height: 100% !important;
+  top: 0 !important;
+  left: 0 !important;
+  object-fit: contain !important;
+}
+
+body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] #movie_player:not(.ytp-fullscreen):not(:fullscreen) .ytp-chrome-bottom {
+  width: calc(100% - 24px) !important;
+  left: 12px !important;
+}
+
+body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] .blr-reading-topbar {
+  grid-template-columns: minmax(0, 1fr);
+  right: 76px;
+}
+
+body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] .blr-reading-actions {
+  margin: 0;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] #blr-reading-view[data-blr-reader-ready="0"] {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Keep the title and all controls on one line, including the 280px column. */
+body[data-blr-reader-mode="1"] #blr-reading-inline-host .blr-reading-transcript-heading {
+  flex-wrap: nowrap;
+  gap: 4px;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+body[data-blr-reader-mode="1"] #blr-reading-inline-host .blr-reading-transcript-heading-title {
+  flex: 0 0 auto;
+  min-width: 0;
+  overflow: visible;
+  white-space: nowrap;
+  letter-spacing: 0;
+}
+
+body[data-blr-reader-mode="1"] #blr-reading-inline-host .blr-reading-transcript-heading-controls {
+  display: flex;
+  flex: 1 1 0;
+  flex-wrap: nowrap;
+  min-width: 0;
+  gap: 2px;
+}
+
+body[data-blr-reader-mode="1"] #blr-reading-inline-host .blr-reading-transcript-tool-button {
+  flex: 0 0 26px;
+}
+
+body[data-blr-reader-mode="1"] #blr-reading-inline-host .blr-reading-transcript-tool-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+body[data-blr-reader-mode="1"] #blr-reading-inline-host .blr-reading-transcript-heading-controls select {
+  padding-left: 5px;
+  padding-right: 20px;
+  background-position: right 5px center;
+}
+
+body[data-blr-reader-mode="1"] #blr-reading-inline-host #blr-reading-transcript-language {
+  flex: 1 1 72px;
+  width: 72px;
+  min-width: 0;
+  max-width: none;
+}
+
+body[data-blr-reader-mode="1"] #blr-reading-inline-host #blr-reading-transcript-font-size {
+  flex: 0 0 46px;
+  width: 46px;
+  min-width: 0;
+}
+
+body[data-blr-reader-mode="1"] #blr-reading-inline-host #blr-reading-transcript-font-weight {
+  flex: 0 0 52px;
+  width: 52px;
+  min-width: 0;
+}
+
+body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"][data-blr-reader-has-chapters="1"] .blr-reading-rail {
+  display: grid !important;
+  top: calc(var(--blr-reader-player-bottom) + 12px) !important;
+  left: var(--blr-reader-player-left) !important;
+  bottom: auto !important;
+  width: var(--blr-reader-player-width) !important;
+  height: 112px !important;
+  min-height: 0;
+  max-height: none !important;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 6px;
+  padding: 10px 12px;
+  overflow: hidden;
+}
+
+body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] .blr-reading-rail .blr-reading-list {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] .blr-reading-rail .blr-reading-chapter {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 120px;
+  max-width: 190px;
+  padding: 6px 10px;
+}
+
+@media (max-width: 1180px) {
+  body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] #blr-reading-inline-host {
+    position: fixed !important;
+    top: calc(var(--blr-reader-player-bottom, 40vh) + 16px) !important;
+    right: var(--blr-reader-page-padding) !important;
+    bottom: 16px !important;
+    left: var(--blr-reader-page-padding) !important;
+    width: auto !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    border: 1px solid var(--blr-reader-border);
+    border-radius: 12px;
+    scroll-padding-top: 46px;
+    z-index: 2147483645;
+  }
+
+  body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"][data-blr-reader-has-chapters="1"] #blr-reading-inline-host {
+    top: calc(var(--blr-reader-player-bottom) + 144px) !important;
+  }
+
+  body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] #blr-reading-inline-host .blr-reading-transcript {
+    height: auto;
+    overflow: visible;
+  }
+
+  body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] .blr-reading-transcript-heading {
+    position: sticky;
+    top: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 6px 10px;
+    box-sizing: border-box;
+    border-bottom: 1px solid var(--blr-reader-border);
+    background: var(--blr-reader-surface-2);
+    color: var(--blr-reader-text);
+    font-size: 12px;
+    font-weight: 700;
+    z-index: 3;
+  }
+
+  body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] .blr-reading-transcript-heading-controls {
+    display: flex;
+    flex: 1 1 auto;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] .blr-reading-transcript-tool-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 1px solid var(--blr-reader-border);
+    border-radius: 50%;
+    background: var(--blr-reader-surface);
+    color: var(--blr-reader-text);
+    cursor: pointer;
+  }
+
+  body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] .blr-reading-transcript-tool-button svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] .blr-reading-transcript-heading-controls select {
+    height: 26px;
+    max-width: 130px;
+    border: 1px solid var(--blr-reader-border);
+    border-radius: 5px;
+    background: var(--blr-reader-surface);
+    color: var(--blr-reader-text);
+    font-size: 12px;
+  }
+
+  body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] .blr-reading-transcript-tool-button:hover,
+  body[data-blr-reader-mode="1"][data-blr-reader-platform="youtube"] .blr-reading-transcript-tool-button:focus-visible {
+    border-color: var(--blr-reader-accent);
+    color: var(--blr-reader-accent);
+  }
+}

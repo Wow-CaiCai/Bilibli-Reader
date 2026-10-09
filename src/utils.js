@@ -1,3 +1,16 @@
+let readerHtmlPolicy = null;
+
+function readerHtml(html) {
+  // YouTube enforces Trusted Types. Keep this policy private to the reader;
+  // generated markup still escapes every video/subtitle-derived string.
+  const types = isYouTubePage() ? getYouTubePageWindow().trustedTypes : null;
+  if (!types) return html;
+  if (!readerHtmlPolicy) readerHtmlPolicy = types.createPolicy("bilibli-reader", {
+    createHTML: (value) => value
+  });
+  return readerHtmlPolicy.createHTML(html);
+}
+
 function normalizeSubtitleUrl(url) {
   if (!url) {
     return "";
