@@ -137,7 +137,7 @@ def main(*, bump: bool = False, release: bool = False) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Build the Bilibili Reader userscript")
+    parser = argparse.ArgumentParser(description="构建小书吏用户脚本")
     parser.add_argument(
         "--release", action="store_true", help="Build the next stable patch release"
     )

@@ -20,7 +20,7 @@ const DEFAULT_SETTINGS = {
   readerDefaultsVersion: 3
 };
 
-const READER_VERSION = "0.0.10-alpha.19";
+const READER_VERSION = "0.0.10";
 const CACHE_KEY_PREFIX = "bilibli_reader_subtitle_cache_";
 globalThis.__BILIBLI_READER_CONTENT_SCRIPT_LOADED__ = READER_VERSION;
 // Data and request identity for the current video.

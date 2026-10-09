@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Bilibili Reader｜哔哩哔哩阅读模式
+// @name         小书吏 ｜ 将哔哩哔哩与YouTube视频誊写为文章
 // @namespace    https://github.com/bilibli-reader
 // @version      __BLR_VERSION__
-// @description  B 站与 YouTube 阅读模式，支持连续字幕、章节联动、点击跳转与语言切换
+// @description  将哔哩哔哩与 YouTube 视频字幕誊写为可阅读的文章，支持连续字幕、章节联动、点击跳转与语言切换
 // @author       Wow-CaiCai
 // @license      MIT
 // @homepageURL  https://github.com/Wow-CaiCai/Bilibli-Reader

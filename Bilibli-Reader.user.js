@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Bilibili Reader｜哔哩哔哩阅读模式
+// @name         小书吏 ｜ 将哔哩哔哩与YouTube视频誊写为文章
 // @namespace    https://github.com/bilibli-reader
-// @version      0.0.10-alpha.19
-// @description  B 站与 YouTube 阅读模式，支持连续字幕、章节联动、点击跳转与语言切换
+// @version      0.0.10
+// @description  将哔哩哔哩与 YouTube 视频字幕誊写为可阅读的文章，支持连续字幕、章节联动、点击跳转与语言切换
 // @author       Wow-CaiCai
 // @license      MIT
 // @homepageURL  https://github.com/Wow-CaiCai/Bilibli-Reader
@@ -296,7 +296,7 @@ const DEFAULT_SETTINGS = {
   readerDefaultsVersion: 3
 };
 
-const READER_VERSION = "0.0.10-alpha.19";
+const READER_VERSION = "0.0.10";
 const CACHE_KEY_PREFIX = "bilibli_reader_subtitle_cache_";
 globalThis.__BILIBLI_READER_CONTENT_SCRIPT_LOADED__ = READER_VERSION;
 // Data and request identity for the current video.

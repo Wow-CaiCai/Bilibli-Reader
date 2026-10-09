@@ -1,40 +1,28 @@
-# Bilibili Reader
+# 小书吏 ｜将哔哩哔哩与YouTube视频誊写为文章
 
-## 让视频，也能读。
+为哔哩哔哩与 YouTube 视频带来阅读模式，将字幕展开成连续全文，让画面、文字和章节随播放联动。先浏览，再细看，或回到刚才那句话。按你的节奏来，一段课程，一场访谈，一次笔记，都从这里开始。
 
-。值得细看的内容，也值得慢慢读。
+## 打开视频，文字就在旁边。
 
-为 BiliBli 与 YouTube 带来阅读模式。把视频里的字幕展开成连续全文，让画面、文字和章节随播放联动。先浏览，再细看，或回到刚才那句话。按你的节奏来，一段课程，一场访谈，一次笔记，都从这里开始。
-
-[脚本猫](https://scriptcat.org/zh-CN/script-show-page/8038) · [Greasy Fork](https://greasyfork.org/zh-CN/scripts/596599-bilibili-reader-%E5%93%94%E5%93%A9%E5%93%94%E5%93%A9%E9%98%85%E8%AF%BB%E6%A8%A1%E5%BC%8F) · [GitHub](https://github.com/Wow-CaiCai/Bilibli-Reader)
-
-<!-- 配图 01A：哔哩哔哩阅读模式全景，展示原生播放器、连续字幕和当前播放高亮。 -->
-
-**哔哩哔哩**
-
-![哔哩哔哩阅读模式全景截图](docs/images/reader-bilibili.png)
-
-<!-- 配图 01B：YouTube 阅读模式全景，展示原生播放器、连续字幕和已有章节。 -->
-
-**YouTube**
-
-![YouTube 阅读模式全景截图](docs/images/reader-youtube.png)
-
-## 打开视频。文字就在旁边。
-
-熟悉的播放页，多了一栏可以直接阅读的字幕。展开就能浏览全文，收起便能继续看视频。点击「字幕」右侧的书本按钮，即可进入阅读模式。
+熟悉的播放页，多了一栏可以直接阅读的字幕。展开就能浏览全文，收起便能继续看视频。
 
 <!-- 配图 02A：哔哩哔哩普通播放页，展示弹幕列表上方的字幕面板、书本入口和工具栏。 -->
-
-**哔哩哔哩**
 
 ![哔哩哔哩普通播放页与字幕面板截图](docs/images/native-page-bilibili.png)
 
 <!-- 配图 02B：YouTube 普通播放页，展示推荐视频上方的字幕面板、书本入口和工具栏。 -->
 
-**YouTube**
-
 ![YouTube 普通播放页与字幕面板截图](docs/images/native-page-youtube.png)
+
+## 沉浸阅读，把注意力留给内容。
+
+<!-- 配图 01A：哔哩哔哩阅读模式全景，展示原生播放器、连续字幕和当前播放高亮。 -->
+
+点击「字幕」右侧的书本按钮，即可进入阅读模式。![哔哩哔哩阅读模式全景截图](docs/images/reader-bilibili.png)
+
+<!-- 配图 01B：YouTube 阅读模式全景，展示原生播放器、连续字幕和已有章节。 -->
+
+![YouTube 阅读模式全景截图](docs/images/reader-youtube.png)
 
 ## 字幕工具栏，随手就会。
 
@@ -69,9 +57,9 @@
 ## 几步安装，就能开始。
 
 1. 在浏览器中安装 **脚本猫（ScriptCat）** 或 **Tampermonkey（篡改猴）** 扩展。
-2. 打开 Bilibili Reader 的[脚本猫](https://scriptcat.org/zh-CN/script-show-page/8038)或 [Greasy Fork](https://greasyfork.org/zh-CN/scripts/596599-bilibili-reader-%E5%93%94%E5%93%A9%E5%93%94%E5%93%A9%E9%98%85%E8%AF%BB%E6%A8%A1%E5%BC%8F)，点击「安装脚本」。
+2. 打开小书吏的[脚本猫](https://scriptcat.org/zh-CN/script-show-page/8038)或 [Greasy Fork](https://greasyfork.org/zh-CN/scripts/596599-bilibili-reader-%E5%93%94%E5%93%A9%E5%93%94%E5%93%A9%E9%98%85%E8%AF%BB%E6%A8%A1%E5%BC%8F)，点击「安装脚本」。
 3. 在脚本管理器中确认安装。
-4. 打开Bilibli｜YouTube 的视频播放页，等待字幕面板加载。
+4. 打开哔哩哔哩或 YouTube 的视频播放页，等待字幕面板加载。
 
 ## 关于字幕与支持范围。
 
